@@ -154,7 +154,7 @@ class AuthController extends Controller
         if ($user->two_factor_attempts >= 3) {
             Auth::logout();
 
-            return redirect()->route('login.get')->with('error',
+            return redirect()->route('login')->with('error',
                 'Too many invalid attempts. Please login again.');
         }
 
@@ -190,6 +190,6 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('login.get')->with('success', 'Logged out successfully.');
+        return redirect()->route('login')->with('success', 'Logged out successfully.');
     }
 }

@@ -17,7 +17,7 @@ class AuthMiddleware
     public function handle($request, Closure $next)
     {
         if (!Auth::check()) {
-            return redirect()->route('login.get')->withErrors(['msg' => 'Please login to access this page.']);
+            return redirect()->route('login')->withErrors(['msg' => 'Please login to access this page.']);
         }
 
         return $next($request);

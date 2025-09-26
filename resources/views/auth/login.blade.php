@@ -66,7 +66,7 @@
                                             <input type="password" name="password" class="form-control form-control-lg" id="signin-password"
                                                 placeholder="password">
                                             <a href="javascript:void(0);" class="show-password-button text-muted"
-                                                id="button-addon2"><i class="ri-eye-off-line align-middle"></i></a>
+                                                id="button-addon2" onclick="createpassword('signin-password',this)"><i class="ri-eye-off-line align-middle"></i></a>
                                         </div>
                                         <div class="mt-2">
                                             <div class="form-check">

@@ -12,5 +12,9 @@
     <script src="{{ asset('assets/js/analytics-dashboard.js') }}"></script>
     <script src="{{ asset('assets/js/custom.js') }}"></script>
     <script src="{{ asset('assets/js/custom-switcher.min.js') }}"></script>
+    <script src="{{ asset('assets/libs/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+     <script src="{{ asset('assets/libs/particles.js/particles.js') }}"></script>
+     <script src="{{ asset('assets/js/basic-password.js') }}"></script>
+     <script src="{{ asset('assets/js/show-password.js') }}"></script>
     @stack('scripts')
 </html> 

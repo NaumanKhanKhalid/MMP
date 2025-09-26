@@ -4,16 +4,20 @@
     <div class="main-header-container container-fluid">
 
         <!-- Start::header-content-left -->
-        <div class="header-content-left">   
+        <div class="header-content-left">
 
             <!-- Start::header-element -->
             <div class="header-element">
                 <div class="horizontal-logo">
                     <a href="{{ route('dashboard') }}" class="header-logo">
-                        <img src="{{ asset('assets/images/brand-logos/desktop-logo.png') }}" alt="logo" class="desktop-logo">
-                        <img src="{{ asset('assets/images/brand-logos/toggle-logo.png') }}" alt="logo" class="toggle-logo">
-                        <img src="{{ asset('assets/images/brand-logos/desktop-dark.png') }}" alt="logo" class="desktop-dark">
-                        <img src="{{ asset('assets/images/brand-logos/toggle-dark.png') }}" alt="logo" class="toggle-dark">
+                        <img src="{{ asset('assets/images/brand-logos/desktop-logo.png') }}" alt="logo"
+                            class="desktop-logo">
+                        <img src="{{ asset('assets/images/brand-logos/toggle-logo.png') }}" alt="logo"
+                            class="toggle-logo">
+                        <img src="{{ asset('assets/images/brand-logos/desktop-dark.png') }}" alt="logo"
+                            class="desktop-dark">
+                        <img src="{{ asset('assets/images/brand-logos/toggle-dark.png') }}" alt="logo"
+                            class="toggle-dark">
                     </a>
                 </div>
             </div>
@@ -24,8 +28,8 @@
                 <!-- Start::header-link -->
                 <a aria-label="Hide Sidebar" class="sidemenu-toggle header-link" data-bs-toggle="sidebar"
                     href="javascript:void(0);">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="header-link-icon menu-btn" width="32" height="32"
-                        fill="#000000" viewBox="0 0 256 256">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="header-link-icon menu-btn" width="32"
+                        height="32" fill="#000000" viewBox="0 0 256 256">
                         <path
                             d="M224,128a8,8,0,0,1-8,8H40a8,8,0,0,1,0-16H216A8,8,0,0,1,224,128ZM40,72H216a8,8,0,0,0,0-16H40a8,8,0,0,0,0,16ZM216,184H40a8,8,0,0,0,0,16H216a8,8,0,0,0,0-16Z">
                         </path>
@@ -59,9 +63,9 @@
             </li>
             <!-- End::header-element -->
 
-           
 
-          
+
+
 
             {{-- <!-- Start::header-element -->
             <li class="header-element cart-dropdown dropdown">
@@ -763,39 +767,44 @@
                     data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
                     <div class="d-flex align-items-center">
                         <div class="me-xl-2 me-0">
-                            <img src="{{ asset('assets/images/faces/2.jpg') }}" alt="img" class="avatar avatar-sm avatar-rounded">
+                            <img src="{{ auth()->user()->avatar ?? asset('assets/images/faces/9.jpg') }}" alt="Profile"
+                                class="avatar avatar-sm avatar-rounded">
                         </div>
                         <div class="d-xl-block d-none lh-1">
-                            <span class="fw-medium lh-1">Mr. Jack</span>
+                            <span class="fw-medium lh-1">{{ auth()->user()->name }}</span>
                         </div>
                     </div>
                 </a>
                 <!-- End::header-link|dropdown-toggle -->
+
                 <ul class="main-header-dropdown dropdown-menu pt-0 overflow-hidden header-profile-dropdown dropdown-menu-end"
                     aria-labelledby="mainHeaderProfile">
                     <li>
-                        <div class="py-2 px-3 text-center"> <span class="fw-semibold"> Mr.Jack Miller </span> <span
-                                class="d-block fs-12 text-muted">UI/UX Designer</span> </div>
+                        <div class="py-2 px-3 text-center">
+                            <span class="fw-semibold">{{ auth()->user()->name }}</span>
+                            <span class="d-block fs-12 text-muted">{{ auth()->user()->email }}</span>
+                            <span class=" mt-1">
+                                {{ ucfirst(auth()->user()->role->name ?? 'User') }}
+                            </span>
+                        </div>
                     </li>
-                    <li><a class="dropdown-item d-flex align-items-center" href="profile.html"><i
-                                class="ti ti-user text-primary me-2 fs-16"></i>Profile</a>
+
+                    <li>
+                        <a class="dropdown-item d-flex align-items-center"
+                            href="{{ route('users.profile.settings') }}">
+                            <i class="ti ti-user text-primary me-2 fs-16"></i> Profile
+                        </a>
                     </li>
-                    <li><a class="dropdown-item d-flex align-items-center" href="mail.html"> <i
-                                class="ti ti-mail text-secondary me-2 fs-16"></i>Inbox</a>
-                    </li>
-                    <li><a class="dropdown-item d-flex align-items-center" href="to-do-list.html"><i
-                                class="ti ti-checklist text-success me-2 fs-16"></i>Task
-                            Manager</a></li>
-                    <li><a class="dropdown-item d-flex align-items-center" href="mail-settings.html"><i
-                                class="ti ti-settings text-info me-2 fs-16"></i>Settings</a>
-                    </li>
-                    <li><a class="dropdown-item d-flex align-items-center" href="chat.html"><i
-                                class="ti ti-headset text-warning me-2 fs-16"></i>Support</a>
-                    </li>
-                    <li class="py-2 px-3"><a class="btn btn-primary btn-sm w-100" href="sign-up-basic.html">Log Out</a>
+                    <!-- Logout -->
+                    <li class="py-2 px-3">
+                        <form action="{{ route('logout') }}" method="POST">
+                            @csrf
+                            <button type="submit" class="btn btn-primary btn-sm w-100">Log Out</button>
+                        </form>
                     </li>
                 </ul>
             </li>
+
             <!-- End::header-element -->
 
             {{-- <!-- Start::header-element -->

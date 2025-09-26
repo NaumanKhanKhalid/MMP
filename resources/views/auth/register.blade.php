@@ -70,7 +70,7 @@
                                             <input type="password" name="password"   class="form-control form-control-lg" id="signup-password"
                                                 placeholder="Password">
                                             <a href="javascript:void(0);" class="show-password-button text-muted"
-                                                id="button-addon2"><i class="ri-eye-off-line align-middle"></i></a>
+                                                onclick="createpassword('signup-password',this)" id="button-addon2"><i class="ri-eye-off-line align-middle"></i></a>
                                         </div>
                                     </div>
                                     <div class="col-xl-12">
@@ -80,7 +80,7 @@
                                             <input type="password" class="form-control form-control-lg"
                                                 id="signup-confirmpassword" name="password_confirmation" placeholder="Confirm Password">
                                             <a href="javascript:void(0);"   class="show-password-button text-muted"
-                                                id="button-addon3"><i class="ri-eye-off-line align-middle"></i></a>
+                                                 onclick="createpassword('signup-confirmpassword',this)" id="button-addon3"><i class="ri-eye-off-line align-middle"></i></a>
                                         </div>
                                     </div>
                                 </div>
@@ -92,7 +92,7 @@
 
                             <div class="text-center mb-3">
                                 <p class="text-muted mt-3 mb-0">Already have an account? <a
-                                        href="{{ route('login.get') }}" class="text-primary">Sign In</a></p>
+                                        href="{{ route('login') }}" class="text-primary">Sign In</a></p>
                             </div>
                         </div>
                     </div>

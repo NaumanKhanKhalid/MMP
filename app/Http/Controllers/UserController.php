@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
 {
@@ -13,7 +14,6 @@ class UserController extends Controller
     public function index()
     {
         try {
-            // Owner ke ilawa sab users paginate karo (10 per page)
             $users = User::whereHas('role', fn($q) => $q->where('name', '!=', 'Owner'))
                 ->paginate(10);
 
@@ -26,13 +26,16 @@ class UserController extends Controller
     // Create new staff/manager
     public function store(Request $request)
     {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'role' => 'required|in:staff,manager',
+            'status' => 'required|in:active,inactive',
+            'password' => 'required|min:6'
+        ]);
+
         try {
-            $request->validate([
-                'name' => 'required|string|max:255',
-                'email' => 'required|email|unique:users,email',
-                'role' => 'required|in:staff,manager',
-                'password' => 'required|min:6'
-            ]);
+
 
             $role = Role::where('name', $request->role)->first();
 
@@ -43,6 +46,7 @@ class UserController extends Controller
             User::create([
                 'name' => $request->name,
                 'email' => $request->email,
+                'status' => $request->status,
                 'role_id' => $role->id,
                 'password' => Hash::make($request->password),
             ]);
@@ -59,10 +63,14 @@ class UserController extends Controller
     // Update role
     public function update(Request $request, User $user)
     {
+
+        $request->validate([
+            'role' => 'required|in:staff,manager',
+            'status' => 'required|in:active,inactive',
+        ]);
+
         try {
-            $request->validate([
-                'role' => 'required|in:staff,manager',
-            ]);
+
 
             $role = Role::where('name', $request->role)->first();
 
@@ -72,6 +80,7 @@ class UserController extends Controller
 
             $user->update([
                 'role_id' => $role->id,
+                'status' => $request->status,
             ]);
 
             return back()->with('success', 'Role updated successfully!');
@@ -83,19 +92,6 @@ class UserController extends Controller
         }
     }
 
-    // Reset password
-    public function resetPassword(User $user)
-    {
-        try {
-            $newPassword = '123456'; // default or random generate
-            $user->update(['password' => Hash::make($newPassword)]);
-
-            return back()->with('success', 'Password has been reset successfully. New password: ' . $newPassword);
-        } catch (\Exception $e) {
-            Log::error("Password reset error: " . $e->getMessage());
-            return back()->with('error', 'Failed to reset password.');
-        }
-    }
 
     // Delete
     public function destroy(User $user)
@@ -108,4 +104,122 @@ class UserController extends Controller
             return back()->with('error', 'Failed to delete user.');
         }
     }
+
+    public function userProfileSettings()
+    {
+        return view('users.profile_settings');
+    }
+
+
+    public function userPasswordUpdate(Request $request)
+    {
+
+        $request->validate([
+            'current_password' => 'required',
+            'password' => 'required|confirmed|min:8',
+        ]);
+        try {
+
+
+            if (!Hash::check($request->current_password, $request->user()->password)) {
+                return back()->with('error', 'Current password is incorrect.');
+            }
+
+            $request->user()->update([
+                'password' => Hash::make($request->password),
+            ]);
+
+            return back()->with('success', 'Password updated successfully!');
+        } catch (\Exception $e) {
+            Log::error("Password update error: " . $e->getMessage());
+            return back()->with('error', 'Failed to update password.');
+        }
+    }
+
+    public function userProfileUpdate(Request $request)
+    {
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,' . $request->user()->id,
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
+        ]);
+
+
+        try {
+
+            $data = $request->only(['name', 'email']);
+
+            // Avatar upload
+            if ($request->hasFile('avatar')) {
+                $path = $request->file('avatar')->store('avatars', 'public');
+
+                // Full URL banani hai
+                $data['avatar'] = asset('storage/' . $path);
+            }
+
+            $request->user()->update($data);
+
+            return back()->with('success', 'Profile updated successfully!');
+        } catch (\Exception $e) {
+            dd($e->getMessage());
+            Log::error("Profile update error: " . $e->getMessage());
+            return back()->with('error', 'Failed to update profile.');
+        }
+    }
+
+    public function removeAvatar(Request $request)
+    {
+        try {
+            $user = $request->user();
+
+            if ($user->avatar) {
+                // Optionally delete file from storage
+                $filePath = str_replace(asset('storage/'), '', $user->avatar);
+                Storage::disk('public')->delete($filePath);
+
+                $user->update(['avatar' => null]);
+            }
+
+            return back()->with('success', 'Avatar removed successfully.');
+        } catch (\Exception $e) {
+            Log::error("Avatar remove error: " . $e->getMessage());
+            return back()->with('error', 'Failed to remove avatar.');
+        }
+    }
+
+    public function twoFactorEnable(Request $request)
+    {
+        $user = $request->user();
+
+        if ($user->role->name !== 'Owner') {
+            return back()->with('error', 'You are not allowed to perform this action.');
+        }
+
+        $user->update(['two_factor_enabled' => true]);
+
+        return back()->with('success', 'Two-Factor Authentication enabled successfully.');
+    }
+
+    public function twoFactorDisable(Request $request)
+    {
+        $user = $request->user();
+
+        if ($user->role->name !== 'Owner') {
+            return back()->with('error', 'You are not allowed to perform this action.');
+        }
+
+        $user->update(['two_factor_enabled' => false]);
+
+        return back()->with('success', 'Two-Factor Authentication disabled successfully.');
+    }
+
+    public function toggleUserStatus(User $user)
+    {
+        $user->status = $user->status === 'active' ? 'inactive' : 'active';
+        $user->save();
+
+        return back()->with('success', 'User status updated successfully.');
+    }
+
 }

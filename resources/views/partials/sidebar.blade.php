@@ -24,7 +24,7 @@
             </div>
             <ul class="main-menu">
                 <li class="slide">
-                    <a href="icons.html" class="side-menu__item">
+                    <a href="{{ route('dashboard') }}" class="side-menu__item">
                         <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" viewBox="0 0 256 256">
                             <rect width="256" height="256" fill="none" />
                             <path
@@ -59,16 +59,50 @@
                     </a>
                     <ul class="slide-menu child1">
                         <li class="slide">
-                            <a href="" class="side-menu__item">Users</a>
-                            <a href="" class="side-menu__item">Customer</a>
-                            <a href="" class="side-menu__item">Mechanics</a>
+                            <a href="{{ route('users.index') }}" class="side-menu__item">Users</a>
+                            {{-- <a href="" class="side-menu__item">Customer</a>
+                            <a href="" class="side-menu__item">Mechanics</a> --}}
                         </li>
 
                     </ul>
+
+                <li class="slide has-sub">
+                    <a href="javascript:void(0);" class="side-menu__item">
+                        <!-- Improved folder icon -->
+                        <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" viewBox="0 0 256 256">
+                            <path
+                                d="M32 72a16 16 0 0 1 16-16h56l16 16h104a16 16 0 0 1 16 16v96a16 16 0 0 1-16 16H48a16 16 0 0 1-16-16Z"
+                                fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                stroke-width="16" />
+                        </svg>
+                        <span class="side-menu__label">Categories</span>
+                        <i class="ri-arrow-right-s-line side-menu__angle"></i>
+                    </a>
+                    <ul class="slide-menu child1">
+                        <li class="slide">
+                            <a href="{{ route('categories.parents') }}" class="side-menu__item"> Categories</a>
+                            <a href="{{ route('categories.subcategories') }}"
+                                class="side-menu__item">Subcategories</a>
+                        </li>
+                    </ul>
                 </li>
 
+                <li class="slide">
+                    <a href="{{ route('brands.index') }}" class="side-menu__item">
+                        <!-- Improved tag icon -->
+                        <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" viewBox="0 0 256 256">
+                            <path d="M48 40h80l80 80-80 80H48a8 8 0 0 1-8-8V48a8 8 0 0 1 8-8z" fill="none"
+                                stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                stroke-width="16" />
+                            <circle cx="84" cy="84" r="12" fill="currentColor" />
+                        </svg>
+                        <span class="side-menu__label">All Brands</span>
+                    </a>
+                </li>
+
+
             </ul>
-            </li>
+
             <div class="slide-right" id="slide-right"><svg xmlns="http://www.w3.org/2000/svg" fill="#7b8191"
                     width="24" height="24" viewBox="0 0 24 24">
                     <path d="M10.707 17.707 16.414 12l-5.707-5.707-1.414 1.414L13.586 12l-4.293 4.293z"></path>

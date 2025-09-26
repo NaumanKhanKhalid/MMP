@@ -21,7 +21,7 @@ class RoleMiddleware
 
         // Check if user is logged in
         if (!$user) {
-            return redirect()->route('login.get');
+            return redirect()->route('login');
         }
 
         // Check if user's role is in allowed roles

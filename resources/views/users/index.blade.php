@@ -30,6 +30,8 @@
                             <th>Name</th>
                             <th>Email</th>
                             <th>Role</th>
+                            <th>Status</th>
+
                             <th class="text-end">Actions</th>
                         </tr>
                     </thead>
@@ -45,6 +47,14 @@
                                     </div>
                                 </td>
                                 <td><span class="badge bg-info-transparent">{{ ucfirst($user->role->name) }}</span></td>
+                                <td>
+                                    @if ($user->status == 'active')
+                                        <span class="badge rounded-pill bg-success-transparent">Active</span>
+                                    @else
+                                        <span class="badge rounded-pill bg-secondary-transparent">Inactive</span>
+                                    @endif
+                                </td>
+
                                 <td class="text-end">
                                     <div class="btn-list">
                                         <!-- View Button -->
@@ -60,6 +70,17 @@
                                             <i class="ri-pencil-line"></i>
                                         </button>
 
+                                        <form method="POST" action="{{ route('toggle.user.status', $user->id) }}"
+                                            class="d-inline">
+                                            @csrf
+                                            @method('PATCH')
+                                            <button type="submit"
+                                                class="btn btn-sm {{ $user->status === 'active' ? 'btn-warning-light' : 'btn-success-light' }} btn-icon"
+                                                title="{{ $user->status === 'active' ? 'Deactivate' : 'Activate' }}">
+                                                <i
+                                                    class="ri-toggle-{{ $user->status === 'active' ? 'line' : 'fill' }}"></i>
+                                            </button>
+                                        </form>
                                         <!-- Delete Button -->
                                         <button class="btn btn-sm btn-danger-light btn-icon contact-delete"
                                             data-bs-toggle="modal" data-bs-target="#deleteUser{{ $user->id }}">
@@ -81,6 +102,7 @@
                                 <div class="offcanvas-body">
                                     <p><strong>Name:</strong> {{ $user->name }}</p>
                                     <p><strong>Email:</strong> {{ $user->email }}</p>
+                                    <p><strong>Status:</strong> {{ $user->status }}</p>
                                     <p><strong>Role:</strong> {{ ucfirst($user->role->name) }}</p>
                                     <hr>
                                 </div>
@@ -108,6 +130,19 @@
                                                     <input type="email" name="email" class="form-control"
                                                         value="{{ $user->email }}" required>
                                                 </div>
+
+                                                <div class="mb-3">
+                                                    <label>Status</label>
+                                                    <select name="status" class="form-select">
+                                                        <option value="active"
+                                                            {{ $user->status == 'active' ? 'selected' : '' }}>Active
+                                                        </option>
+                                                        <option value="inactive"
+                                                            {{ $user->status == 'inactive' ? 'selected' : '' }}>Inactive
+                                                        </option>
+                                                    </select>
+                                                </div>
+
                                                 <div class="mb-3">
                                                     <label>Role</label>
                                                     <select name="role" class="form-select">
@@ -144,7 +179,8 @@
                                         <div class="modal-content">
                                             <div class="modal-header">
                                                 <h5 class="modal-title">Confirm Delete</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                <button type="button" class="btn-close"
+                                                    data-bs-dismiss="modal"></button>
                                             </div>
                                             <div class="modal-body">
                                                 Are you sure you want to delete <strong>{{ $user->name }}</strong>?
@@ -227,6 +263,13 @@
                         <div class="mb-3">
                             <label>Email</label>
                             <input type="email" name="email" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label>Status</label>
+                            <select name="status" class="form-select">
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
                         </div>
                         <div class="mb-3">
                             <label>Role</label>

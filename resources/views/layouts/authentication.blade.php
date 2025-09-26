@@ -28,6 +28,23 @@
     <!-- Icons Css -->
     <link href="{{ asset('assets/css/icons.css') }}" rel="stylesheet">
 
+    <!-- Choices Css -->
+    <link rel="stylesheet" href="{{ asset('assets/libs/choices.js/public/assets/styles/choices.min.css') }}">
+
+    <!-- FlatPickr CSS -->
+    <link rel="stylesheet" href="{{ asset('assets/libs/flatpickr/flatpickr.min.css') }}">
+
+    <!-- Auto Complete CSS -->
+    <link rel="stylesheet" href="{{ asset('assets/libs/@tarekraafat/autocomplete.js/css/autoComplete.css') }}">
+
+    <!-- Main Theme Js -->
+    <script src="{{asset('assets/js/authentication-main.js')}}"></script>
+    <!-- Bootstrap Css -->
+    <link id="style" href="{{asset('assets/libs/bootstrap/css/bootstrap.min.css')}}" rel="stylesheet">
+    <!-- Style Css -->
+    <link href="{{asset('assets/css/styles.css')}}" rel="stylesheet">
+    <!-- Icons Css -->
+    <link href="{{asset('assets/css/icons.css')}}" rel="stylesheet">
 </head>
 
 <body class="authenticationcover-background bg-primary-transparent position-relative" id="particles-js">
