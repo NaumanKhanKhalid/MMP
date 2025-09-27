@@ -4,19 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class ProductFitment extends Model
+class ModelEngine extends Model
 {
     protected $guarded = [];
-
-    public function product()
-    {
-        return $this->belongsTo(Product::class, 'product_id');
-    }
-
-    public function make()
-    {
-        return $this->belongsTo(Make::class, 'make_id');
-    }
 
     public function model()
     {

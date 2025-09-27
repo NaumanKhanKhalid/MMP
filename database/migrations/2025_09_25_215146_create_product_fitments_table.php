@@ -12,14 +12,17 @@ return new class extends Migration {
     {
         Schema::create('product_fitments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('product_id')->constrained()->cascadeOnDelete();
-            $table->string('vehicle_make'); // e.g. Toyota
-            $table->string('vehicle_model'); // e.g. Corolla
-            $table->string('year_range')->nullable(); // e.g. 2010-2015
+            $table->foreignId('product_id')->constrained('products')->cascadeOnDelete();
+            $table->foreignId('make_id')->constrained('makes')->cascadeOnDelete();
+            $table->foreignId('model_id')->constrained('models')->cascadeOnDelete();
+            $table->foreignId('engine_id')->constrained('engines')->cascadeOnDelete();
+            $table->year('year_start');
+            $table->year('year_end');
+            $table->string('market')->nullable(); // e.g. Pakistan, Japan
             $table->timestamps();
         });
-
     }
+
 
     /**
      * Reverse the migrations.
