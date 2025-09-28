@@ -6,7 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class CrossReference extends Model
 {
-    protected $fillable = ['product_id', 'reference_number', 'reference_brand'];
+       protected $guarded = [];
+
 
     public function product()
     {

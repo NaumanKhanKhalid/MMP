@@ -9,12 +9,7 @@ class ProductCrossRef extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'product_id',
-        'reference_number',
-        'note',
-        'status',
-    ];
+    protected $guarded = [];
 
     public function product()
     {

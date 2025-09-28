@@ -8,7 +8,12 @@ class Supplier extends Model
 {
     protected $guarded = [];
 
-       protected $casts = [
+    protected $casts = [
         'balance' => 'decimal:2',
     ];
+    public function products()
+    {
+        return $this->belongsToMany(Product::class, 'product_supplier');
+    }
+
 }

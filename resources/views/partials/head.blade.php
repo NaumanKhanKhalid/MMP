@@ -1,9 +1,4 @@
-<!DOCTYPE html>
-<html lang="en" dir="ltr" data-nav-layout="vertical" data-theme-mode="light" data-header-styles="light"
-    data-width="fullwidth" data-menu-styles="light" data-toggled="close">
-
 <head>
-
     <!-- Meta Data -->
     <meta charset="UTF-8">
     <meta name='viewport' content='width=device-width, initial-scale=1.0'>
@@ -14,15 +9,8 @@
     <meta name="keywords"
         content="bootstrap template, admin panel bootstrap, bootstrap dashboard, admin, admin dashboard template, dashboard template, html css templates, dashboard, template dashboard,  bootstrap dashboard template, dashboard html css, bootstrap admin dashboard,  bootstrap admin, dashboard template, bootstrap5 admin template">
 
-
     <!-- Favicon -->
     <link rel="icon" href="{{ asset('assets/images/brand-logos/favicon.ico') }}" type="image/x-icon">
-
-    <!-- Choices JS -->
-    <script src="{{ asset('assets/libs/choices.js/public/assets/scripts/choices.min.js') }}"></script>
-
-    <!-- Main Theme Js -->
-    <script src="{{ asset('assets/js/main.js') }}"></script>
 
     <!-- Bootstrap Css -->
     <link id="style" href="{{ asset('assets/libs/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
@@ -52,14 +40,23 @@
     <!-- Auto Complete CSS -->
     <link rel="stylesheet" href="{{ asset('assets/libs/@tarekraafat/autocomplete.js/css/autoComplete.css') }}">
 
+    <!-- Select2 CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
+
+    <!-- jQuery (Load first!) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+    <!-- Select2 JS (Load after jQuery) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.min.js"></script>
+
+    <!-- Choices JS -->
+    <script src="{{ asset('assets/libs/choices.js/public/assets/scripts/choices.min.js') }}"></script>
+
     <!-- Main Theme Js -->
-    <script src="{{asset('assets/js/authentication-main.js')}}"></script>
-    <!-- Bootstrap Css -->
-    <link id="style" href="{{asset('assets/libs/bootstrap/css/bootstrap.min.css')}}" rel="stylesheet">
-    <!-- Style Css -->
-    <link href="{{asset('assets/css/styles.css')}}" rel="stylesheet">
-    <!-- Icons Css -->
-    <link href="{{asset('assets/css/icons.css')}}" rel="stylesheet">
+    <script src="{{ asset('assets/js/main.js') }}"></script>
+
+    <!-- Authentication Main Js -->
+    <script src="{{ asset('assets/js/authentication-main.js') }}"></script>
 
     <style>
         .switch {
@@ -105,6 +102,13 @@
         input:checked+.slider:before {
             transform: translateX(24px);
         }
+        .modal {
+    z-index: 1055 !important;
+}
+.modal-backdrop {
+    z-index: 1050 !important;
+}
+
     </style>
     @stack('styles')
 </head>

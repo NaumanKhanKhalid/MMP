@@ -6,7 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class OeNumber extends Model
 {
-    protected $fillable = ['product_id', 'oe_number'];
+        protected $guarded = [];
+
 
     public function product()
     {

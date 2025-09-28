@@ -6,7 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Engine extends Model
 {
-    protected $fillable = ['code', 'displacement', 'fuel_type', 'cylinder', 'power'];
+      protected $guarded = [];
+
 
     public function models()
     {

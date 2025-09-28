@@ -9,26 +9,8 @@ class Product extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'sku',
-        'barcode',
-        'name',
-        'description',
-        'brand_id',
-        'category_id',
-        'primary_supplier_id',
-        'supplier_code',
-        'unit',
-        'images',
-        'bin_location',
-        'reorder_level',
-        'price_normal',
-        'price_online',
-        'price_workshop',
-        'allow_negative',
-        'special_order',
-        'notes',
-        'status'
+    protected $guarded = [
+
     ];
 
     protected $casts = [
@@ -66,7 +48,7 @@ class Product extends Model
     // pivot
     public function suppliers()
     {
-        return $this->belongsToMany(Supplier::class, 'product_supplier')
+        return $this->belongsToMany(Supplier::class, 'product_suppliers')
             ->withPivot('purchase_price', 'currency', 'lead_time', 'supplier_sku')
             ->withTimestamps();
     }
@@ -103,6 +85,9 @@ class Product extends Model
     {
         return $this->stockBatches()->sum('qty_left');
     }
+    public function images()
+    {
+        return $this->hasMany(ProductImage::class);
+    }
 
-    // eager-friendly accessor using withSum in queries: use ->withSum('stockBatches','qty_left')
 }

@@ -12,7 +12,7 @@ return new class extends Migration {
     {
         Schema::create('car_models', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('make_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('car_make_id');
             $table->string('name'); // Corolla, Civic
             $table->string('generation')->nullable(); // 10th Gen
             $table->string('body_type')->nullable(); // Sedan, Hatchback

@@ -4,7 +4,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class StockBatch extends Model
 {
-    protected $fillable = ['product_id','batch_code','qty_received','qty_left','landed_unit_cost','received_date','grn_id'];
+    protected $guarded = [];
 
     public function product() { return $this->belongsTo(Product::class); }
 }
