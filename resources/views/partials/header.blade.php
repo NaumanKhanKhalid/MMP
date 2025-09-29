@@ -10,13 +10,13 @@
                 <div class="header-element">
                     <div class="horizontal-logo">
                         <a href="{{ route('dashboard') }}" class="header-logo">
-                            <img src="{{ asset('assets/images/brand-logos/desktop-logo.png') }}" alt="logo"
+                            <img src="{{ url('public/assets/images/brand-logos/desktop-logo.png') }}" alt="logo"
                                 class="desktop-logo">
-                            <img src="{{ asset('assets/images/brand-logos/toggle-logo.png') }}" alt="logo"
+                            <img src="{{ url('public/assets/images/brand-logos/toggle-logo.png') }}" alt="logo"
                                 class="toggle-logo">
-                            <img src="{{ asset('assets/images/brand-logos/desktop-dark.png') }}" alt="logo"
+                            <img src="{{ url('public/assets/images/brand-logos/desktop-dark.png') }}" alt="logo"
                                 class="desktop-dark">
-                            <img src="{{ asset('assets/images/brand-logos/toggle-dark.png') }}" alt="logo"
+                            <img src="{{ url('public/assets/images/brand-logos/toggle-dark.png') }}" alt="logo"
                                 class="toggle-dark">
                         </a>
                     </div>
@@ -387,7 +387,7 @@
                                         <div class="d-flex align-items-start">
                                             <div class="pe-2 lh-1"> <span
                                                     class="avatar avatar-md avatar-rounded svg-white">
-                                                    <img src="{{ asset('assets/images/faces/2.jpg') }}" alt="img"> </span>
+                                                    <img src="{{ url('public/assets/images/faces/2.jpg') }}" alt="img"> </span>
                                             </div>
                                             <div class="flex-grow-1 d-flex align-items-start justify-content-between">
                                                 <div>
@@ -429,7 +429,7 @@
                                         <div class="d-flex align-items-start">
                                             <div class="pe-2 lh-1"> <span
                                                     class="avatar avatar-md avatar-rounded svg-white">
-                                                    <img src="{{ asset('assets/images/faces/6.jpg') }}" alt="img"> </span>
+                                                    <img src="{{ url('public/assets/images/faces/6.jpg') }}" alt="img"> </span>
                                             </div>
                                             <div class="flex-grow-1 d-flex align-items-start justify-content-between">
                                                 <div>
@@ -469,7 +469,7 @@
                                         <div class="d-flex align-items-start">
                                             <div class="pe-2 lh-1"> <span
                                                     class="avatar avatar-md avatar-rounded svg-white">
-                                                    <img src="{{ asset('assets/images/faces/14.jpg') }}" alt="img"> </span>
+                                                    <img src="{{ url('public/assets/images/faces/14.jpg') }}" alt="img"> </span>
                                             </div>
                                             <div class="flex-grow-1 d-flex align-items-start justify-content-between">
                                                 <div>

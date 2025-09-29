@@ -13,10 +13,9 @@ use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ModelEngineController;
 use App\Http\Controllers\ProductFitmentController;
-    use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ProductController;
 
 Route::get('/', function () {
-
     if (auth()->check()) {
         return redirect()->route('dashboard');
     }
@@ -50,19 +49,21 @@ Route::middleware(['auth', 'security'])->group(function () {
 
 
 // Route::middleware(['auth', 'role:Owner'])->group(function () {
-Route::get('/users-list', [UserController::class, 'index'])->name('users.index');
-Route::post('/add-users', [UserController::class, 'store'])->name('users.store');
-Route::put('/update-users/{user}', [UserController::class, 'update'])->name('users.update');
-Route::post('/user-password-update', [UserController::class, 'userPasswordUpdate'])->name('user.password.update');
-Route::delete('/delete-user/{user}', [UserController::class, 'destroy'])->name('users.destroy');
-Route::get('/user-profile-settings', [UserController::class, 'userProfileSettings'])->name('users.profile.settings');
-Route::put('/user-profile-update', [UserController::class, 'userProfileUpdate'])->name('user.profile.update');
-Route::get('/user-avatar-remove', [UserController::class, 'removeAvatar'])->name('user.avatar.remove');
-Route::patch('/toggle-user-status/{user}/', [UserController::class, 'toggleUserStatus'])->name('toggle.user.status');
-Route::post('/two-factor-enable', [UserController::class, 'twoFactorEnable'])->name('two.factor.enable');
-Route::post('/two-factor-disable', [UserController::class, 'twoFactorDisable'])->name('two.factor.disable');
+Route::middleware(['auth', 'security'])->group(function () {
+    Route::get('/users-list', [UserController::class, 'index'])->name('users.index');
+    Route::post('/add-users', [UserController::class, 'store'])->name('users.store');
+    Route::put('/update-users/{user}', [UserController::class, 'update'])->name('users.update');
+    Route::post('/user-password-update', [UserController::class, 'userPasswordUpdate'])->name('user.password.update');
+    Route::delete('/delete-user/{user}', [UserController::class, 'destroy'])->name('users.destroy');
 
-// }); 
+    Route::get('/user-profile-settings', [UserController::class, 'userProfileSettings'])->name('users.profile.settings');
+    Route::put('/user-profile-update', [UserController::class, 'userProfileUpdate'])->name('user.profile.update');
+    Route::get('/user-avatar-remove', [UserController::class, 'removeAvatar'])->name('user.avatar.remove');
+    Route::patch('/toggle-user-status/{user}/', [UserController::class, 'toggleUserStatus'])->name('toggle.user.status');
+    Route::post('/two-factor-enable', [UserController::class, 'twoFactorEnable'])->name('two.factor.enable');
+    Route::post('/two-factor-disable', [UserController::class, 'twoFactorDisable'])->name('two.factor.disable');
+
+});
 
 Route::middleware(['auth', 'security'])->group(function () {
 
@@ -153,15 +154,17 @@ Route::middleware(['auth', 'security'])->group(function () {
 
 
 
-Route::middleware(['auth','security'])->group(function () {
-    Route::get('/products', [ProductController::class,'index'])->name('products.index');
-    Route::get('/products/{product}', [ProductController::class,'show'])->name('products.show'); // detail / history
-    Route::post('/products', [ProductController::class,'store'])->name('products.store');
-    Route::post('/products/quick-add', [ProductController::class,'quickAdd'])->name('products.quickAdd');
-    Route::put('/products/{product}', [ProductController::class,'update'])->name('products.update');
-    Route::delete('/products/{product}', [ProductController::class,'destroy'])->name('products.destroy');
-    Route::patch('/products/{product}/toggle-status', [ProductController::class,'toggleStatus'])->name('products.toggleStatus');
-});
+    Route::middleware(['auth', 'security'])->group(function () {
+        Route::get('/products', [ProductController::class, 'index'])->name('products.index');
+        Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show'); // detail / history
+        Route::post('/products', [ProductController::class, 'store'])->name('products.store');
+        Route::post('/products/quick-add', [ProductController::class, 'quickAdd'])->name('products.quickAdd');
+        Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
+        Route::patch('/products/{product}/toggle-status', [ProductController::class, 'toggleStatus'])->name('products.toggleStatus');
+
+        Route::post('/products/{product}', [ProductController::class, 'update'])->name('products.update');
+
+    });
 
 
 });

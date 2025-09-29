@@ -1,4 +1,3 @@
-
 <div class="modal fade" id="createProductModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
@@ -18,7 +17,7 @@
                         </div>
                         <div class="col-md-3 mb-3">
                             <label>Brand</label>
-                            <select name="brand_id" class="form-select select2" required>
+                            <select name="brand_id" class="form-select" required>
                                 <option value="">-- Select --</option>
                                 @foreach ($brands as $brand)
                                     <option value="{{ $brand->id }}">{{ $brand->name }}</option>
@@ -27,7 +26,7 @@
                         </div>
                         <div class="col-md-3 mb-3">
                             <label>Category</label>
-                            <select name="category_id" class="form-select select2" required>
+                            <select name="category_id" class="form-select" required>
                                 <option value="">-- Select --</option>
                                 @foreach ($categories as $cat)
                                     <option value="{{ $cat->id }}">{{ $cat->name }}</option>
@@ -36,7 +35,7 @@
                         </div>
                         <div class="col-md-3 mb-3">
                             <label>Subcategory</label>
-                            <select name="subcategory_id" class="form-select select2" required>
+                            <select name="subcategory_id" class="form-select" required>
                                 <option value="">-- Select --</option>
                                 @foreach ($subCategories as $cat)
                                     <option value="{{ $cat->id }}">{{ $cat->name }}</option>
@@ -62,8 +61,7 @@
                         </div>
                         <div class="col-md-3 mb-3">
                             <label>Barcode</label>
-                            <input type="text" name="barcode" class="form-control"
-                                placeholder="Auto-generated if empty">
+                            <input type="text" name="barcode" class="form-control" placeholder="Auto-generated if empty">
                         </div>
                         <div class="col-md-2 mb-3">
                             <label>Unit</label>
@@ -128,20 +126,31 @@
                     {{-- Vehicle Fitments --}}
                     <hr>
                     <h6>Vehicle Fitments</h6>
-                    <div id="fitments-wrapper"></div>
-                    <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="addFitmentBtn">+ Add
-                        Fitment</button>
+                    <div id="create-fitments-wrapper"></div>
+                    <button type="button" class="btn btn-sm btn-outline-primary mt-2" id="createAddFitmentBtn">+ Add Fitment</button>
 
                     {{-- OE Numbers --}}
                     <div class="mt-4">
-                        <label>OE Numbers</label>
-                        <textarea name="oe_numbers" class="form-control" placeholder="Comma separated"></textarea>
+                        <label for="oeNumbersInput">OE Numbers</label>
+                        <input
+                            name="oe_numbers"
+                            class="form-control"
+                            placeholder="Comma separated"
+                            id="oeNumbersInput"
+                            value="{{ old('oe_numbers') }}"
+                        />
                     </div>
 
                     {{-- Cross References --}}
                     <div class="mt-3">
-                        <label>Cross References</label>
-                        <textarea name="cross_refs" class="form-control" placeholder="Comma separated"></textarea>
+                        <label for="crossRefsInput">Cross References</label>
+                        <input
+                            name="cross_refs"
+                            class="form-control"
+                            placeholder="Comma separated"
+                            id="crossRefsInput"
+                            value="{{ old('cross_refs') }}"
+                        />
                     </div>
 
                     {{-- Images --}}
@@ -167,10 +176,10 @@
 </div>
 
 {{-- Fitment Row Template --}}
-<template id="fitmentRowTemplate">
+<template id="createFitmentRowTemplate">
     <div class="row g-2 fitment-item mb-2 border p-2 rounded">
         <div class="col-md-3">
-            <select name="fitments[__INDEX__][make_id]" class="form-select select2" required>
+            <select name="fitments[__INDEX__][make_id]" class="form-select" required>
                 <option value="">-- Make --</option>
                 @foreach ($makes as $make)
                     <option value="{{ $make->id }}">{{ $make->name }}</option>
@@ -178,7 +187,7 @@
             </select>
         </div>
         <div class="col-md-3">
-            <select name="fitments[__INDEX__][model_id]" class="form-select select2" required>
+            <select name="fitments[__INDEX__][model_id]" class="form-select" required>
                 <option value="">-- Model --</option>
                 @foreach ($models as $model)
                     <option value="{{ $model->id }}">{{ $model->name }}</option>
@@ -186,7 +195,7 @@
             </select>
         </div>
         <div class="col-md-2">
-            <select name="fitments[__INDEX__][engine_id]" class="form-select select2">
+            <select name="fitments[__INDEX__][engine_id]" class="form-select">
                 <option value="">-- Engine --</option>
                 @foreach ($engines as $engine)
                     <option value="{{ $engine->id }}">{{ $engine->name }}</option>
@@ -206,28 +215,59 @@
 </template>
 
 @push('scripts')
-    <script>
-        document.getElementById('addFitmentBtn').addEventListener('click', function() {
-            let tmpl = document.getElementById('fitmentRowTemplate').innerHTML;
-            let index = document.querySelectorAll('#fitments-wrapper .fitment-item').length;
-            tmpl = tmpl.replace(/__INDEX__/g, index);
-            document.getElementById('fitments-wrapper').insertAdjacentHTML('beforeend', tmpl);
-        });
+<script src="https://cdn.jsdelivr.net/npm/@yaireo/tagify"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@yaireo/tagify/dist/tagify.css" />
 
-        // Remove fitment
-        document.addEventListener('click', function(e) {
-            if (e.target.classList.contains('removeFitmentBtn')) {
-                e.target.closest('.fitment-item').remove();
-            }
-        });
-
-
-        $(document).ready(function() {
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Initialize select2 on suppliers select
+        function initSelect2() {
             $('.select2').select2({
                 width: '100%',
                 placeholder: "Select option",
-                allowClear: true
+                allowClear: true,
+                dropdownParent: $('#createProductModal')
             });
+        }
+
+        initSelect2();
+
+        $('#createProductModal').on('shown.bs.modal', function() {
+            initSelect2();
         });
-    </script>
+
+        // Initialize Tagify on OE Numbers input
+        var oeNumbersInput = document.querySelector('#oeNumbersInput');
+        new Tagify(oeNumbersInput, {
+            delimiters: ",",
+            whitelist: [],
+            dropdown: { enabled: 0 }
+        });
+
+        // Initialize Tagify on Cross References input
+        var crossRefsInput = document.querySelector('#crossRefsInput');
+        new Tagify(crossRefsInput, {
+            delimiters: ",",
+            whitelist: [],
+            dropdown: { enabled: 0 }
+        });
+
+        // Fitment add/remove handlers
+        document.getElementById('createAddFitmentBtn').addEventListener('click', function() {
+            let tmpl = document.getElementById('createFitmentRowTemplate').innerHTML;
+            let index = document.querySelectorAll('#create-fitments-wrapper .fitment-item').length;
+            tmpl = tmpl.replace(/__INDEX__/g, index);
+            document.getElementById('create-fitments-wrapper').insertAdjacentHTML('beforeend', tmpl);
+        });
+
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('removeFitmentBtn')) {
+                let fitment = e.target.closest('.fitment-item');
+                if (fitment && fitment.parentElement && fitment.parentElement.id === 'create-fitments-wrapper') {
+                    fitment.remove();
+                }
+            }
+        });
+    });
+</script>
 @endpush

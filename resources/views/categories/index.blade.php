@@ -265,7 +265,7 @@
                             <div class="d-flex align-items-start flex-wrap gap-3">
                                 <div>
                                     <span class="avatar avatar-xxl">
-                                        <img src="{{ asset('assets/images/company-logos/1.png') }}" alt="Category Logo"
+                                        <img src="{{ url('public/assets/images/company-logos/1.png') }}" alt="Category Logo"
                                             style="width:64px;height:64px;object-fit:cover;">
                                     </span>
                                 </div>

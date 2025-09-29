@@ -38,7 +38,7 @@
                                 <td>{{ $brand->name }}</td>
                                 <td>
                                     @if ($brand->logo)
-                                        <img src="{{ asset('storage/' . $brand->logo) }}" alt="Logo" width="50"
+                                        <img src="{{ url('public/storage/' . $brand->logo) }}" alt="Logo" width="50"
                                             height="50" class="rounded">
                                     @else
                                         -
@@ -100,7 +100,7 @@
                                     <p>
                                         <strong>Logo:</strong><br>
                                         @if ($brand->logo)
-                                            <img src="{{ asset('storage/' . $brand->logo) }}" width="120"
+                                            <img src="{{ url('public/storage/' . $brand->logo) }}" width="120"
                                                 class="rounded">
                                         @else
                                             No Logo

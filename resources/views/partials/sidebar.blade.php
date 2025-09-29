@@ -3,10 +3,10 @@
     <!-- Start::main-sidebar-header -->
     <div class="main-sidebar-header">
         <a href="index.html" class="header-logo">
-            <img src="{{ asset('assets/images/brand-logos/desktop-logo.png') }}" alt="logo" class="desktop-logo">
-            <img src="{{ asset('assets/images/brand-logos/toggle-dark.png') }}" alt="logo" class="toggle-dark">
-            <img src="{{ asset('assets/images/brand-logos/desktop-dark.png') }}" alt="logo" class="desktop-dark">
-            <img src="{{ asset('assets/images/brand-logos/toggle-logo.png') }}" alt="logo" class="toggle-logo">
+            <img src="{{ url('public/assets/images/brand-logos/desktop-logo.png') }}" alt="logo" class="desktop-logo">
+            <img src="{{ url('public/assets/images/brand-logos/toggle-dark.png') }}" alt="logo" class="toggle-dark">
+            <img src="{{ url('public/assets/images/brand-logos/desktop-dark.png') }}" alt="logo" class="desktop-dark">
+            <img src="{{ url('public/assets/images/brand-logos/toggle-logo.png') }}" alt="logo" class="toggle-logo">
         </a>
     </div>
     <!-- End::main-sidebar-header -->
@@ -139,50 +139,63 @@
                         <span class="side-menu__label">Brands</span>
                     </a>
                 </li>
-                <!-- Car Makes -->
-                <li class="slide">
-                    <a href="{{ route('car-makes.index') }}"
-                        class="side-menu__item {{ request()->routeIs('car-makes.*') ? 'active' : '' }}">
+                <!-- Car Data Dropdown -->
+                <li class="slide has-sub">
+                    <a href="javascript:void(0);"
+                        class="side-menu__item {{ request()->routeIs('car-makes.*', 'car-models.*', 'engines.*', 'model.engines.*') ? 'active' : '' }}">
                         <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" viewBox="0 0 256 256">
                             <rect width="256" height="256" fill="none" />
-                            <rect x="40" y="120" width="176" height="56" rx="8" fill="none"
+                            <rect x="48" y="48" width="64" height="64" rx="8" fill="none"
                                 stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
                                 stroke-width="16" />
-                            <circle cx="72" cy="180" r="12" fill="currentColor" />
-                            <circle cx="184" cy="180" r="12" fill="currentColor" />
+                            <rect x="144" y="48" width="64" height="64" rx="8" fill="none"
+                                stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                stroke-width="16" />
+                            <rect x="48" y="144" width="64" height="64" rx="8" fill="none"
+                                stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                stroke-width="16" />
+                            <rect x="144" y="144" width="64" height="64" rx="8" fill="none"
+                                stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                stroke-width="16" />
                         </svg>
-                        <span class="side-menu__label">Car Makes</span>
+                        <span class="side-menu__label">Car Data</span>
+                        <i class="ri-arrow-right-s-line side-menu__angle"></i>
                     </a>
+                    <ul class="slide-menu child1">
+                        <!-- Car Makes -->
+                        <li>
+                            <a href="{{ route('car-makes.index') }}"
+                                class="side-menu__item {{ request()->routeIs('car-makes.*') ? 'active' : '' }}">
+                                Car Makes
+                            </a>
+                        </li>
+
+                        <!-- Car Models -->
+                        <li>
+                            <a href="{{ route('car-models.index') }}"
+                                class="side-menu__item {{ request()->routeIs('car-models.*') ? 'active' : '' }}">
+                                Car Models
+                            </a>
+                        </li>
+
+                        <!-- Engines -->
+                        <li>
+                            <a href="{{ route('engines.index') }}"
+                                class="side-menu__item {{ request()->routeIs('engines.*') ? 'active' : '' }}">
+                                Engines
+                            </a>
+                        </li>
+
+                        <!-- Model Engines -->
+                        <li>
+                            <a href="{{ route('model.engines.index') }}"
+                                class="side-menu__item {{ request()->routeIs('model.engines.*') ? 'active' : '' }}">
+                                Model Engines
+                            </a>
+                        </li>
+                    </ul>
                 </li>
-                <!-- Car Models -->
-                <li class="slide">
-                    <a href="{{ route('car-models.index') }}"
-                        class="side-menu__item {{ request()->routeIs('car-models.*') ? 'active' : '' }}">
-                      <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"></rect><path d="M32,216V56a8,8,0,0,1,8-8H216a8,8,0,0,1,8,8V216l-32-16-32,16-32-16L96,216,64,200Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"></path><line x1="144" y1="112" x2="192" y2="112" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"></line><line x1="144" y1="144" x2="192" y2="144" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"></line><rect x="64" y="96" width="48" height="64" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"></rect></svg>  
-                        <span class="side-menu__label">Car Models</span>
-                    </a>
-                </li>
-                <!-- Engines -->
-                <li class="slide">
-                    <a href="{{ route('engines.index') }}"
-                        class="side-menu__item {{ request()->routeIs('engines.*') ? 'active' : '' }}">
-                       <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" viewBox="0 0 256 256"><rect width="256" height="256" fill="none"></rect><path d="M32,216V56a8,8,0,0,1,8-8H216a8,8,0,0,1,8,8V216l-32-16-32,16-32-16L96,216,64,200Z" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"></path><line x1="144" y1="112" x2="192" y2="112" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"></line><line x1="144" y1="144" x2="192" y2="144" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"></line><rect x="64" y="96" width="48" height="64" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="16"></rect></svg> 
-                        <span class="side-menu__label">Engines</span>
-                    </a>
-                </li>
-                <!-- Model Engines -->
-                <li class="slide">
-                    <a href="{{ route('model.engines.index') }}"
-                        class="side-menu__item {{ request()->routeIs('model.engines.*') ? 'active' : '' }}">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" viewBox="0 0 256 256">
-                            <circle cx="128" cy="128" r="96" fill="none" stroke="currentColor"
-                                stroke-linecap="round" stroke-linejoin="round" stroke-width="16" />
-                            <circle cx="128" cy="128" r="40" fill="none" stroke="currentColor"
-                                stroke-linecap="round" stroke-linejoin="round" stroke-width="16" />
-                        </svg>
-                        <span class="side-menu__label">Model Engines</span>
-                    </a>
-                </li>
+
                 <!-- Add more new menu items here as needed -->
             </ul>
 

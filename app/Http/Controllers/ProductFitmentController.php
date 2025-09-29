@@ -34,7 +34,7 @@ class ProductFitmentController extends Controller
         ]);
 
         ProductFitment::create($data);
-        return redirect()->route('fitments.index')->with('success', 'Product fitment added successfully.');
+        return redirect()->route('product.fitments.index')->with('success', 'Product fitment added successfully.');
     }
 
     public function update(Request $request, ProductFitment $fitment)

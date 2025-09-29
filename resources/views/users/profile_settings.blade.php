@@ -137,6 +137,7 @@
                                 </div>
                             </form>
                         </div>
+                        @dd(auth()->user()->role->name)
                         @if (auth()->user()->role->name === 'Owner')
                             <div class="tab-pane overflow-hidden p-0 border-0" id="security-tab-pane" role="tabpanel"
                                 aria-labelledby="security-tab" tabindex="0">

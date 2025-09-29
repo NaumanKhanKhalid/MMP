@@ -15,12 +15,11 @@ class UserSeeder extends Seeder
      */
     public function run()
     {
-        // Admin user
         User::create([
             'name' => 'Admin User',
-            'email' => 'admin@example.com',
+            'email' => 'admin@mmp.com',
             'email_verified_at' => now(),
-            'password' => Hash::make('adminpassword'),
+            'password' => Hash::make('12345678'),
             'role_id' => 1, // assuming 1 = admin
             'two_factor_enabled' => 0,
             'two_factor_code' => null,
@@ -32,12 +31,11 @@ class UserSeeder extends Seeder
             'updated_at' => now(),
         ]);
 
-        // Staff user
         User::create([
             'name' => 'Staff User',
-            'email' => 'staff@example.com',
+            'email' => 'staff@mmp.com',
             'email_verified_at' => now(),
-            'password' => Hash::make('staffpassword'),
+            'password' => Hash::make('12345678'),
             'role_id' => 3, // assuming 2 = staff
             'two_factor_enabled' => 0,
             'two_factor_code' => null,
@@ -49,12 +47,11 @@ class UserSeeder extends Seeder
             'updated_at' => now(),
         ]);
 
-        // Manager user
         User::create([
             'name' => 'Manager User',
-            'email' => 'manager@example.com',
+            'email' => 'manager@mmp.com',
             'email_verified_at' => now(),
-            'password' => Hash::make('managerpassword'),
+            'password' => Hash::make('12345678'),
             'role_id' => 3, // assuming 3 = manager
             'two_factor_enabled' => 0,
             'two_factor_code' => null,

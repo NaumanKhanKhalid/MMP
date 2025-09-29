@@ -155,7 +155,7 @@ class UserController extends Controller
                 $path = $request->file('avatar')->store('avatars', 'public');
 
                 // Full URL banani hai
-                $data['avatar'] = asset('storage/' . $path);
+                $data['avatar'] = asset('storage/app/public/' . $path);
             }
 
             $request->user()->update($data);
@@ -175,7 +175,7 @@ class UserController extends Controller
 
             if ($user->avatar) {
                 // Optionally delete file from storage
-                $filePath = str_replace(asset('storage/'), '', $user->avatar);
+                $filePath = str_replace(asset('public/storage/'), '', $user->avatar);
                 Storage::disk('public')->delete($filePath);
 
                 $user->update(['avatar' => null]);

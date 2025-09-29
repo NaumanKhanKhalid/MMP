@@ -15,7 +15,7 @@ class ProductFitment extends Model
 
     public function make()
     {
-        return $this->belongsTo(Make::class, 'make_id');
+        return $this->belongsTo(CarMake::class, 'make_id');
     }
 
     public function model()

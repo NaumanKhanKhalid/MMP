@@ -6,7 +6,7 @@
             <div class="col-xxl-4 col-xl-5 col-lg-5 col-md-6 col-sm-8 col-12">
                 <div class="mb-3 d-flex justify-content-center auth-logo">
                     <a href="index.html">
-                        <img src="../assets/images/brand-logos/desktop-dark.png" alt="logo" class="desktop-dark">
+                        <img src="{{ url('public/assets/images/brand-logos/desktop-dark.png')}}" alt="logo" class="desktop-dark">
                     </a>
                 </div>
                 <div class="card custom-card my-4 border z-3 position-relative">

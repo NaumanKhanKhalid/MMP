@@ -25,7 +25,7 @@
                             <th scope="col">Brand</th>
                             <th scope="col">Category</th>
                             <th scope="col">Supplier</th>
-                            <th scope="col">On-hand</th>
+                            {{-- <th scope="col">On-hand</th> --}}
                             <th scope="col">Price</th>
                             <th scope="col">Status</th>
                             <th scope="col" class="text-end">Actions</th>
@@ -36,19 +36,41 @@
                             <tr>
                                 <td>{{ $loop->iteration + ($products->currentPage() - 1) * $products->perPage() }}</td>
                                 <td>{{ $p->sku }}</td>
-                                <td>{{ $p->barcode }}</td>
+                                <td>
+                                    <div>
+                                        @if ($p->barcode)
+                                            {!! DNS1D::getBarcodeHTML($p->barcode, 'C128', 0.60, 30) !!}
+                                            <div style="font-size: 10px !important;">{{ $p->barcode }}</div>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </div>
+                                </td>
+
+
+
                                 <td>{{ $p->name }}</td>
                                 <td>{{ $p->brand->name ?? '-' }}</td>
                                 <td>{{ $p->category->name ?? '-' }}</td>
-                                <td>{{ $p->primarySupplier->name ?? '-' }}</td>
                                 <td>
+                                    @if ($p->suppliers->count())
+                                        @foreach ($p->suppliers as $supplier)
+                                            <span class="badge bg-primary">{{ $supplier->name }}</span>
+                                        @endforeach
+                                    @else
+                                        <span class="text-muted">-</span>
+                                    @endif
+                                </td>
+
+
+                                {{-- <td>
                                     @php $onHand = $p->on_hand_sum ?? 0; @endphp
                                     @if ($onHand < 0)
                                         <span class="text-danger">{{ $onHand }}</span>
                                     @else
                                         {{ $onHand }}
                                     @endif
-                                </td>
+                                </td> --}}
                                 <td>{{ number_format($p->price_normal, 2) }}</td>
                                 <td>
                                     @if ($p->status === 'active')
@@ -71,11 +93,11 @@
                                             </button>
                                         </form>
 
-                                        <button class="btn btn-sm btn-info-light btn-icon" data-bs-toggle="modal"
-                                            data-bs-target="#showProduct{{ $p->id }}" title="View History"
-                                            aria-label="View history of product {{ $p->name }}">
-                                            <i class="ri-time-line"></i>
-                                        </button>
+                                        <!--<button class="btn btn-sm btn-info-light btn-icon" data-bs-toggle="modal"-->
+                                        <!--    data-bs-target="#showProduct{{ $p->id }}" title="View History"-->
+                                        <!--    aria-label="View history of product {{ $p->name }}">-->
+                                        <!--    <i class="ri-time-line"></i>-->
+                                        <!--</button>-->
 
                                         <button class="btn btn-sm btn-primary-light btn-icon" data-bs-toggle="modal"
                                             data-bs-target="#editProductModal-{{ $p->id }}" title="Edit Product"

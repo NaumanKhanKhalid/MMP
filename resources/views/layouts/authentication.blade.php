@@ -8,43 +8,43 @@
     <meta charset="UTF-8">
     <meta name='viewport' content='width=device-width, initial-scale=1.0'>
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title> ZYNIX - Bootstrap 5 Premium Admin & Dashboard Template </title>
+    <title> MMP Login</title>
     <meta name="Description" content="Bootstrap Responsive Admin Web Dashboard HTML5 Template">
     <meta name="Author" content="Wcsrm Software Private Limited">
     <meta name="keywords"
         content="bootstrap template, admin panel bootstrap, bootstrap dashboard, admin, admin dashboard template, dashboard template, html css templates, dashboard, template dashboard,  bootstrap dashboard template, dashboard html css, bootstrap admin dashboard,  bootstrap admin, dashboard template, bootstrap5 admin template">
     <!-- Favicon -->
-    <link rel="icon" href="{{ asset('assets/images/brand-logos/favicon.ico') }}" type="image/x-icon">
+    <link rel="icon" href="{{ url('public/assets/images/brand-logos/favicon.ico') }}" type="image/x-icon">
 
     <!-- Main Theme Js -->
-    <script src="{{ asset('assets/js/authentication-main.js') }}"></script>
+    <script src="{{ url('public/assets/js/authentication-main.js') }}"></script>
 
     <!-- Bootstrap Css -->
-    <link id="style" href="{{ asset('assets/libs/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
+    <link id="style" href="{{ url('public/assets/libs/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
 
     <!-- Style Css -->
-    <link href="{{ asset('assets/css/styles.css') }}" rel="stylesheet">
+    <link href="{{ url('public/assets/css/styles.css') }}" rel="stylesheet">
 
     <!-- Icons Css -->
-    <link href="{{ asset('assets/css/icons.css') }}" rel="stylesheet">
+    <link href="{{ url('public/assets/css/icons.css') }}" rel="stylesheet">
 
     <!-- Choices Css -->
-    <link rel="stylesheet" href="{{ asset('assets/libs/choices.js/public/assets/styles/choices.min.css') }}">
+    <link rel="stylesheet" href="{{ url('public/assets/libs/choices.js/public/assets/styles/choices.min.css') }}">
 
     <!-- FlatPickr CSS -->
-    <link rel="stylesheet" href="{{ asset('assets/libs/flatpickr/flatpickr.min.css') }}">
+    <link rel="stylesheet" href="{{ url('public/assets/libs/flatpickr/flatpickr.min.css') }}">
 
     <!-- Auto Complete CSS -->
-    <link rel="stylesheet" href="{{ asset('assets/libs/@tarekraafat/autocomplete.js/css/autoComplete.css') }}">
+    <link rel="stylesheet" href="{{ url('public/assets/libs/@tarekraafat/autocomplete.js/css/autoComplete.css') }}">
 
     <!-- Main Theme Js -->
-    <script src="{{asset('assets/js/authentication-main.js')}}"></script>
+    <script src="{{ asset('public/assets/js/authentication-main.js') }}"></script>
     <!-- Bootstrap Css -->
-    <link id="style" href="{{asset('assets/libs/bootstrap/css/bootstrap.min.css')}}" rel="stylesheet">
+    <link id="style" href="{{ asset('public/assets/libs/bootstrap/css/bootstrap.min.css') }}" rel="stylesheet">
     <!-- Style Css -->
-    <link href="{{asset('assets/css/styles.css')}}" rel="stylesheet">
+    <link href="{{ asset('public/assets/css/styles.css') }}" rel="stylesheet">
     <!-- Icons Css -->
-    <link href="{{asset('assets/css/icons.css')}}" rel="stylesheet">
+    <link href="{{ asset('public/assets/css/icons.css') }}" rel="stylesheet">
 </head>
 
 <body class="authenticationcover-background bg-primary-transparent position-relative" id="particles-js">
@@ -53,15 +53,15 @@
 
 
     <!-- Bootstrap JS -->
-    <script src="{{ asset('assets/libs/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
+    <script src="{{ url('public/assets/libs/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
 
     <!-- Particles JS -->
-    <script src="{{ asset('assets/libs/particles.js/particles.js') }}"></script>
+    <script src="{{ url('public/assets/libs/particles.js/particles.js') }}"></script>
 
-    <script src="{{ asset('assets/js/cover-password.js') }}"></script>
+    <script src="{{ url('public/assets/js/cover-password.js') }}"></script>
 
     <!-- Show Password JS -->
-    <script src="{{ asset('assets/js/show-password.js') }}"></script>
+    <script src="{{ url('public/assets/js/show-password.js') }}"></script>
 
     <!-- CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastr@2.1.4/build/toastr.min.css">

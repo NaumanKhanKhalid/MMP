@@ -64,327 +64,445 @@ class ProductController extends Controller
 
     // public function store(Request $request)
     // {
-    //     $request->validate([
+    //     $validated = $request->validate([
     //         'name' => 'required|string|max:255',
-    //         'brand_id' => 'nullable|exists:brands,id',
-    //         'category_id' => 'nullable|exists:categories,id',
-    //         'primary_supplier_id' => 'nullable|exists:suppliers,id',
-    //         'supplier_code' => 'nullable|string|max:255',
+    //         'brand_id' => 'required|exists:brands,id',
+    //         'supplier_ids' => 'nullable|array',
+    //         'category_id' => 'required|exists:categories,id',
+    //         'subcategory_id' => 'required|exists:categories,id',
+    //         'supplier_ids.*' => 'exists:suppliers,id',
+    //         'sku' => 'nullable|string|max:100|unique:products,sku',
+    //         'barcode' => 'nullable|string|max:100|unique:products,barcode',
     //         'unit' => 'nullable|string|max:20',
-    //         'images.*' => 'nullable|image|max:2048',
     //         'bin_location' => 'nullable|string|max:50',
-    //         'reorder_level' => 'nullable|integer|min:0',
-    //         'price_normal' => 'nullable|numeric|min:0',
-    //         'price_online' => 'nullable|numeric|min:0',
-    //         'price_workshop' => 'nullable|numeric|min:0',
-    //         'allow_negative' => 'nullable|boolean',
-    //         'special_order' => 'nullable|boolean',
+    //         'price_normal' => 'nullable|numeric',
+    //         'price_online' => 'nullable|numeric',
+    //         'price_workshop' => 'nullable|numeric',
+    //         'reorder_level' => 'nullable|integer',
+    //         'allow_negative' => 'boolean',
+    //         'special_order' => 'boolean',
+    //         'status' => 'required|in:active,inactive',
+    //         'description' => 'nullable|string',
     //         'oe_numbers' => 'nullable|string',
     //         'cross_refs' => 'nullable|string',
+    //         'notes' => 'nullable|string',
+    //         'images.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
     //     ]);
 
-    //     DB::transaction(function () use ($request) {
-    //         $sku = Product::generateSku();
-    //         $barcode = Product::generateBarcode($sku);
 
-    //         $data = $request->only([
-    //             'name',
-    //             'description',
-    //             'brand_id',
-    //             'category_id',
-    //             'primary_supplier_id',
-    //             'supplier_code',
-    //             'unit',
-    //             'bin_location',
-    //             'reorder_level',
-    //             'price_normal',
-    //             'price_online',
-    //             'price_workshop',
-    //             'notes'
+    //     DB::beginTransaction();
+    //     try {
+    //         // ✅ Create Product
+    //         $product = Product::create([
+    //             'name' => $validated['name'],
+    //             'brand_id' => $validated['brand_id'],
+    //             'category_id' => $validated['category_id'],
+    //             'subcategory_id' => $validated['subcategory_id'],
+    //             'sku' => $validated['sku'] ?? strtoupper(Str::random(8)),
+    //             'barcode' => $validated['barcode'] ?? strtoupper(Str::random(12)),
+    //             'unit' => $validated['unit'] ?? 'PCS',
+    //             'bin_location' => $validated['bin_location'] ?? null,
+    //             'price_normal' => $validated['price_normal'] ?? 0,
+    //             'price_online' => $validated['price_online'] ?? 0,
+    //             'price_workshop' => $validated['price_workshop'] ?? 0,
+    //             'reorder_level' => $validated['reorder_level'] ?? 0,
+    //             'allow_negative' => $request->allow_negative ?? 0,
+    //             'special_order' => $request->special_order ?? 0,
+    //             'status' => $validated['status'],
+    //             'description' => $validated['description'] ?? null,
+
+    //             'notes' => $validated['notes'] ?? null,
     //         ]);
-    //         $data['sku'] = $sku;
-    //         $data['barcode'] = $barcode;
-    //         $data['allow_negative'] = $request->has('allow_negative') ? boolval($request->allow_negative) : true;
-    //         $data['special_order'] = $request->has('special_order') ? boolval($request->special_order) : true;
 
-    //         // images
-    //         $images = [];
+    //         // OE Numbers (assuming comma-separated string input)
+    //         if (!empty($validated['oe_numbers'])) {
+    //             $oeNumbers = explode(',', $validated['oe_numbers']);
+    //             foreach ($oeNumbers as $oe) {
+    //                 $product->oeNumbers()->create(['oe_number' => trim($oe)]);
+    //             }
+    //         }
+
+    //         // Cross References (assuming comma-separated string input)
+    //         if (!empty($validated['cross_refs'])) {
+    //             $crossRefs = explode(',', $validated['cross_refs']);
+    //             foreach ($crossRefs as $crossRef) {
+    //                 $product->crossRefs()->create(['cross_ref' => trim($crossRef)]);
+    //             }
+    //         }
+
+
+    //         // ✅ Attach Multiple Suppliers
+    //         if (!empty($validated['supplier_ids'])) {
+    //             $product->suppliers()->sync($validated['supplier_ids']);
+    //         }
+
+    //         // ✅ Save Fitments
+    //         if ($request->has('fitments')) {
+    //             foreach ($request->fitments as $fit) {
+    //                 if (!empty($fit['make_id']) && !empty($fit['model_id'])) {
+    //                     $product->fitments()->create([
+    //                         'make_id' => $fit['make_id'],
+    //                         'model_id' => $fit['model_id'],
+    //                         'engine_id' => $fit['engine_id'] ?? null,
+    //                         'year_start' => $fit['year_start'] ?? null,
+    //                         'year_end' => $fit['year_end'] ?? null,
+    //                     ]);
+    //                 }
+    //             }
+    //         }
+
+    //         // ✅ Upload Images (max 3)
     //         if ($request->hasFile('images')) {
-    //             foreach ($request->file('images') as $file) {
-    //                 $images[] = $file->store('products', 'public');
-    //                 if (count($images) >= 3)
-    //                     break;
-    //             }
-    //         }
-    //         $data['images'] = $images ?: null;
-
-    //         $product = Product::create($data);
-
-    //         // parse OE numbers - allow newline separated text or array
-    //         if ($request->filled('oe_numbers')) {
-    //             $lines = is_array($request->oe_numbers) ? $request->oe_numbers : preg_split("/\r\n|\n|\r/", $request->oe_numbers);
-    //             foreach ($lines as $l) {
-    //                 $l = trim($l);
-    //                 if ($l !== '')
-    //                     ProductOeNumber::create(['product_id' => $product->id, 'oe_number' => $l]);
-    //             }
-    //         }
-
-    //         if ($request->filled('cross_refs')) {
-    //             $lines = is_array($request->cross_refs) ? $request->cross_refs : preg_split("/\r\n|\n|\r/", $request->cross_refs);
-    //             foreach ($lines as $l) {
-    //                 $l = trim($l);
-    //                 if ($l !== '')
-    //                     ProductCrossRef::create(['product_id' => $product->id, 'cross_ref' => $l]);
-    //             }
-    //         }
-
-    //         // Optionally attach primary supplier to pivot if provided
-    //         if ($request->filled('primary_supplier_id')) {
-    //             $supplier = Supplier::find($request->primary_supplier_id);
-    //             if ($supplier) {
-    //                 $product->suppliers()->syncWithoutDetaching([
-    //                     $supplier->id => [
-    //                         'purchase_price' => 0,
-    //                         'currency' => 'ZAR',
-    //                         'lead_time' => null,
-    //                         'supplier_sku' => $request->supplier_code ?? null
-    //                     ]
+    //             foreach ($request->file('images') as $img) {
+    //                 $path = $img->store('products', 'public');
+    //                 $product->images()->create([
+    //                     'path' => $path,
     //                 ]);
     //             }
     //         }
-    //     });
 
-    //     return redirect()->route('products.index')->with('success', 'Product created.');
+    //         DB::commit();
+    //         return redirect()->route('products.index')->with('success', 'Product created successfully!');
+    //     } catch (\Exception $e) {
+    //         dd($e->getMessage());
+    //         DB::rollBack();
+    //         return back()->withErrors(['error' => $e->getMessage()]);
+    //     }
+    // }
+
+    // public function update(Request $request, Product $product)
+    // {
+    //     $validated = $request->validate([
+    //         'name' => 'required|string|max:255',
+    //         'brand_id' => 'required|exists:brands,id',
+    //         'supplier_ids' => 'nullable|array',
+    //         'category_id' => 'required|exists:categories,id',
+    //         'subcategory_id' => 'required|exists:categories,id',
+    //         'supplier_ids.*' => 'exists:suppliers,id',
+    //         'sku' => 'nullable|string|max:100|unique:products,sku,' . $product->id,
+    //         'barcode' => 'nullable|string|max:100|unique:products,barcode,' . $product->id,
+    //         'unit' => 'nullable|string|max:20',
+    //         'bin_location' => 'nullable|string|max:50',
+    //         'price_normal' => 'nullable|numeric',
+    //         'price_online' => 'nullable|numeric',
+    //         'price_workshop' => 'nullable|numeric',
+    //         'reorder_level' => 'nullable|integer',
+    //         'allow_negative' => 'boolean',
+    //         'special_order' => 'boolean',
+    //         'status' => 'required|in:active,inactive',
+    //         'description' => 'nullable|string',
+    //         'oe_numbers' => 'nullable|string',
+    //         'cross_refs' => 'nullable|string',
+    //         'notes' => 'nullable|string',
+    //         'images.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+    //     ]);
+
+    //     DB::beginTransaction();
+    //     try {
+    //         // Update product basic info
+    //         $product->update([
+    //             'name' => $validated['name'],
+    //             'brand_id' => $validated['brand_id'],
+    //             'category_id' => $validated['category_id'],
+    //             'subcategory_id' => $validated['subcategory_id'],
+    //             'sku' => $validated['sku'] ?? $product->sku,
+    //             'barcode' => $validated['barcode'] ?? $product->barcode,
+    //             'unit' => $validated['unit'] ?? 'PCS',
+    //             'bin_location' => $validated['bin_location'] ?? null,
+    //             'price_normal' => $validated['price_normal'] ?? 0,
+    //             'price_online' => $validated['price_online'] ?? 0,
+    //             'price_workshop' => $validated['price_workshop'] ?? 0,
+    //             'reorder_level' => $validated['reorder_level'] ?? 0,
+    //             'allow_negative' => $request->allow_negative ?? 0,
+    //             'special_order' => $request->special_order ?? 0,
+    //             'status' => $validated['status'],
+    //             'description' => $validated['description'] ?? null,
+    //             'notes' => $validated['notes'] ?? null,
+    //         ]);
+
+    //         // Sync suppliers (many-to-many)
+    //         if (!empty($validated['supplier_ids'])) {
+    //             $product->suppliers()->sync($validated['supplier_ids']);
+    //         } else {
+    //             $product->suppliers()->sync([]);  // detach all if none selected
+    //         }
+
+    //         // OE Numbers update:
+    //         // Delete old OE numbers and add new ones
+    //         $product->oeNumbers()->delete();
+    //         if (!empty($validated['oe_numbers'])) {
+    //             $oeNumbers = explode(',', $validated['oe_numbers']);
+    //             foreach ($oeNumbers as $oe) {
+    //                 $product->oeNumbers()->create(['oe_number' => trim($oe)]);
+    //             }
+    //         }
+
+    //         // Cross References update:
+    //         $product->crossRefs()->delete();
+    //         if (!empty($validated['cross_refs'])) {
+    //             $crossRefs = explode(',', $validated['cross_refs']);
+    //             foreach ($crossRefs as $crossRef) {
+    //                 $product->crossRefs()->create(['cross_ref' => trim($crossRef)]);
+    //             }
+    //         }
+
+    //         // Fitments update:
+    //         // Delete existing fitments and add new ones from request
+    //         $product->fitments()->delete();
+    //         if ($request->has('fitments')) {
+    //             foreach ($request->fitments as $fit) {
+    //                 if (!empty($fit['make_id']) && !empty($fit['model_id'])) {
+    //                     $product->fitments()->create([
+    //                         'make_id' => $fit['make_id'],
+    //                         'model_id' => $fit['model_id'],
+    //                         'engine_id' => $fit['engine_id'] ?? null,
+    //                         'year_start' => $fit['year_start'] ?? null,
+    //                         'year_end' => $fit['year_end'] ?? null,
+    //                     ]);
+    //                 }
+    //             }
+    //         }
+
+    //         // Images update:
+    //         // Optionally handle deletion of old images before adding new ones
+    //         if ($request->hasFile('images')) {
+    //             // Delete old images if you want (optional)
+    //             // foreach ($product->images as $image) {
+    //             //     Storage::disk('public')->delete($image->path);
+    //             //     $image->delete();
+    //             // }
+
+    //             // Add new images (append)
+    //             foreach ($request->file('images') as $img) {
+    //                 $path = $img->store('products', 'public');
+    //                 $product->images()->create([
+    //                     'path' => $path,
+    //                 ]);
+    //             }
+    //         }
+
+    //         DB::commit();
+    //         return redirect()->route('products.index')->with('success', 'Product updated successfully!');
+    //     } catch (\Exception $e) {
+    //         DB::rollBack();
+    //         return back()->withErrors(['error' => $e->getMessage()]);
+    //     }
     // }
 
 
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'brand_id' => 'required|exists:brands,id',
-            'supplier_ids' => 'nullable|array',
-            'category_id' => 'required|exists:categories,id',
-            'subcategory_id' => 'required|exists:categories,id',
-            'supplier_ids.*' => 'exists:suppliers,id',
-            'sku' => 'nullable|string|max:100|unique:products,sku',
-            'barcode' => 'nullable|string|max:100|unique:products,barcode',
-            'unit' => 'nullable|string|max:20',
-            'bin_location' => 'nullable|string|max:50',
-            'price_normal' => 'nullable|numeric',
-            'price_online' => 'nullable|numeric',
-            'price_workshop' => 'nullable|numeric',
-            'reorder_level' => 'nullable|integer',
-            'allow_negative' => 'boolean',
-            'special_order' => 'boolean',
-            'status' => 'required|in:active,inactive',
-            'description' => 'nullable|string',
-            'oe_numbers' => 'nullable|string',
-            'cross_refs' => 'nullable|string',
-            'notes' => 'nullable|string',
-            'images.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+public function store(Request $request) 
+{
+    $validated = $request->validate([
+        'name' => 'required|string|max:255',
+        'brand_id' => 'required|exists:brands,id',
+        'supplier_ids' => 'nullable|array',
+        'supplier_ids.*' => 'exists:suppliers,id',
+        'category_id' => 'required|exists:categories,id',
+        'subcategory_id' => 'required|exists:categories,id',
+        'sku' => 'nullable|string|max:100|unique:products,sku',
+        'barcode' => 'nullable|string|max:100|unique:products,barcode',
+        'unit' => 'nullable|string|max:20',
+        'bin_location' => 'nullable|string|max:50',
+        'price_normal' => 'nullable|numeric',
+        'price_online' => 'nullable|numeric',
+        'price_workshop' => 'nullable|numeric',
+        'reorder_level' => 'nullable|integer',
+        'allow_negative' => 'boolean',
+        'special_order' => 'boolean',
+        'status' => 'required|in:active,inactive',
+        'description' => 'nullable|string',
+        'oe_numbers' => 'nullable|string',
+        'cross_refs' => 'nullable|string',
+        'notes' => 'nullable|string',
+        'images.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+    ]);
+
+    DB::beginTransaction();
+
+    try {
+        $product = Product::create([
+            'name' => $validated['name'],
+            'brand_id' => $validated['brand_id'],
+            'category_id' => $validated['category_id'],
+            'subcategory_id' => $validated['subcategory_id'],
+            'sku' => $validated['sku'] ?? strtoupper(Str::random(8)),
+            'barcode' => $validated['barcode'] ?? strtoupper(Str::random(12)),
+            'unit' => $validated['unit'] ?? 'PCS',
+            'bin_location' => $validated['bin_location'] ?? null,
+            'price_normal' => $validated['price_normal'] ?? 0,
+            'price_online' => $validated['price_online'] ?? 0,
+            'price_workshop' => $validated['price_workshop'] ?? 0,
+            'reorder_level' => $validated['reorder_level'] ?? 0,
+            'allow_negative' => $request->allow_negative ?? 0,
+            'special_order' => $request->special_order ?? 0,
+            'status' => $validated['status'],
+            'description' => $validated['description'] ?? null,
+            'notes' => $validated['notes'] ?? null,
         ]);
 
-
-        DB::beginTransaction();
-        try {
-            // ✅ Create Product
-            $product = Product::create([
-                'name' => $validated['name'],
-                'brand_id' => $validated['brand_id'],
-                'category_id' => $validated['category_id'],
-                'subcategory_id' => $validated['subcategory_id'],
-                'sku' => $validated['sku'] ?? strtoupper(Str::random(8)),
-                'barcode' => $validated['barcode'] ?? strtoupper(Str::random(12)),
-                'unit' => $validated['unit'] ?? 'PCS',
-                'bin_location' => $validated['bin_location'] ?? null,
-                'price_normal' => $validated['price_normal'] ?? 0,
-                'price_online' => $validated['price_online'] ?? 0,
-                'price_workshop' => $validated['price_workshop'] ?? 0,
-                'reorder_level' => $validated['reorder_level'] ?? 0,
-                'allow_negative' => $request->allow_negative ?? 0,
-                'special_order' => $request->special_order ?? 0,
-                'status' => $validated['status'],
-                'description' => $validated['description'] ?? null,
-
-                'notes' => $validated['notes'] ?? null,
-            ]);
-
-            // OE Numbers (assuming comma-separated string input)
-            if (!empty($validated['oe_numbers'])) {
-                $oeNumbers = explode(',', $validated['oe_numbers']);
-                foreach ($oeNumbers as $oe) {
-                    $product->oeNumbers()->create(['oe_number' => trim($oe)]);
-                }
+        // OE Numbers (comma separated)
+        if (!empty($validated['oe_numbers'])) {
+            $oeNumbers = explode(',', $validated['oe_numbers']);
+            foreach ($oeNumbers as $oe) {
+                $product->oeNumbers()->create(['oe_number' => trim($oe)]);
             }
+        }
 
-            // Cross References (assuming comma-separated string input)
-            if (!empty($validated['cross_refs'])) {
-                $crossRefs = explode(',', $validated['cross_refs']);
-                foreach ($crossRefs as $crossRef) {
-                    $product->crossRefs()->create(['cross_ref' => trim($crossRef)]);
-                }
+        // Cross References (comma separated)
+        if (!empty($validated['cross_refs'])) {
+            $crossRefs = explode(',', $validated['cross_refs']);
+            foreach ($crossRefs as $crossRef) {
+                $product->crossRefs()->create(['cross_ref' => trim($crossRef)]);
             }
+        }
 
+        // Suppliers
+        if (!empty($validated['supplier_ids'])) {
+            $product->suppliers()->sync($validated['supplier_ids']);
+        }
 
-            // ✅ Attach Multiple Suppliers
-            if (!empty($validated['supplier_ids'])) {
-                $product->suppliers()->sync($validated['supplier_ids']);
-            }
-
-            // ✅ Save Fitments
-            if ($request->has('fitments')) {
-                foreach ($request->fitments as $fit) {
-                    if (!empty($fit['make_id']) && !empty($fit['model_id'])) {
-                        $product->fitments()->create([
-                            'make_id' => $fit['make_id'],
-                            'model_id' => $fit['model_id'],
-                            'engine_id' => $fit['engine_id'] ?? null,
-                            'year_start' => $fit['year_start'] ?? null,
-                            'year_end' => $fit['year_end'] ?? null,
-                        ]);
-                    }
-                }
-            }
-
-            // ✅ Upload Images (max 3)
-            if ($request->hasFile('images')) {
-                foreach ($request->file('images') as $img) {
-                    $path = $img->store('products', 'public');
-                    $product->images()->create([
-                        'path' => $path,
+        // Fitments
+        if ($request->has('fitments')) {
+            foreach ($request->fitments as $fit) {
+                if (!empty($fit['make_id']) && !empty($fit['model_id'])) {
+                    $product->fitments()->create([
+                        'make_id' => $fit['make_id'],
+                        'model_id' => $fit['model_id'],
+                        'engine_id' => $fit['engine_id'] ?? null,
+                        'year_start' => $fit['year_start'] ?? null,
+                        'year_end' => $fit['year_end'] ?? null,
                     ]);
                 }
             }
-
-            DB::commit();
-            return redirect()->route('products.index')->with('success', 'Product created successfully!');
-        } catch (\Exception $e) {
-            dd($e->getMessage());
-            DB::rollBack();
-            return back()->withErrors(['error' => $e->getMessage()]);
         }
-    }
 
-    public function update(Request $request, Product $product)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'brand_id' => 'required|exists:brands,id',
-            'supplier_ids' => 'nullable|array',
-            'category_id' => 'required|exists:categories,id',
-            'subcategory_id' => 'required|exists:categories,id',
-            'supplier_ids.*' => 'exists:suppliers,id',
-            'sku' => 'nullable|string|max:100|unique:products,sku,' . $product->id,
-            'barcode' => 'nullable|string|max:100|unique:products,barcode,' . $product->id,
-            'unit' => 'nullable|string|max:20',
-            'bin_location' => 'nullable|string|max:50',
-            'price_normal' => 'nullable|numeric',
-            'price_online' => 'nullable|numeric',
-            'price_workshop' => 'nullable|numeric',
-            'reorder_level' => 'nullable|integer',
-            'allow_negative' => 'boolean',
-            'special_order' => 'boolean',
-            'status' => 'required|in:active,inactive',
-            'description' => 'nullable|string',
-            'oe_numbers' => 'nullable|string',
-            'cross_refs' => 'nullable|string',
-            'notes' => 'nullable|string',
-            'images.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+        // Images upload
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $img) {
+                $path = $img->store('products', 'public');
+                $product->images()->create(['path' => $path]);
+            }
+        }
+
+        DB::commit();
+
+        return redirect()->route('products.index')->with('success', 'Product created successfully!');
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return back()->withErrors(['error' => $e->getMessage()]);
+    }
+}
+
+
+public function update(Request $request, Product $product)
+{
+    $validated = $request->validate([
+        'name' => 'required|string|max:255',
+        'brand_id' => 'required|exists:brands,id',
+        'supplier_ids' => 'nullable|array',
+        'supplier_ids.*' => 'exists:suppliers,id',
+        'category_id' => 'required|exists:categories,id',
+        'subcategory_id' => 'required|exists:categories,id',
+        'sku' => 'nullable|string|max:100|unique:products,sku,' . $product->id,
+        'barcode' => 'nullable|string|max:100|unique:products,barcode,' . $product->id,
+        'unit' => 'nullable|string|max:20',
+        'bin_location' => 'nullable|string|max:50',
+        'price_normal' => 'nullable|numeric',
+        'price_online' => 'nullable|numeric',
+        'price_workshop' => 'nullable|numeric',
+        'reorder_level' => 'nullable|integer',
+        'allow_negative' => 'boolean',
+        'special_order' => 'boolean',
+        'status' => 'required|in:active,inactive',
+        'description' => 'nullable|string',
+        'oe_numbers' => 'nullable|string',
+        'cross_refs' => 'nullable|string',
+        'notes' => 'nullable|string',
+        'images.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+    ]);
+
+    DB::beginTransaction();
+
+    try {
+        $product->update([
+            'name' => $validated['name'],
+            'brand_id' => $validated['brand_id'],
+            'category_id' => $validated['category_id'],
+            'subcategory_id' => $validated['subcategory_id'],
+            'sku' => $validated['sku'] ?? $product->sku,
+            'barcode' => $validated['barcode'] ?? $product->barcode,
+            'unit' => $validated['unit'] ?? 'PCS',
+            'bin_location' => $validated['bin_location'] ?? null,
+            'price_normal' => $validated['price_normal'] ?? 0,
+            'price_online' => $validated['price_online'] ?? 0,
+            'price_workshop' => $validated['price_workshop'] ?? 0,
+            'reorder_level' => $validated['reorder_level'] ?? 0,
+            'allow_negative' => $request->allow_negative ?? 0,
+            'special_order' => $request->special_order ?? 0,
+            'status' => $validated['status'],
+            'description' => $validated['description'] ?? null,
+            'notes' => $validated['notes'] ?? null,
         ]);
 
-        DB::beginTransaction();
-        try {
-            // Update product basic info
-            $product->update([
-                'name' => $validated['name'],
-                'brand_id' => $validated['brand_id'],
-                'category_id' => $validated['category_id'],
-                'subcategory_id' => $validated['subcategory_id'],
-                'sku' => $validated['sku'] ?? $product->sku,
-                'barcode' => $validated['barcode'] ?? $product->barcode,
-                'unit' => $validated['unit'] ?? 'PCS',
-                'bin_location' => $validated['bin_location'] ?? null,
-                'price_normal' => $validated['price_normal'] ?? 0,
-                'price_online' => $validated['price_online'] ?? 0,
-                'price_workshop' => $validated['price_workshop'] ?? 0,
-                'reorder_level' => $validated['reorder_level'] ?? 0,
-                'allow_negative' => $request->allow_negative ?? 0,
-                'special_order' => $request->special_order ?? 0,
-                'status' => $validated['status'],
-                'description' => $validated['description'] ?? null,
-                'notes' => $validated['notes'] ?? null,
-            ]);
+        // Suppliers sync
+        if (!empty($validated['supplier_ids'])) {
+            $product->suppliers()->sync($validated['supplier_ids']);
+        } else {
+            $product->suppliers()->sync([]); // detach all if none
+        }
 
-            // Sync suppliers (many-to-many)
-            if (!empty($validated['supplier_ids'])) {
-                $product->suppliers()->sync($validated['supplier_ids']);
-            } else {
-                $product->suppliers()->sync([]);  // detach all if none selected
+        // OE Numbers update
+        $product->oeNumbers()->delete();
+        if (!empty($validated['oe_numbers'])) {
+            $oeNumbers = explode(',', $validated['oe_numbers']);
+            foreach ($oeNumbers as $oe) {
+                $product->oeNumbers()->create(['oe_number' => trim($oe)]);
             }
+        }
 
-            // OE Numbers update:
-            // Delete old OE numbers and add new ones
-            $product->oeNumbers()->delete();
-            if (!empty($validated['oe_numbers'])) {
-                $oeNumbers = explode(',', $validated['oe_numbers']);
-                foreach ($oeNumbers as $oe) {
-                    $product->oeNumbers()->create(['oe_number' => trim($oe)]);
-                }
+        // Cross References update
+        $product->crossRefs()->delete();
+        if (!empty($validated['cross_refs'])) {
+            $crossRefs = explode(',', $validated['cross_refs']);
+            foreach ($crossRefs as $crossRef) {
+                $product->crossRefs()->create(['cross_ref' => trim($crossRef)]);
             }
+        }
 
-            // Cross References update:
-            $product->crossRefs()->delete();
-            if (!empty($validated['cross_refs'])) {
-                $crossRefs = explode(',', $validated['cross_refs']);
-                foreach ($crossRefs as $crossRef) {
-                    $product->crossRefs()->create(['cross_ref' => trim($crossRef)]);
-                }
-            }
-
-            // Fitments update:
-            // Delete existing fitments and add new ones from request
-            $product->fitments()->delete();
-            if ($request->has('fitments')) {
-                foreach ($request->fitments as $fit) {
-                    if (!empty($fit['make_id']) && !empty($fit['model_id'])) {
-                        $product->fitments()->create([
-                            'make_id' => $fit['make_id'],
-                            'model_id' => $fit['model_id'],
-                            'engine_id' => $fit['engine_id'] ?? null,
-                            'year_start' => $fit['year_start'] ?? null,
-                            'year_end' => $fit['year_end'] ?? null,
-                        ]);
-                    }
-                }
-            }
-
-            // Images update:
-            // Optionally handle deletion of old images before adding new ones
-            if ($request->hasFile('images')) {
-                // Delete old images if you want (optional)
-                // foreach ($product->images as $image) {
-                //     Storage::disk('public')->delete($image->path);
-                //     $image->delete();
-                // }
-
-                // Add new images (append)
-                foreach ($request->file('images') as $img) {
-                    $path = $img->store('products', 'public');
-                    $product->images()->create([
-                        'path' => $path,
+        // Fitments update
+        $product->fitments()->delete();
+        if ($request->has('fitments')) {
+            foreach ($request->fitments as $fit) {
+                if (!empty($fit['make_id']) && !empty($fit['model_id'])) {
+                    $product->fitments()->create([
+                        'make_id' => $fit['make_id'],
+                        'model_id' => $fit['model_id'],
+                        'engine_id' => $fit['engine_id'] ?? null,
+                        'year_start' => $fit['year_start'] ?? null,
+                        'year_end' => $fit['year_end'] ?? null,
                     ]);
                 }
             }
-
-            DB::commit();
-            return redirect()->route('products.index')->with('success', 'Product updated successfully!');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->withErrors(['error' => $e->getMessage()]);
         }
+
+        // Images update (append new images)
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $img) {
+                $path = $img->store('products', 'public');
+                $product->images()->create(['path' => $path]);
+            }
+        }
+
+        DB::commit();
+
+        return redirect()->route('products.index')->with('success', 'Product updated successfully!');
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return back()->withErrors(['error' => $e->getMessage()]);
     }
+}
+
+
 
 
     public function destroy(Product $product)
