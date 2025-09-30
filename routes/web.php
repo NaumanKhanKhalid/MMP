@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\GoodsReceiptController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
@@ -42,7 +43,6 @@ Route::middleware(['auth', 'security'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::middleware('role:Owner')->group(function () {
-        Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
     });
 });
 
@@ -156,15 +156,21 @@ Route::middleware(['auth', 'security'])->group(function () {
 
     Route::middleware(['auth', 'security'])->group(function () {
         Route::get('/products', [ProductController::class, 'index'])->name('products.index');
-        Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show'); // detail / history
+        Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
         Route::post('/products', [ProductController::class, 'store'])->name('products.store');
-        Route::post('/products/quick-add', [ProductController::class, 'quickAdd'])->name('products.quickAdd');
+        Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update'); // ✅ Changed to PUT
         Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
         Route::patch('/products/{product}/toggle-status', [ProductController::class, 'toggleStatus'])->name('products.toggleStatus');
-
-        Route::post('/products/{product}', [ProductController::class, 'update'])->name('products.update');
-
+        Route::post('/products/quick-add', [ProductController::class, 'quickAdd'])->name('products.quickAdd');
     });
+
+    Route::resource('goods-receipts', GoodsReceiptController::class);
+
+    // For AJAX
+
+    Route::get('/goods-receipts/{id}/view-modal', [GoodsReceiptController::class, 'viewModal'])->name('goods-receipts.view-modal');
+    Route::get('/goods-receipts/{id}/edit-modal', [GoodsReceiptController::class, 'editModal'])->name('goods-receipts.edit-modal');
+
 
 
 });

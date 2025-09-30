@@ -195,8 +195,18 @@
                         </li>
                     </ul>
                 </li>
-
-                <!-- Add more new menu items here as needed -->
+                <!-- GRN (Goods Receipts) -->
+                <li class="slide">
+                    <a href="{{ route('goods-receipts.index') }}"
+                        class="side-menu__item {{ request()->routeIs('goods-receipts.*') ? 'active' : '' }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" viewBox="0 0 24 24">
+                            <rect width="24" height="24" fill="none" />
+                            <path d="M4 4h16v16H4z" fill="none" stroke="currentColor" stroke-width="2"/>
+                            <path d="M8 8h8v2H8zM8 12h8v2H8zM8 16h4v2H8z" fill="currentColor"/>
+                        </svg>
+                        <span class="side-menu__label">Goods Receipts (GRN)</span>
+                    </a>
+                </li>
             </ul>
 
             <div class="slide-right" id="slide-right"><svg xmlns="http://www.w3.org/2000/svg" fill="#7b8191"

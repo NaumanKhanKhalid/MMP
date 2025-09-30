@@ -38,6 +38,8 @@ class DatabaseSeeder extends Seeder
             ProductCrossRefsSeeder::class,
             ProductSuppliersSeeder::class,
             ProductImagesSeeder::class,
+            GoodsReceiptSeeder::class,
+            StockBatchSeeder::class,
             StockLedgerSeeder::class,
         ]);
     }

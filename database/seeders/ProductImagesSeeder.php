@@ -10,11 +10,11 @@ class ProductImagesSeeder extends Seeder
 {
     public function run(): void
     {
-        $now = Carbon::now();
+        // $now = Carbon::now();
 
-        DB::table('product_images')->insert([
-            ['product_id' => 1, 'path' => 'products/images/product1_img1.jpg', 'created_at' => $now, 'updated_at' => $now],
-            ['product_id' => 1, 'path' => 'products/images/product1_img2.jpg', 'created_at' => $now, 'updated_at' => $now],
-        ]);
+        // DB::table('product_images')->insert([
+        //     ['product_id' => 1, 'path' => 'products/images/product1_img1.jpg', 'created_at' => $now, 'updated_at' => $now],
+        //     ['product_id' => 1, 'path' => 'products/images/product1_img2.jpg', 'created_at' => $now, 'updated_at' => $now],
+        // ]);
     }
 }

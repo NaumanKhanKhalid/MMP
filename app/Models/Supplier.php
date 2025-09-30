@@ -16,4 +16,8 @@ class Supplier extends Model
         return $this->belongsToMany(Product::class, 'product_supplier');
     }
 
+    public function grns()
+    {
+        return $this->hasMany(GoodsReceipt::class);
+    }
 }
