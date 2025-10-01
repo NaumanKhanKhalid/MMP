@@ -15,6 +15,7 @@
                         <tr>
                             <th>GRN Number</th>
                             <th>Supplier</th>
+                            <th>PO Number</th>
                             <th>Received Date</th>
                             <th>Status</th>
                             <th>Actions</th>
@@ -25,19 +26,19 @@
                             <tr>
                                 <td>{{ $grn->grn_number }}</td>
                                 <td>{{ $grn->supplier->name }}</td>
+                                <td>
+                                    @if($grn->purchaseOrder)
+                                        <a href="#" class="text-decoration-underline text-primary view-po-btn" data-po-id="{{ $grn->purchaseOrder->id }}">{{ $grn->purchaseOrder->po_number }}</a>
+                                    @else
+                                        <span class="text-muted">-</span>
+                                    @endif
+                                </td>
                                 <td>{{ \Carbon\Carbon::parse($grn->received_date)->format('Y-m-d') }}</td>
                                 <td>{{ ucfirst($grn->status) }}</td>
                                 <td>
-                                    <button class="btn btn-info btn-sm view-grn-btn"
-                                        data-grn-id="{{ $grn->id }}">View</button>
-                                    {{-- <button class="btn btn-warning btn-sm edit-grn-btn"
-                                        data-grn-id="{{ $grn->id }}">Edit</button>
-                                    <form action="{{ route('goods-receipts.destroy', $grn->id) }}" method="POST"
-                                        class="d-inline" onsubmit="return confirm('Are you sure to delete this GRN?');">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                                    </form> --}}
+                                    <button class="btn btn-info btn-sm view-grn-btn" data-grn-id="{{ $grn->id }}">View</button>
+                                    {{-- <button class="btn btn-warning btn-sm edit-grn-btn" data-grn-id="{{ $grn->id }}">Edit</button>
+                                    <form action="{{ route('goods-receipts.destroy', $grn->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure to delete this GRN?');">@csrf @method('DELETE')<button type="submit" class="btn btn-danger btn-sm">Delete</button></form> --}}
                                 </td>
                             </tr>
                         @endforeach

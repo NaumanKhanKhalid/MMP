@@ -158,7 +158,7 @@
                                 <div class="col-md-12 mb-3">
                                     <div class="form-check form-switch mb-2">
                                         <input class="form-check-input" type="checkbox" name="allow_negative"
-                                            id="edit_allow_negative_{{ $product->id }}"
+                                            id="edit_allow_negative_{{ $product->id }}" value="1"
                                             {{ $product->allow_negative ? 'checked' : '' }}>
                                         <label class="form-check-label"
                                             for="edit_allow_negative_{{ $product->id }}">
@@ -167,7 +167,7 @@
                                     </div>
                                     <div class="form-check form-switch">
                                         <input class="form-check-input" type="checkbox" name="special_order"
-                                            id="edit_special_order_{{ $product->id }}"
+                                            id="edit_special_order_{{ $product->id }}" value="1"    
                                             {{ $product->special_order ? 'checked' : '' }}>
                                         <label class="form-check-label" for="edit_special_order_{{ $product->id }}">
                                             <strong>Special Order Only</strong>

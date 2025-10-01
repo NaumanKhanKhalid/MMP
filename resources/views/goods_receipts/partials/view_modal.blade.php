@@ -29,6 +29,18 @@
                     <p class="form-control-static">{{ $grn->grn_number }}</p>
                 </div>
                 <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold">Linked PO</label>
+                    @if($grn->purchaseOrder)
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="fw-bold">{{ $grn->purchaseOrder->po_number }}</span>
+                            <span class="badge bg-info">{{ ucfirst($grn->purchaseOrder->status) }}</span>
+                            <button class="btn btn-outline-primary btn-sm view-po-btn" data-po-id="{{ $grn->purchaseOrder->id }}">View PO</button>
+                        </div>
+                    @else
+                        <span class="text-muted">No PO linked</span>
+                    @endif
+                </div>
+                <div class="col-md-6 mb-3">
                     <label class="form-label fw-bold">Received Date</label>
                     <p class="form-control-static">{{ \Carbon\Carbon::parse($grn->received_date)->format('M d, Y') }}</p>
                 </div>

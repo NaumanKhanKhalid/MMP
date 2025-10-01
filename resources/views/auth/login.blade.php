@@ -6,7 +6,8 @@
             <div class="col-xxl-4 col-xl-5 col-lg-5 col-md-6 col-sm-8 col-12">
                 <div class="mb-3 d-flex justify-content-center auth-logo">
                     <a href="index.html">
-                        <img src="{{ url('public/assets/images/brand-logos/desktop-dark.png')}}" alt="logo" class="desktop-dark">
+                        <img src="{{ url('public/assets/images/brand-logos/desktop-dark.png') }}" alt="logo"
+                            class="desktop-dark">
                     </a>
                 </div>
                 <div class="card custom-card my-4 border z-3 position-relative">
@@ -60,13 +61,14 @@
                                     <div class="col-xl-12 mb-2">
                                         <label for="signin-password" class="form-label text-default d-block">Password<a
                                                 href="reset-password-basic.html"
-                                                class="float-end  link-danger op-5 fw-medium fs-12">Forget password
-                                                ?</a></label>
+                                                class="float-end  link-danger op-5 fw-medium fs-12"></a>
+                                        </label>
                                         <div class="position-relative">
-                                            <input type="password" name="password" class="form-control form-control-lg" id="signin-password"
-                                                placeholder="password">
+                                            <input type="password" name="password" class="form-control form-control-lg"
+                                                id="signin-password" placeholder="password">
                                             <a href="javascript:void(0);" class="show-password-button text-muted"
-                                                id="button-addon2" onclick="createpassword('signin-password',this)"><i class="ri-eye-off-line align-middle"></i></a>
+                                                id="button-addon2" onclick="createpassword('signin-password',this)"><i
+                                                    class="ri-eye-off-line align-middle"></i></a>
                                         </div>
                                         <div class="mt-2">
                                             <div class="form-check">

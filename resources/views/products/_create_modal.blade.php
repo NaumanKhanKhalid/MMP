@@ -160,7 +160,7 @@
                                         <div class="col-md-12 mb-3">
                                             <div class="form-check form-switch mb-2">
                                                 <input class="form-check-input" type="checkbox" name="allow_negative"
-                                                    id="create_allow_negative" checked>
+                                                    id="create_allow_negative" checked value="1">
                                                 <label class="form-check-label" for="create_allow_negative">
                                                     <strong>Allow Negative Sale</strong>
                                                     <small class="d-block text-muted">Permit sales even when stock is
@@ -169,7 +169,7 @@
                                             </div>
                                             <div class="form-check form-switch">
                                                 <input class="form-check-input" type="checkbox" name="special_order"
-                                                    id="create_special_order">
+                                                    id="create_special_order" value="1">
                                                 <label class="form-check-label" for="create_special_order">
                                                     <strong>Special Order Only</strong>
                                                     <small class="d-block text-muted">Mark this product as special

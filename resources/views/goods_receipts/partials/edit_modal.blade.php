@@ -23,7 +23,7 @@
         <div class="tab-content">
             <div class="tab-pane fade show active" id="edit-basic-{{ $grn->id }}">
                 <div class="row">
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-4 mb-3">
                         <label class="form-label">Supplier <span class="text-danger">*</span></label>
                         <select name="supplier_id" class="form-select select2-edit-supplier" required>
                             <option value="">-- Select Supplier --</option>
@@ -33,35 +33,38 @@
                             @endforeach
                         </select>
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">GRN Number <span class="text-danger">*</span></label>
-                        <input type="text" name="grn_number" class="form-control" value="{{ $grn->grn_number }}"
-                            required>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Linked PO</label>
+                        <select name="purchase_order_id" class="form-select select2-edit-po">
+                            <option value="">-- Select PO (optional) --</option>
+                            @foreach($purchaseOrders as $po)
+                                <option value="{{ $po->id }}" @if($grn->purchase_order_id == $po->id) selected @endif>{{ $po->po_number }} ({{ $po->supplier->name ?? '-' }})</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Received Date <span class="text-danger">*</span></label>
+                        <input type="date" name="received_date" class="form-control" value="{{ $grn->received_date }}" required>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label class="form-label">Received Date <span class="text-danger">*</span></label>
-                        <input type="date" name="received_date" class="form-control"
-                            value="{{ $grn->received_date }}" required>
+                        <label class="form-label">GRN Number <span class="text-danger">*</span></label>
+                        <input type="text" name="grn_number" class="form-control" value="{{ $grn->grn_number }}" required>
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Invoice Number</label>
-                        <input type="text" name="invoice_number" class="form-control"
-                            value="{{ $grn->invoice_number }}">
+                        <input type="text" name="invoice_number" class="form-control" value="{{ $grn->invoice_number }}">
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Status <span class="text-danger">*</span></label>
                         <select name="status" class="form-select" required>
                             <option value="pending" @if ($grn->status == 'pending') selected @endif>Pending</option>
-                            <option value="completed" @if ($grn->status == 'completed') selected @endif>Completed
-                            </option>
-                            <option value="cancelled" @if ($grn->status == 'cancelled') selected @endif>Cancelled
-                            </option>
+                            <option value="completed" @if ($grn->status == 'completed') selected @endif>Completed</option>
+                            <option value="cancelled" @if ($grn->status == 'cancelled') selected @endif>Cancelled</option>
                         </select>
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Total Amount</label>
-                        <input type="text" class="form-control bg-light"
-                            value="${{ number_format($grn->total_amount, 2) }}" readonly>
+                        <input type="text" class="form-control bg-light" value="${{ number_format($grn->total_amount, 2) }}" readonly>
                         <small class="text-muted">Total amount is calculated from items below.</small>
                     </div>
                 </div>
@@ -157,7 +160,7 @@
     // Reinitialize Select2 and row logic for edit modal
     (function() {
         const grnId = {{ $grn->id }};
-        $('#editGrnModal .select2-edit-supplier, #editGrnModal .select2-edit-product').select2({
+    $('#editGrnModal .select2-edit-supplier, #editGrnModal .select2-edit-product, #editGrnModal .select2-edit-po').select2({
             dropdownParent: $('#editGrnModal'),
             width: '100%'
         });

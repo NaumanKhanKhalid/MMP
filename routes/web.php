@@ -15,6 +15,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ModelEngineController;
 use App\Http\Controllers\ProductFitmentController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\PurchaseOrderController;
 
 Route::get('/', function () {
     if (auth()->check()) {
@@ -166,11 +167,18 @@ Route::middleware(['auth', 'security'])->group(function () {
 
     Route::resource('goods-receipts', GoodsReceiptController::class);
 
+        // Purchase Orders CRUD
+        Route::resource('purchase-orders', PurchaseOrderController::class);
+
+        // Purchase Order Status Change (PATCH)
+        Route::patch('/purchase-orders/{purchaseOrder}/change-status', [PurchaseOrderController::class, 'changeStatus'])->name('purchase-orders.change-status');
+
+    // AJAX: PO view/edit modals
+    Route::get('/purchase-orders/{id}/view-modal', [PurchaseOrderController::class, 'viewModal'])->name('purchase-orders.view-modal');
+    Route::get('/purchase-orders/{id}/edit-modal', [PurchaseOrderController::class, 'editModal'])->name('purchase-orders.edit-modal');
+
     // For AJAX
 
     Route::get('/goods-receipts/{id}/view-modal', [GoodsReceiptController::class, 'viewModal'])->name('goods-receipts.view-modal');
     Route::get('/goods-receipts/{id}/edit-modal', [GoodsReceiptController::class, 'editModal'])->name('goods-receipts.edit-modal');
-
-
-
 });

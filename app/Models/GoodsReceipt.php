@@ -32,6 +32,11 @@ class GoodsReceipt extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function purchaseOrder()
+    {
+        return $this->belongsTo(\App\Models\PurchaseOrder::class, 'purchase_order_id');
+    }
 }
 
 

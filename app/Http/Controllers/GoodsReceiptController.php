@@ -16,8 +16,10 @@ class GoodsReceiptController extends Controller
     // AJAX: Return view modal HTML for a GRN
     public function viewModal($id)
     {
+        $purchaseOrders = \App\Models\PurchaseOrder::with('items.product')->get();
+
         $grn = GoodsReceipt::with(['supplier', 'batches.product'])->findOrFail($id);
-        return view('goods_receipts.partials.view_modal', compact('grn'))->render();
+        return view('goods_receipts.partials.view_modal', compact('grn', 'purchaseOrders'))->render();
     }
 
     // AJAX: Return edit modal HTML for a GRN
@@ -30,6 +32,7 @@ class GoodsReceiptController extends Controller
     }
     public function index(Request $request)
     {
+        $purchaseOrders = \App\Models\PurchaseOrder::with('items.product')->get();
         $grns = GoodsReceipt::with(['supplier', 'user'])
             ->when($request->search, fn($q) => $q->where('grn_number', 'like', "%{$request->search}%"))
             ->when($request->supplier_id, fn($q) => $q->where('supplier_id', $request->supplier_id))
@@ -42,7 +45,7 @@ class GoodsReceiptController extends Controller
 
         $suppliers = Supplier::orderBy('name')->get();
 
-        return view('goods_receipts.index', compact('grns', 'suppliers', 'products'));
+        return view('goods_receipts.index', compact('grns', 'suppliers', 'products', 'purchaseOrders'));
     }
 
 
@@ -50,7 +53,7 @@ class GoodsReceiptController extends Controller
     {
         $suppliers = Supplier::all();
         $products = Product::all();
-    return view('goods_receipts._create_modal', compact('suppliers', 'products'));
+        return view('goods_receipts._create_modal', compact('suppliers', 'products'));
     }
 
     // public function store(Request $request)
@@ -151,8 +154,15 @@ class GoodsReceiptController extends Controller
 
                 $total += $item['quantity'] * $item['purchase_price'];
             }
-
             $grn->update(['total_amount' => $total]);
+
+            // Update PO status if this GRN is linked to a PO
+            if ($request->purchase_order_id) {
+                $po = \App\Models\PurchaseOrder::find($request->purchase_order_id);
+                if ($po) {
+                    \App\Http\Controllers\PurchaseOrderController::updatePOStatusFromGRN($po);
+                }
+            }
         });
 
         return redirect()->route('goods-receipts.index')->with('success', 'GRN created successfully!');
@@ -230,6 +240,14 @@ class GoodsReceiptController extends Controller
             }
 
             $goods_receipt->update(['total_amount' => $total]);
+
+            // Update PO status if this GRN is linked to a PO
+            if ($request->purchase_order_id) {
+                $po = \App\Models\PurchaseOrder::find($request->purchase_order_id);
+                if ($po) {
+                    \App\Http\Controllers\PurchaseOrderController::updatePOStatusFromGRN($po);
+                }
+            }
         });
 
         return redirect()->route('goods-receipts.index')->with('success', 'GRN updated successfully!');
@@ -237,7 +255,7 @@ class GoodsReceiptController extends Controller
 
     public function destroy(GoodsReceipt $grn)
     {
-    // dd($grn); // Removed debug statement
+        // dd($grn); // Removed debug statement
         try {
             DB::transaction(function () use ($grn) {
                 StockBatch::where('grn_id', $grn->id)->delete();
