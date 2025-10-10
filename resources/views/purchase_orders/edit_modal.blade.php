@@ -91,7 +91,7 @@
                                     <td><input type="number" name="items[{{ $i }}][quantity]" class="form-control edit-qty" min="1" value="{{ $item->quantity }}" required></td>
                                     <td><input type="number" name="items[{{ $i }}][unit_price]" class="form-control edit-price" min="0" step="0.01" value="{{ $item->unit_price }}" required></td>
                                     <td class="edit-item-total">R {{ number_format($item->quantity * $item->unit_price, 2) }}</td>
-                                    <td><button type="button" class="btn btn-danger btn-sm remove-edit-row">Remove</button></td>
+                                    <td><button type="button" class="btn btn-danger-light btn-sm btn-icon remove-edit-row" title="Remove"><i class="ri-delete-bin-line"></i></button></td>
                                 </tr>
                             @endforeach
                         </tbody>
@@ -112,11 +112,11 @@
         </div>
     </div>
     <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-            <i class="bi bi-x-circle me-1"></i> Cancel
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+            <i class="ri-close-line"></i> Cancel
         </button>
-        <button type="submit" class="btn btn-primary">
-            <i class="bi bi-check-circle me-1"></i> Update PO
+        <button type="submit" class="btn btn-success-light btn-icon">
+            <i class="ri-save-line"></i>
         </button>
     </div>
 </form>
@@ -160,7 +160,7 @@
             <td><input type="number" name="items[${rowIndex}][quantity]" class="form-control edit-qty" min="1" value="1" required></td>
             <td><input type="number" name="items[${rowIndex}][unit_price]" class="form-control edit-price" min="0" step="0.01" value="0" required></td>
             <td class="edit-item-total">R 0.00</td>
-            <td><button type="button" class="btn btn-danger btn-sm remove-edit-row">Remove</button></td>
+            <td><button type="button" class="btn btn-danger-light btn-sm btn-icon remove-edit-row" title="Remove"><i class="ri-delete-bin-line"></i></button></td>
         </tr>`;
             $('#editItemsTable-' + poId + ' tbody').append(row);
             $('#editPoModal .select2-edit-product').select2({

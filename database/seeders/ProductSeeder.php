@@ -14,12 +14,18 @@ class ProductSeeder extends Seeder
     public function run(): void
     {
         // Dummy brand and category bana lo agar nai hain
-        $brand = Brand::firstOrCreate(['name' => 'Example Brand']);
-        $category = Category::firstOrCreate(['name' => 'Example Category']);
-        $subcategory = Category::firstOrCreate(['name' => 'Example Subcategory']);
+        $brand = Brand::firstOrCreate(['name' => 'Example Brand'], ['slug' => 'example-brand', 'status' => 'active']);
+        $category = Category::firstOrCreate(
+            ['name' => 'Example Category'], 
+            ['slug' => 'example-category', 'status' => 'active']
+        );
+        $subcategory = Category::firstOrCreate(
+            ['name' => 'Example Subcategory'], 
+            ['slug' => 'example-subcategory', 'parent_id' => $category->id, 'status' => 'active']
+        );
 
-        $supplier1 = Supplier::firstOrCreate(['name' => 'Supplier One']);
-        $supplier2 = Supplier::firstOrCreate(['name' => 'Supplier Two']);
+        $supplier1 = Supplier::first();
+        $supplier2 = Supplier::skip(1)->first();
 
         // 1st Product with full details
         $product1 = Product::create([

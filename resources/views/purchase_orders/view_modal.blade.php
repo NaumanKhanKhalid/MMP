@@ -80,7 +80,7 @@
                         @foreach ($po->items as $item)
                             <tr>
                                 <td>{{ $item->product->name ?? '-' }}</td>
-                                <td>{{ $item->quantity }}</td>
+                                <td>{{ number_format($item->quantity, 0) }}</td>
                                 <td>R {{ number_format($item->unit_price, 2) }}</td>
                                 <td>R {{ number_format($item->total_price, 2) }}</td>
                             </tr>

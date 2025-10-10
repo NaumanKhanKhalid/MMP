@@ -121,8 +121,8 @@
                                     <td class="edit-item-total">
                                         ${{ number_format($batch->qty_received * $batch->landed_unit_cost, 2) }}</td>
                                     <td>
-                                        <button type="button" class="btn btn-sm btn-danger remove-edit-row">
-                                            <i class="bi bi-x"></i>
+                                        <button type="button" class="btn btn-sm btn-danger-light btn-icon remove-edit-row" title="Remove">
+                                            <i class="ri-delete-bin-line"></i>
                                         </button>
                                     </td>
                                 </tr>
@@ -148,11 +148,11 @@
         </div>
     </div>
     <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-            <i class="bi bi-x-circle me-1"></i> Cancel
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+            <i class="ri-close-line"></i> Cancel
         </button>
-        <button type="submit" class="btn btn-primary">
-            <i class="bi bi-check-circle me-1"></i> Update GRN
+        <button type="submit" class="btn btn-success-light btn-icon">
+            <i class="ri-save-line"></i> Update
         </button>
     </div>
 </form>
@@ -209,8 +209,8 @@
             </td>
             <td class="edit-item-total">$0.00</td>
             <td>
-                <button type="button" class="btn btn-sm btn-danger remove-edit-row">
-                    <i class="bi bi-x"></i>
+                <button type="button" class="btn btn-sm btn-danger-light btn-icon remove-edit-row" title="Remove">
+                    <i class="ri-delete-bin-line"></i>
                 </button>
             </td>
         </tr>`;

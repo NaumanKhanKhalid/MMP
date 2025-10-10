@@ -129,6 +129,11 @@ class ProductController extends Controller
             'cross_refs' => 'nullable|string',
             'notes' => 'nullable|string',
             'images.*' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            // Opening stock fields
+            'initial_qty' => 'nullable|integer|min:0',
+            'initial_cost' => 'nullable|numeric|min:0',
+            'primary_supplier_id' => 'nullable|exists:suppliers,id',
+            'supplier_sku' => 'nullable|string|max:100',
         ]);
 
         DB::beginTransaction();
@@ -169,9 +174,51 @@ class ProductController extends Controller
                 }
             }
 
-            // Suppliers
+            // Suppliers (including primary supplier with SKU)
+            $supplierData = [];
+            
+            // Add primary supplier first if provided
+            if (!empty($validated['primary_supplier_id'])) {
+                $supplierData[$validated['primary_supplier_id']] = [
+                    'supplier_sku' => $validated['supplier_sku'] ?? null,
+                ];
+            }
+            
+            // Add other suppliers
             if (!empty($validated['supplier_ids'])) {
-                $product->suppliers()->sync($validated['supplier_ids']);
+                foreach ($validated['supplier_ids'] as $supplierId) {
+                    // Skip if already added as primary
+                    if (!isset($supplierData[$supplierId])) {
+                        $supplierData[$supplierId] = ['supplier_sku' => null];
+                    }
+                }
+            }
+            
+            if (!empty($supplierData)) {
+                $product->suppliers()->sync($supplierData);
+            }
+
+            // Opening Stock Batch
+            if ($request->filled('initial_qty') && $request->initial_qty > 0) {
+                StockBatch::create([
+                    'product_id' => $product->id,
+                    'qty_received' => $request->initial_qty,
+                    'qty_left' => $request->initial_qty,
+                    'landed_unit_cost' => $request->initial_cost ?? 0,
+                    'received_date' => now(),
+                ]);
+
+                // Record in stock ledger
+                StockLedger::create([
+                    'product_id' => $product->id,
+                    'document_type' => 'OPENING_STOCK',
+                    'document_id' => null,
+                    'qty' => $request->initial_qty,
+                    'unit_cost' => $request->initial_cost ?? 0,
+                    'total_cost' => ($request->initial_qty * ($request->initial_cost ?? 0)),
+                    'user_id' => auth()->id(),
+                    'notes' => 'Opening stock on product creation',
+                ]);
             }
 
             // Fitments
@@ -337,8 +384,18 @@ class ProductController extends Controller
         DB::beginTransaction();
 
         try {
+            // Get first available brand and category as defaults
+            $defaultBrand = Brand::first();
+            $defaultCategory = Category::whereNull('parent_id')->first();
+
+            if (!$defaultBrand || !$defaultCategory) {
+                return back()->withErrors(['error' => 'Please create at least one Brand and Category first.']);
+            }
+
             $product = Product::create([
                 'name' => $request->name,
+                'brand_id' => $defaultBrand->id,
+                'category_id' => $defaultCategory->id,
                 'price_normal' => $request->price_normal,
                 'price_online' => $request->price_normal,
                 'price_workshop' => $request->price_normal,
@@ -372,9 +429,34 @@ class ProductController extends Controller
 
             DB::commit();
 
+            // Check if AJAX request (from job cards, POS, etc)
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Product created successfully',
+                    'product' => [
+                        'id' => $product->id,
+                        'name' => $product->name,
+                        'sku' => $product->sku,
+                        'barcode_primary' => $product->barcode_primary,
+                        'price_normal' => $product->price_normal,
+                        'price_workshop' => $product->price_workshop,
+                        'on_hand' => $request->qty ?? 0,
+                    ],
+                ]);
+            }
+
             return redirect()->route('products.index')->with('success', 'Quick product added successfully!');
         } catch (\Exception $e) {
             DB::rollBack();
+            
+            if ($request->expectsJson() || $request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => $e->getMessage(),
+                ], 500);
+            }
+            
             return back()->withErrors(['error' => $e->getMessage()]);
         }
     }

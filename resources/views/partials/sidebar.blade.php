@@ -1,11 +1,13 @@
+<!-- Sidebar -->
 <aside class="app-sidebar sticky" id="sidebar">
 
     <!-- Start::main-sidebar-header -->
     <div class="main-sidebar-header">
-        <a href="index.html" class="header-logo">
+        <a href="{{ route('dashboard') }}" class="header-logo">
             <img src="{{ url('public/assets/images/brand-logos/desktop-logo.png') }}" alt="logo" class="desktop-logo">
             <img src="{{ url('public/assets/images/brand-logos/toggle-dark.png') }}" alt="logo" class="toggle-dark">
-            <img src="{{ url('public/assets/images/brand-logos/desktop-dark.png') }}" alt="logo" class="desktop-dark">
+            <img src="{{ url('public/assets/images/brand-logos/desktop-dark.png') }}" alt="logo"
+                class="desktop-dark">
             <img src="{{ url('public/assets/images/brand-logos/toggle-logo.png') }}" alt="logo" class="toggle-logo">
         </a>
     </div>
@@ -16,13 +18,16 @@
 
         <!-- Start::nav -->
         <nav class="main-menu-container nav nav-pills flex-column sub-open">
+
             <div class="slide-left" id="slide-left">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="#7b8191" width="24" height="24"
                     viewBox="0 0 24 24">
                     <path d="M13.293 6.293 7.586 12l5.707 5.707 1.414-1.414L10.414 12l4.293-4.293z"></path>
                 </svg>
             </div>
+
             <ul class="main-menu">
+
                 <!-- Dashboard -->
                 <li class="slide">
                     <a href="{{ route('dashboard') }}"
@@ -37,38 +42,55 @@
                         <span class="side-menu__label">Dashboard</span>
                     </a>
                 </li>
-                <!-- Users & Suppliers -->
-                <li class="slide has-sub">
-                    <a href="javascript:void(0);"
-                        class="side-menu__item {{ request()->routeIs('users.*', 'suppliers.*') ? 'active' : '' }}">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" viewBox="0 0 256 256">
-                            <rect width="256" height="256" fill="none" />
-                            <rect x="48" y="48" width="64" height="64" rx="8" fill="none"
-                                stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                                stroke-width="16" />
-                            <rect x="144" y="48" width="64" height="64" rx="8" fill="none"
-                                stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                                stroke-width="16" />
-                            <rect x="48" y="144" width="64" height="64" rx="8" fill="none"
-                                stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                                stroke-width="16" />
-                            <rect x="144" y="144" width="64" height="64" rx="8" fill="none"
-                                stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                                stroke-width="16" />
+
+                <li class="slide">
+                    <a href="{{ route('pos.index') }}" class="side-menu__item">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" width="20" height="20"
+                            viewBox="0 0 24 24">
+                            <rect x="3" y="7" width="18" height="13" rx="2" ry="2"
+                                stroke="currentColor" fill="none" stroke-width="2" />
+                            <path d="M8 7V4h8v3M8 11h8M6 15h2m4 0h6" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
                         </svg>
-                        <span class="side-menu__label">Users</span>
-                        <i class="ri-arrow-right-s-line side-menu__angle"></i>
+                        <span class="side-menu__label">Point of Sale</span>
                     </a>
-                    <ul class="slide-menu child1">
-                        <li>
-                            <a href="{{ route('users.index') }}"
-                                class="side-menu__item {{ request()->routeIs('users.index') ? 'active' : '' }}">Users</a>
-                        </li>
-                        <li>
-                            <a href="{{ route('suppliers.index') }}"
-                                class="side-menu__item {{ request()->routeIs('suppliers.index') ? 'active' : '' }}">Suppliers</a>
-                        </li>
-                    </ul>
+                </li>
+                <li class="slide">
+                    <a href="{{ route('invoices.index') }}" class="side-menu__item">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" width="20" height="20"
+                            viewBox="0 0 24 24">
+                            <path d="M9 12h6M9 16h6M8 4v16l4-2 4 2V4H8z" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        <span class="side-menu__label">Sale History</span>
+                    </a>
+                </li>
+
+
+                <li class="slide">
+                    <a href="{{ route('returns.index') }}"
+                        class="side-menu__item {{ request()->routeIs('returns.*') ? 'active' : '' }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" width="20" height="20"
+                            viewBox="0 0 24 24">
+                            <path d="M3 12a9 9 0 1 1 9 9" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" />
+                            <polyline points="3 12 9 12 9 18" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                        <span class="side-menu__label">Return & Credit Notes</span>
+                    </a>
+                </li>
+
+                <li class="slide">
+                    <a href="{{ route('quotes.index') }}" class="side-menu__item">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" width="20"
+                            height="20" viewBox="0 0 24 24">
+                            <path d="M9 5h9a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3H13l-4 4v-4H6a3 3 0 0 1-3-3V8a3 3 0 0 1 3-3h3z"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                        </svg>
+                        <span class="side-menu__label">Quotations</span>
+                    </a>
                 </li>
                 <!-- Products -->
                 <li class="slide">
@@ -82,9 +104,202 @@
                             <path d="M168,88a40,40,0,0,1-80,0" fill="none" stroke="currentColor"
                                 stroke-linecap="round" stroke-linejoin="round" stroke-width="16" />
                         </svg>
-                        <span class="side-menu__label">All Products</span>
+                        <span class="side-menu__label">Inventory</span>
                     </a>
                 </li>
+
+                <li class="slide has-sub">
+                    <a href="javascript:void(0);"
+                        class="side-menu__item {{ request()->routeIs('stock-counts.*', 'stock-adjustments.*') ? 'active' : '' }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" width="20"
+                            height="20" viewBox="0 0 24 24">
+                            <rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor"
+                                fill="none" stroke-width="2" />
+                            <rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor"
+                                fill="none" stroke-width="2" />
+                            <rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor"
+                                fill="none" stroke-width="2" />
+                            <rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor"
+                                fill="none" stroke-width="2" />
+                        </svg>
+                        <span class="side-menu__label">Stock Management</span>
+                        <i class="ri-arrow-right-s-line side-menu__angle"></i>
+                    </a>
+                    <ul class="slide-menu child1">
+                        <li><a href="{{ route('stock-counts.index') }}"
+                                class="side-menu__item {{ request()->routeIs('stock-counts.*') ? 'active' : '' }}">Stock
+                                Counts</a></li>
+                        <li><a href="{{ route('stock-adjustments.index') }}"
+                                class="side-menu__item {{ request()->routeIs('stock-adjustments.*') ? 'active' : '' }}">Stock
+                                Adjustments</a></li>
+                    </ul>
+                </li>
+                <!-- Users & Suppliers -->
+
+
+                <!-- Main Categories -->
+            
+                <li class="slide">
+                    <a href="{{ route('job-cards.index') }}" class="side-menu__item">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" width="20"
+                            height="20" viewBox="0 0 24 24">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="none"
+                                stroke="currentColor" stroke-width="2" />
+                            <polyline points="14,2 14,8 20,8" fill="none" stroke="currentColor"
+                                stroke-width="2" />
+                            <line x1="16" y1="13" x2="8" y2="13" stroke="currentColor"
+                                stroke-width="2" />
+                            <line x1="16" y1="17" x2="8" y2="17" stroke="currentColor"
+                                stroke-width="2" />
+                            <polyline points="10,9 9,9 8,9" fill="none" stroke="currentColor" stroke-width="2" />
+                        </svg>
+                        <span class="side-menu__label">Workshop</span>
+                    </a>
+                </li>
+                <!-- Main Categories -->
+                <li class="slide">
+                    <a href="{{ route('suppliers.index') }}"
+                        class="side-menu__item {{ request()->routeIs('suppliers.index') ? 'active' : '' }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" viewBox="0 0 256 256">
+                            <path
+                                d="M32 72a16 16 0 0 1 16-16h56l16 16h104a16 16 0 0 1 16 16v96a16 16 0 0 1-16 16H48a16 16 0 0 1-16-16Z"
+                                fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                stroke-width="16" />
+                        </svg>
+                        <span class="side-menu__label">Creditors</span>
+                    </a>
+                </li>
+                <!-- Main Categories -->
+                <li class="slide">
+                    <a href="{{ route('customers.index') }}"
+                        class="side-menu__item {{ request()->routeIs('suppliers.index') ? 'active' : '' }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" viewBox="0 0 256 256">
+                            <path
+                                d="M32 72a16 16 0 0 1 16-16h56l16 16h104a16 16 0 0 1 16 16v96a16 16 0 0 1-16 16H48a16 16 0 0 1-16-16Z"
+                                fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                stroke-width="16" />
+                        </svg>
+                        <span class="side-menu__label">Debtors</span>
+                    </a>
+                </li>
+
+                <li class="slide">
+                    <a href="{{ route('purchase-orders.index') }}" class="side-menu__item">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" width="20"
+                            height="20" viewBox="0 0 24 24">
+                            <rect x="9" y="2" width="6" height="4" rx="1" ry="1"
+                                stroke="currentColor" fill="none" stroke-width="2" />
+                            <path d="M9 4H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-4"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                        </svg>
+                        <span class="side-menu__label">Purchase Orders</span>
+                    </a>
+                </li>
+                <li class="slide">
+                    <a href="{{ route('goods-receipts.index') }}" class="side-menu__item">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" width="20"
+                            height="20" viewBox="0 0 24 24">
+                            <path
+                                d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.73zM12 22V12"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" />
+                        </svg>
+                        <span class="side-menu__label">Goods Receipts</span>
+                    </a>
+                </li>
+
+
+                <li class="slide">
+                    <a href="{{ route('reports.index') }}"
+                        class="side-menu__item {{ request()->routeIs('reports.*') ? 'active' : '' }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" width="20"
+                            height="20" viewBox="0 0 24 24">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"
+                                stroke="currentColor" fill="none" stroke-width="2" />
+                            <line x1="8" y1="10" x2="16" y2="10" stroke="currentColor"
+                                stroke-width="2" />
+                            <line x1="8" y1="14" x2="16" y2="14" stroke="currentColor"
+                                stroke-width="2" />
+                            <line x1="8" y1="18" x2="12" y2="18" stroke="currentColor"
+                                stroke-width="2" />
+                        </svg>
+                        <span class="side-menu__label">Reports</span>
+                    </a>
+                </li>
+
+                @if (auth()->user()->role === 'Owner')
+                    <li class="slide">
+                        <a href="{{ route('settings.index') }}"
+                            class="side-menu__item {{ request()->routeIs('settings.*') ? 'active' : '' }}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" width="20"
+                                height="20" viewBox="0 0 24 24">
+                                <circle cx="12" cy="12" r="3" stroke="currentColor" fill="none"
+                                    stroke-width="2" />
+                                <path d="M12 1v6m0 6v6M23 12h-6m-6 0H1" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" />
+                            </svg>
+                            <span class="side-menu__label">Settings</span>
+                        </a>
+                    </li>
+                @endif
+                <li class="slide">
+                    <a href="{{ route('users.index') }}"
+                        class="side-menu__item {{ request()->routeIs('users.index') ? 'active' : '' }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" viewBox="0 0 256 256">
+                            <path
+                                d="M32 72a16 16 0 0 1 16-16h56l16 16h104a16 16 0 0 1 16 16v96a16 16 0 0 1-16 16H48a16 16 0 0 1-16-16Z"
+                                fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                stroke-width="16" />
+                        </svg>
+                        <span class="side-menu__label">Users</span>
+                    </a>
+                </li>
+
+
+
+                <li class="slide">
+                    <a href="{{ route('categories.index') }}"
+                        class="side-menu__item {{ request()->routeIs('categories.index') ? 'active' : '' }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" viewBox="0 0 256 256">
+                            <path
+                                d="M32 72a16 16 0 0 1 16-16h56l16 16h104a16 16 0 0 1 16 16v96a16 16 0 0 1-16 16H48a16 16 0 0 1-16-16Z"
+                                fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                stroke-width="16" />
+                        </svg>
+                        <span class="side-menu__label">Categories</span>
+                    </a>
+                </li>
+
+                <!-- Sub-Categories -->
+                <li class="slide">
+                    <a href="{{ route('categories.subcategories') }}"
+                        class="side-menu__item {{ request()->routeIs('categories.subcategories') ? 'active' : '' }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" viewBox="0 0 256 256">
+                            <path
+                                d="M32 72a16 16 0 0 1 16-16h56l16 16h104a16 16 0 0 1 16 16v96a16 16 0 0 1-16 16H48a16 16 0 0 1-16-16Z"
+                                fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                stroke-width="16" />
+                        </svg>
+                        <span class="side-menu__label">Sub-Categories</span>
+                    </a>
+                </li>
+
+                <!-- Brands -->
+                <li class="slide">
+                    <a href="{{ route('brands.index') }}"
+                        class="side-menu__item {{ request()->routeIs('brands.*') ? 'active' : '' }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" viewBox="0 0 256 256">
+                            <path d="M48 40h80l80 80-80 80H48a8 8 0 0 1-8-8V48a8 8 0 0 1 8-8z" fill="none"
+                                stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
+                                stroke-width="16" />
+                            <circle cx="84" cy="84" r="12" fill="currentColor" />
+                        </svg>
+                        <span class="side-menu__label">Brands</span>
+                    </a>
+                </li>
+
+
                 <!-- Product Fitments -->
                 <li class="slide">
                     <a href="{{ route('product.fitments.index') }}"
@@ -100,49 +315,12 @@
                         <span class="side-menu__label">Product Fitments</span>
                     </a>
                 </li>
-                <!-- Categories -->
-                <li class="slide">
-                    <a href="{{ route('categories.parents') }}"
-                        class="side-menu__item {{ request()->routeIs('categories.parents') ? 'active' : '' }}">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" viewBox="0 0 256 256">
-                            <path
-                                d="M32 72a16 16 0 0 1 16-16h56l16 16h104a16 16 0 0 1 16 16v96a16 16 0 0 1-16 16H48a16 16 0 0 1-16-16Z"
-                                fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                                stroke-width="16" />
-                        </svg>
-                        <span class="side-menu__label">Categories</span>
-                    </a>
-                </li>
-                <!-- Subcategories -->
-                <li class="slide">
-                    <a href="{{ route('categories.subcategories') }}"
-                        class="side-menu__item {{ request()->routeIs('categories.subcategories') ? 'active' : '' }}">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" viewBox="0 0 256 256">
-                            <path
-                                d="M32 72a16 16 0 0 1 16-16h56l16 16h104a16 16 0 0 1 16 16v96a16 16 0 0 1-16 16H48a16 16 0 0 1-16-16Z"
-                                fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                                stroke-width="16" />
-                        </svg>
-                        <span class="side-menu__label">Subcategories</span>
-                    </a>
-                </li>
-                <!-- Brands -->
-                <li class="slide">
-                    <a href="{{ route('brands.index') }}"
-                        class="side-menu__item {{ request()->routeIs('brands.*') ? 'active' : '' }}">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" viewBox="0 0 256 256">
-                            <path d="M48 40h80l80 80-80 80H48a8 8 0 0 1-8-8V48a8 8 0 0 1 8-8z" fill="none"
-                                stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"
-                                stroke-width="16" />
-                            <circle cx="84" cy="84" r="12" fill="currentColor" />
-                        </svg>
-                        <span class="side-menu__label">Brands</span>
-                    </a>
-                </li>
+
+
                 <!-- Car Data Dropdown -->
                 <li class="slide has-sub">
                     <a href="javascript:void(0);"
-                        class="side-menu__item {{ request()->routeIs('car-makes.*', 'car-models.*', 'engines.*', 'model.engines.*') ? 'active' : '' }}">
+                        class="side-menu__item {{ request()->routeIs('car-makes.*', 'car-models.*', 'engines.*') ? 'active' : '' }}">
                         <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" viewBox="0 0 256 256">
                             <rect width="256" height="256" fill="none" />
                             <rect x="48" y="48" width="64" height="64" rx="8" fill="none"
@@ -162,57 +340,49 @@
                         <i class="ri-arrow-right-s-line side-menu__angle"></i>
                     </a>
                     <ul class="slide-menu child1">
-                        <!-- Car Makes -->
-                        <li>
-                            <a href="{{ route('car-makes.index') }}"
-                                class="side-menu__item {{ request()->routeIs('car-makes.*') ? 'active' : '' }}">
-                                Car Makes
-                            </a>
-                        </li>
-
-                        <!-- Car Models -->
-                        <li>
-                            <a href="{{ route('car-models.index') }}"
-                                class="side-menu__item {{ request()->routeIs('car-models.*') ? 'active' : '' }}">
-                                Car Models
-                            </a>
-                        </li>
-
-                        <!-- Engines -->
-                        <li>
-                            <a href="{{ route('engines.index') }}"
-                                class="side-menu__item {{ request()->routeIs('engines.*') ? 'active' : '' }}">
-                                Engines
-                            </a>
-                        </li>
-
-                        <!-- Model Engines -->
-                        <li>
-                            <a href="{{ route('model.engines.index') }}"
-                                class="side-menu__item {{ request()->routeIs('model.engines.*') ? 'active' : '' }}">
-                                Model Engines
-                            </a>
+                        <li><a href="{{ route('car-makes.index') }}"
+                                class="side-menu__item {{ request()->routeIs('car-makes.*') ? 'active' : '' }}">Car
+                                Makes</a></li>
+                        <li><a href="{{ route('car-models.index') }}"
+                                class="side-menu__item {{ request()->routeIs('car-models.*') ? 'active' : '' }}">Car
+                                Models</a></li>
+                        <li><a href="{{ route('engines.index') }}"
+                                class="side-menu__item {{ request()->routeIs('engines.*') ? 'active' : '' }}">Engines</a>
                         </li>
                     </ul>
                 </li>
-                <!-- GRN (Goods Receipts) -->
+
+
                 <li class="slide">
-                    <a href="{{ route('goods-receipts.index') }}"
-                        class="side-menu__item {{ request()->routeIs('goods-receipts.*') ? 'active' : '' }}">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" viewBox="0 0 24 24">
-                            <rect width="24" height="24" fill="none" />
-                            <path d="M4 4h16v16H4z" fill="none" stroke="currentColor" stroke-width="2"/>
-                            <path d="M8 8h8v2H8zM8 12h8v2H8zM8 16h4v2H8z" fill="currentColor"/>
+                    <a href="{{ route('payments.index') }}"
+                        class="side-menu__item {{ request()->routeIs('payments.*') ? 'active' : '' }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="side-menu__icon" width="20"
+                            height="20" viewBox="0 0 24 24">
+                            <rect x="2" y="5" width="20" height="14" rx="2" ry="2"
+                                stroke="currentColor" fill="none" stroke-width="2" />
+                            <line x1="2" y1="10" x2="22" y2="10" stroke="currentColor"
+                                stroke-width="2" />
                         </svg>
-                        <span class="side-menu__label">Goods Receipts (GRN)</span>
+                        <span class="side-menu__label">Payments</span>
                     </a>
                 </li>
+
+                <!-- Stock Management Dropdown -->
+
+
+
+
+
+
             </ul>
 
-            <div class="slide-right" id="slide-right"><svg xmlns="http://www.w3.org/2000/svg" fill="#7b8191"
-                    width="24" height="24" viewBox="0 0 24 24">
+            <div class="slide-right" id="slide-right">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="#7b8191" width="24" height="24"
+                    viewBox="0 0 24 24">
                     <path d="M10.707 17.707 16.414 12l-5.707-5.707-1.414 1.414L13.586 12l-4.293 4.293z"></path>
-                </svg></div>
+                </svg>
+            </div>
+
         </nav>
     </div>
 </aside>

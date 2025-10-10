@@ -36,7 +36,9 @@
                                 <td>{{ \Carbon\Carbon::parse($grn->received_date)->format('Y-m-d') }}</td>
                                 <td>{{ ucfirst($grn->status) }}</td>
                                 <td>
-                                    <button class="btn btn-info btn-sm view-grn-btn" data-grn-id="{{ $grn->id }}">View</button>
+                                    <button class="btn btn-sm btn-primary-light btn-icon view-grn-btn" data-grn-id="{{ $grn->id }}" title="View">
+                                        <i class="ri-eye-line"></i>
+                                    </button>
                                     {{-- <button class="btn btn-warning btn-sm edit-grn-btn" data-grn-id="{{ $grn->id }}">Edit</button>
                                     <form action="{{ route('goods-receipts.destroy', $grn->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure to delete this GRN?');">@csrf @method('DELETE')<button type="submit" class="btn btn-danger btn-sm">Delete</button></form> --}}
                                 </td>

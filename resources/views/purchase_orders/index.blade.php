@@ -47,13 +47,21 @@
                             </td>
                             <td>R {{ number_format($order->total_amount, 2) }}</td>
                             <td>
-                                <button class="btn btn-info btn-sm view-po-btn" data-po-id="{{ $order->id }}">View</button>
-                                <button class="btn btn-warning btn-sm edit-po-btn" data-po-id="{{ $order->id }}">Edit</button>
-                                <form action="{{ route('purchase-orders.destroy', $order->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this PO?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-danger">Delete</button>
-                                </form>
+                                <div class="btn-list d-inline-flex gap-1">
+                                    <button class="btn btn-sm btn-primary-light btn-icon view-po-btn" data-po-id="{{ $order->id }}" title="View">
+                                        <i class="ri-eye-line"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-success-light btn-icon edit-po-btn" data-po-id="{{ $order->id }}" title="Edit">
+                                        <i class="ri-pencil-line"></i>
+                                    </button>
+                                    <form action="{{ route('purchase-orders.destroy', $order->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this PO?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-danger-light btn-icon" title="Delete">
+                                            <i class="ri-delete-bin-line"></i>
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     @endforeach

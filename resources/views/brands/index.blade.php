@@ -13,8 +13,8 @@
         <!-- Header -->
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h4 class="mb-0">Brands</h4>
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createBrandModal">
-                <i class="bi bi-plus-circle me-1"></i> Add Brand
+            <button class="btn btn-primary" id="openCreateBrandModal">
+                <i class="ri-add-line me-1"></i> Add Brand
             </button>
         </div>
 
@@ -28,6 +28,7 @@
                             <th>Name</th>
                             <th>Logo</th>
                             <th>Status</th>
+                            <th>Products</th>
                             <th class="text-end">Actions</th>
                         </tr>
                     </thead>
@@ -35,13 +36,30 @@
                         @forelse($brands as $brand)
                             <tr>
                                 <td>{{ $loop->iteration + ($brands->currentPage() - 1) * $brands->perPage() }}</td>
-                                <td>{{ $brand->name }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-2">
+                                            @if ($brand->logo)
+                                                <img src="{{ asset($brand->logo) }}" alt="Logo" width="40" height="40" class="rounded-circle">
+                                            @else
+                                                <div class="bg-light rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                                    <i class="ri-award-line text-muted"></i>
+                                                </div>
+                                            @endif
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0">{{ $brand->name }}</h6>
+                                            @if($brand->slug)
+                                                <small class="text-muted">{{ $brand->slug }}</small>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </td>
                                 <td>
                                     @if ($brand->logo)
-                                        <img src="{{ url('public/storage/' . $brand->logo) }}" alt="Logo" width="50"
-                                            height="50" class="rounded">
+                                        <img src="{{ asset($brand->logo) }}" alt="Logo" width="50" height="50" class="rounded">
                                     @else
-                                        -
+                                        <span class="text-muted">-</span>
                                     @endif
                                 </td>
                                 <td>
@@ -51,23 +69,23 @@
                                         <span class="badge rounded-pill bg-secondary-transparent">Inactive</span>
                                     @endif
                                 </td>
+                                <td>
+                                    <span class="badge bg-primary">{{ $brand->products_count ?? 0 }}</span>
+                                </td>
                                 <td class="text-end">
                                     <div class="btn-list">
                                         <!-- View -->
-                                        <a data-bs-toggle="offcanvas" href="#viewBrand{{ $brand->id }}" role="button"
-                                            aria-controls="viewBrand{{ $brand->id }}"
-                                            class="btn btn-sm btn-primary-light btn-icon">
+                                        <button class="btn btn-sm btn-primary-light btn-icon openViewBrandModal" data-id="{{ $brand->id }}" title="View">
                                             <i class="ri-eye-line"></i>
-                                        </a>
+                                        </button>
 
                                         <!-- Edit -->
-                                        <button class="btn btn-sm btn-success-light btn-icon" data-bs-toggle="modal"
-                                            data-bs-target="#editBrand{{ $brand->id }}">
+                                        <button class="btn btn-sm btn-success-light btn-icon openEditBrandModal" data-id="{{ $brand->id }}" title="Edit">
                                             <i class="ri-pencil-line"></i>
                                         </button>
 
                                         <!-- Status Toggle -->
-                                        <form method="POST" action="{{ route('toggle.brand.status', $brand->id) }}" class="d-inline">
+                                        <form method="POST" action="{{ route('brands.toggle-status', $brand->id) }}" class="d-inline">
                                             @csrf
                                             @method('PATCH')
                                             <button type="submit"
@@ -78,119 +96,63 @@
                                         </form>
 
                                         <!-- Delete -->
-                                        <button class="btn btn-sm btn-danger-light btn-icon" data-bs-toggle="modal"
-                                            data-bs-target="#deleteBrand{{ $brand->id }}">
+                                        <button class="btn btn-sm btn-danger-light btn-icon" data-bs-toggle="modal" data-bs-target="#deleteBrand{{ $brand->id }}">
                                             <i class="ri-delete-bin-line"></i>
                                         </button>
                                     </div>
                                 </td>
                             </tr>
 
-                            <!-- Offcanvas: View Brand -->
-                            <div class="offcanvas offcanvas-end" tabindex="-1" id="viewBrand{{ $brand->id }}">
-                                <div class="offcanvas-header">
-                                    <h5>Brand Details</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
-                                </div>
-                                <div class="offcanvas-body">
-                                    <p><strong>Name:</strong> {{ $brand->name }}</p>
-                                    <p><strong>Status:</strong> {{ $brand->status == 'active' ? 'Active' : 'Inactive' }}
-                                    </p>
-                                    <p><strong>Description:</strong> {{ $brand->description ?? '-' }}</p>
-                                    <p>
-                                        <strong>Logo:</strong><br>
-                                        @if ($brand->logo)
-                                            <img src="{{ url('public/storage/' . $brand->logo) }}" width="120"
-                                                class="rounded">
-                                        @else
-                                            No Logo
-                                        @endif
-                                    </p>
-                                </div>
-                            </div>
-
-                            <!-- Modal: Edit Brand -->
-                            <div class="modal fade" id="editBrand{{ $brand->id }}" tabindex="-1">
-                                <div class="modal-dialog">
-                                    <form method="POST" action="{{ route('brands.update', $brand->id) }}"
-                                        enctype="multipart/form-data">
-                                        @csrf
-                                        @method('PUT')
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title">Edit Brand</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                            </div>
-                                            <div class="modal-body">
-                                                <div class="mb-3">
-                                                    <label>Name</label>
-                                                    <input type="text" name="name" class="form-control"
-                                                        value="{{ old('name', $brand->name) }}" required>
-                                                </div>
-
-                                                <div class="mb-3">
-                                                    <label>Logo</label>
-                                                    <input type="file" name="logo" class="form-control">
-                                                    @if ($brand->logo)
-                                                        <img src="{{ asset('storage/' . $brand->logo) }}" width="70"
-                                                            class="mt-2 rounded">
-                                                    @endif
-                                                </div>
-
-                                                <div class="mb-3">
-                                                    <label>Status</label>
-                                                    <select name="status" class="form-select">
-                                                        <option value="active"
-                                                            {{ $brand->status == 'active' ? 'selected' : '' }}>Active
-                                                        </option>
-                                                        <option value="inactive"
-                                                            {{ $brand->status == 'inactive' ? 'selected' : '' }}>Inactive
-                                                        </option>
-                                                    </select>
-                                                </div>
-
-                                                <div class="mb-3">
-                                                    <label>Description</label>
-                                                    <textarea name="description" class="form-control">{{ old('description', $brand->description) }}</textarea>
-                                                </div>
-                                            </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-light"
-                                                    data-bs-dismiss="modal">Cancel</button>
-                                                <button type="submit" class="btn btn-warning">Update</button>
-                                            </div>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-
-                            <!-- Modal: Delete Brand -->
+                            <!-- Delete Modal -->
                             <div class="modal fade" id="deleteBrand{{ $brand->id }}" tabindex="-1">
-                                <div class="modal-dialog">
+                                <div class="modal-dialog modal-dialog-centered">
                                     <form method="POST" action="{{ route('brands.destroy', $brand->id) }}">
                                         @csrf
                                         @method('DELETE')
-                                        <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title">Confirm Delete</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        <div class="modal-content border-0 shadow-lg">
+                                            <div class="modal-header bg-danger text-white">
+                                                <h5 class="modal-title">
+                                                    <i class="ri-delete-bin-line me-2"></i> Delete Brand
+                                                </h5>
+                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                                             </div>
-                                            <div class="modal-body">
-                                                Are you sure you want to delete <strong>{{ $brand->name }}</strong>?
+                                            <div class="modal-body p-4 text-center">
+                                                <!-- Brand Info -->
+                                                <div class="mb-4">
+                                                    @if($brand->logo)
+                                                        <img src="{{ asset($brand->logo) }}" alt="{{ $brand->name }}" class="rounded-circle mb-3" style="width: 80px; height: 80px; object-fit: cover;">
+                                                    @else
+                                                        <div class="bg-light rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 80px; height: 80px;">
+                                                            <i class="ri-award-line text-muted fs-24"></i>
+                                                        </div>
+                                                    @endif
+                                                    <h5 class="mb-1">{{ $brand->name }}</h5>
+                                                    <span class="badge bg-{{ $brand->status === 'active' ? 'success' : 'secondary' }}">
+                                                        {{ ucfirst($brand->status) }}
+                                                    </span>
+                                                </div>
+
+                                                <!-- Simple Warning -->
+                                                <div class="alert alert-warning" role="alert">
+                                                    <i class="ri-alert-line me-2"></i>
+                                                    <strong>Are you sure?</strong> This brand will be moved to trash and can be restored later.
+                                                </div>
                                             </div>
-                                            <div class="modal-footer">
-                                                <button type="button" class="btn btn-light"
-                                                    data-bs-dismiss="modal">Cancel</button>
-                                                <button type="submit" class="btn btn-danger">Delete</button>
+                                            <div class="modal-footer bg-light">
+                                                <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+                                                    <i class="ri-close-line me-1"></i> Cancel
+                                                </button>
+                                                <button type="submit" class="btn btn-danger">
+                                                    <i class="ri-delete-bin-line me-1"></i> Delete Brand
+                                                </button>
                                             </div>
                                         </div>
                                     </form>
                                 </div>
                             </div>
-
                         @empty
                             <tr>
-                                <td colspan="5" class="text-center text-muted">No brands found</td>
+                                <td colspan="6" class="text-center text-muted">No brands found</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -203,62 +165,53 @@
                     <div>
                         @if ($brands->total())
                             Showing {{ $brands->firstItem() }} to {{ $brands->lastItem() }} of
-                            {{ $brands->total() }} entries
+                            {{ $brands->total() }} results
                         @endif
                     </div>
                     <div class="ms-auto">
-                        <nav aria-label="Page navigation">
-                            {{ $brands->links() }}
-                        </nav>
+                        {{ $brands->links() }}
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Modal: Create Brand -->
-    <div class="modal fade" id="createBrandModal" tabindex="-1">
-        <div class="modal-dialog">
-            <form method="POST" action="{{ route('brands.store') }}" enctype="multipart/form-data">
-                @csrf
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Add Brand</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label>Name</label>
-                            <input type="text" name="name" class="form-control" value="{{ old('name') }}"
-                                required>
-                        </div>
-
-                        <div class="mb-3">
-                            <label>Logo</label>
-                            <input type="file" name="logo" class="form-control">
-                        </div>
-
-                        <div class="mb-3">
-                            <label>Status</label>
-                            <select name="status" class="form-select">
-                                <option value="active" {{ old('status', 'active') == 'active' ? 'selected' : '' }}>Active
-                                </option>
-                                <option value="inactive" {{ old('status') == 'inactive' ? 'selected' : '' }}>Inactive
-                                </option>
-                            </select>
-                        </div>
-
-                        <div class="mb-3">
-                            <label>Description</label>
-                            <textarea name="description" class="form-control">{{ old('description') }}</textarea>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Create</button>
-                    </div>
-                </div>
-            </form>
+    <!-- Brand Modals -->
+    <div class="modal fade" id="brandModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content" id="brandModalContent"></div>
         </div>
     </div>
 @endsection
+
+@push('scripts')
+    <script>
+        $(document).ready(function() {
+            // Create Brand
+            $('#openCreateBrandModal').on('click', function() {
+                $.get("{{ route('brands.create-modal') }}", function(html) {
+                    $('#brandModalContent').html(html);
+                    $('#brandModal').modal('show');
+                });
+            });
+
+            // View Brand
+            $(document).on('click', '.openViewBrandModal', function() {
+                var id = $(this).data('id');
+                $.get("{{ route('brands.view-modal', ':id') }}".replace(':id', id), function(html) {
+                    $('#brandModalContent').html(html);
+                    $('#brandModal').modal('show');
+                });
+            });
+
+            // Edit Brand
+            $(document).on('click', '.openEditBrandModal', function() {
+                var id = $(this).data('id');
+                $.get("{{ route('brands.edit-modal', ':id') }}".replace(':id', id), function(html) {
+                    $('#brandModalContent').html(html);
+                    $('#brandModal').modal('show');
+                });
+            });
+        });
+    </script>
+@endpush

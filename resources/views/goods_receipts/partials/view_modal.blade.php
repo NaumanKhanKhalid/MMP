@@ -34,7 +34,7 @@
                         <div class="d-flex align-items-center gap-2">
                             <span class="fw-bold">{{ $grn->purchaseOrder->po_number }}</span>
                             <span class="badge bg-info">{{ ucfirst($grn->purchaseOrder->status) }}</span>
-                            <button class="btn btn-outline-primary btn-sm view-po-btn" data-po-id="{{ $grn->purchaseOrder->id }}">View PO</button>
+                            {{-- <button class="btn btn-outline-primary btn-sm view-po-btn" data-po-id="{{ $grn->purchaseOrder->id }}">View PO</button> --}}
                         </div>
                     @else
                         <span class="text-muted">No PO linked</span>
@@ -76,10 +76,10 @@
                             <tr>
                                 <td>{{ $batch->product->name ?? '-' }}</td>
                                 <td><span class="badge bg-primary">{{ $batch->batch_code }}</span></td>
-                                <td>{{ number_format($batch->qty_received, 4) }}</td>
-                                <td><span class="badge bg-success">{{ number_format($batch->qty_left, 4) }}</span></td>
-                                <td>${{ number_format($batch->landed_unit_cost, 2) }}</td>
-                                <td class="fw-bold">${{ number_format($batch->qty_received * $batch->landed_unit_cost, 2) }}</td>
+                                <td>{{ number_format($batch->qty_received, 0) }}</td>
+                                <td><span class="badge bg-success">{{ number_format($batch->qty_left, 0) }}</span></td>
+                                <td>R {{ number_format($batch->landed_unit_cost, 2) }}</td>
+                                <td class="fw-bold">R {{ number_format($batch->qty_received * $batch->landed_unit_cost, 2) }}</td>
                             </tr>
                         @endforeach
                     </tbody>

@@ -32,17 +32,33 @@ class AuthController extends Controller
             'password' => 'required',
         ]);
 
+        $user = User::where('email', $request->email)->first();
+
+        // Check if user exists and is not locked
+        if ($user && $user->isLocked()) {
+            return back()->with('error', 'Account is temporarily locked. Please try again later.');
+        }
+
         $credentials = $request->only('email', 'password');
 
         if (Auth::attempt($credentials)) {
             $user = Auth::user();
 
-            // Reset OTP attempts on fresh login
+            // Check if user is active
+            if (!$user->isActive()) {
+                Auth::logout();
+                return back()->with('error', 'Your account is inactive. Please contact administrator.');
+            }
+
+            // Reset login attempts and update last login
+            $user->login_attempts = 0;
+            $user->locked_until = null;
+            $user->last_login_at = now();
             $user->two_factor_attempts = 0;
             $user->save();
 
             // 🔐 Force password change
-            if ($user->force_password_change) {
+            if ($user->force_password_change || $user->first_login) {
                 return redirect()->route('change.password.get')
                     ->with('info', 'Please change your password on first login.');
             }
@@ -62,6 +78,18 @@ class AuthController extends Controller
 
             return redirect()->intended('dashboard')
                 ->with('success', 'Login successful!');
+        }
+
+        // Handle failed login attempts
+        if ($user) {
+            $user->increment('login_attempts');
+            
+            // Lock account after 5 failed attempts for 30 minutes
+            if ($user->login_attempts >= 5) {
+                $user->locked_until = Carbon::now()->addMinutes(30);
+                $user->save();
+                return back()->with('error', 'Too many failed attempts. Account locked for 30 minutes.');
+            }
         }
 
         return back()->with('error', 'Invalid credentials provided.');
@@ -125,6 +153,7 @@ class AuthController extends Controller
             $user = Auth::user();
             $user->password = Hash::make($request->password);
             $user->force_password_change = false;
+            $user->first_login = false; // Mark as not first login anymore
             $user->save();
 
             return redirect()->intended('dashboard')

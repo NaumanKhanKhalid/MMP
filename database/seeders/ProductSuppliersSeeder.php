@@ -12,7 +12,7 @@ class ProductSuppliersSeeder extends Seeder
     {
         $now = Carbon::now();
 
-        DB::table('product_supplier')->insert([
+        DB::table('product_supplier')->insertOrIgnore([
             [
                 'product_id' => 1,
                 'supplier_id' => 1,

@@ -29,14 +29,14 @@ class UserController extends Controller
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
+            'phone' => 'nullable|string|max:20',
             'role' => 'required|in:staff,manager',
             'status' => 'required|in:active,inactive',
-            'password' => 'required|min:6'
+            'password' => 'required|min:6',
+            'notes' => 'nullable|string|max:1000',
         ]);
 
         try {
-
-
             $role = Role::where('name', $request->role)->first();
 
             if (!$role) {
@@ -46,9 +46,12 @@ class UserController extends Controller
             User::create([
                 'name' => $request->name,
                 'email' => $request->email,
+                'phone' => $request->phone,
                 'status' => $request->status,
                 'role_id' => $role->id,
                 'password' => Hash::make($request->password),
+                'notes' => $request->notes,
+                'first_login' => true, // Force password change on first login
             ]);
 
             return back()->with('success', 'User created successfully!');
@@ -60,18 +63,19 @@ class UserController extends Controller
         }
     }
 
-    // Update role
+    // Update user
     public function update(Request $request, User $user)
     {
-
         $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,' . $user->id,
+            'phone' => 'nullable|string|max:20',
             'role' => 'required|in:staff,manager',
             'status' => 'required|in:active,inactive',
+            'notes' => 'nullable|string|max:1000',
         ]);
 
         try {
-
-
             $role = Role::where('name', $request->role)->first();
 
             if (!$role) {
@@ -79,16 +83,20 @@ class UserController extends Controller
             }
 
             $user->update([
+                'name' => $request->name,
+                'email' => $request->email,
+                'phone' => $request->phone,
                 'role_id' => $role->id,
                 'status' => $request->status,
+                'notes' => $request->notes,
             ]);
 
-            return back()->with('success', 'Role updated successfully!');
+            return back()->with('success', 'User updated successfully!');
         } catch (\Illuminate\Validation\ValidationException $e) {
             return back()->withErrors($e->validator)->withInput();
         } catch (\Exception $e) {
-            Log::error("Role update error: " . $e->getMessage());
-            return back()->with('error', 'Failed to update role.');
+            Log::error("User update error: " . $e->getMessage());
+            return back()->with('error', 'Failed to update user.');
         }
     }
 
@@ -138,23 +146,19 @@ class UserController extends Controller
 
     public function userProfileUpdate(Request $request)
     {
-
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email,' . $request->user()->id,
+            'phone' => 'nullable|string|max:20',
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
         ]);
 
-
         try {
-
-            $data = $request->only(['name', 'email']);
+            $data = $request->only(['name', 'email', 'phone']);
 
             // Avatar upload
             if ($request->hasFile('avatar')) {
                 $path = $request->file('avatar')->store('avatars', 'public');
-
-                // Full URL banani hai
                 $data['avatar'] = asset('storage/app/public/' . $path);
             }
 
@@ -162,7 +166,6 @@ class UserController extends Controller
 
             return back()->with('success', 'Profile updated successfully!');
         } catch (\Exception $e) {
-            dd($e->getMessage());
             Log::error("Profile update error: " . $e->getMessage());
             return back()->with('error', 'Failed to update profile.');
         }
@@ -220,6 +223,21 @@ class UserController extends Controller
         $user->save();
 
         return back()->with('success', 'User status updated successfully.');
+    }
+
+    public function createModal()
+    {
+        return view('users.partials.create_modal');
+    }
+
+    public function viewModal(User $user)
+    {
+        return view('users.partials.view_modal', compact('user'));
+    }
+
+    public function editModal(User $user)
+    {
+        return view('users.partials.edit_modal', compact('user'));
     }
 
 }

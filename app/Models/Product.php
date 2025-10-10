@@ -25,6 +25,9 @@ class Product extends Model
         'price_online',
         'price_workshop',
         'reorder_level',
+        'on_hand',
+        'reserved',
+        'on_order',
         'allow_negative',
         'special_order',
         'status',
@@ -38,6 +41,9 @@ class Product extends Model
         'price_normal' => 'decimal:2',
         'price_online' => 'decimal:2',
         'price_workshop' => 'decimal:2',
+        'on_hand' => 'decimal:3',
+        'reserved' => 'decimal:3',
+        'on_order' => 'decimal:3',
     ];
 
     // Auto-generate SKU & Barcode

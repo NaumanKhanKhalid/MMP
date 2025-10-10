@@ -145,7 +145,7 @@
                                             <small class="text-muted">Format: Letter-Number (e.g., A-16, B-05)</small>
                                         </div>
                                         <div class="col-md-6 mb-3">
-                                            <label class="form-label">Reorder Level</label>
+                                            <label class="form-label">Reorder Level (Target Stock)</label>
                                             <input type="number" name="reorder_level" class="form-control"
                                                 placeholder="0" min="0">
                                             <small class="text-muted">Alert when stock falls below this level</small>
@@ -157,6 +157,47 @@
                                                 <option value="inactive">Inactive</option>
                                             </select>
                                         </div>
+
+                                        {{-- Opening Stock Section --}}
+                                        <div class="col-md-12 mt-3 mb-2">
+                                            <h6 class="border-bottom pb-2 text-primary">
+                                                <i class="bi bi-box-seam me-2"></i>Opening Stock (Optional)
+                                            </h6>
+                                            <small class="text-muted">Add initial stock when creating product. Leave blank if no opening stock.</small>
+                                        </div>
+
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label">Initial Quantity on Hand</label>
+                                            <input type="number" name="initial_qty" class="form-control"
+                                                placeholder="0" min="0" id="initial_qty_input">
+                                            <small class="text-muted">Opening stock quantity</small>
+                                        </div>
+
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label">Initial Cost Price (R)</label>
+                                            <input type="number" step="0.01" name="initial_cost" class="form-control"
+                                                placeholder="0.00" min="0" id="initial_cost_input">
+                                            <small class="text-muted">Cost per unit for opening stock</small>
+                                        </div>
+
+                                        <div class="col-md-4 mb-3">
+                                            <label class="form-label">Primary Supplier</label>
+                                            <select name="primary_supplier_id" class="form-select select2-primary-supplier" id="primary_supplier_input">
+                                                <option value="">Select Supplier</option>
+                                                @foreach ($suppliers as $s)
+                                                    <option value="{{ $s->id }}">{{ $s->name }}</option>
+                                                @endforeach
+                                            </select>
+                                            <small class="text-muted">Main supplier for this product</small>
+                                        </div>
+
+                                        <div class="col-md-12 mb-3">
+                                            <label class="form-label">Supplier's SKU/Code</label>
+                                            <input type="text" name="supplier_sku" class="form-control"
+                                                placeholder="Supplier's product code">
+                                            <small class="text-muted">The SKU/code used by your primary supplier for this product</small>
+                                        </div>
+
                                         <div class="col-md-12 mb-3">
                                             <div class="form-check form-switch mb-2">
                                                 <input class="form-check-input" type="checkbox" name="allow_negative"
@@ -321,6 +362,13 @@
                             allowClear: true,
                             width: '100%'
                         });
+
+                        $('.select2-primary-supplier').select2({
+                            dropdownParent: $('#createProductModal'),
+                            placeholder: 'Select Primary Supplier',
+                            allowClear: true,
+                            width: '100%'
+                        });
                     }
 
                     // Initialize Tagify for OE Numbers and Cross Refs
@@ -388,7 +436,7 @@
                         $(this).find('form')[0].reset();
 
                         // Destroy Select2
-                        $('.select2-create-brand, .select2-create-category, .select2-create-subcategory, .select2-create-suppliers')
+                        $('.select2-create-brand, .select2-create-category, .select2-create-subcategory, .select2-create-suppliers, .select2-primary-supplier')
                             .select2('destroy');
 
                         // Destroy Tagify

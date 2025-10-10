@@ -208,7 +208,7 @@ class PurchaseOrderController extends Controller
         $anyReceived = false;
         foreach ($poItems as $item) {
             // Sum received qty from all GRN batches for this PO item
-            $receivedQty = \App\Models\GoodsReceipt::where('po_id', $purchaseOrder->id)
+            $receivedQty = \App\Models\GoodsReceipt::where('purchase_order_id', $purchaseOrder->id)
                 ->whereHas('batches', function($q) use ($item) {
                     $q->where('product_id', $item->product_id);
                 })

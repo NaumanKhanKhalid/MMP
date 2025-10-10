@@ -50,12 +50,12 @@ class ProductFitmentController extends Controller
         ]);
 
         $fitment->update($data);
-        return redirect()->route('fitments.index')->with('success', 'Product fitment updated successfully.');
+        return redirect()->route('product.fitments.index')->with('success', 'Product fitment updated successfully.');
     }
 
     public function destroy(ProductFitment $fitment)
     {
         $fitment->delete();
-        return redirect()->route('fitments.index')->with('success', 'Product fitment deleted successfully.');
+        return redirect()->route('product.fitments.index')->with('success', 'Product fitment deleted successfully.');
     }
 }

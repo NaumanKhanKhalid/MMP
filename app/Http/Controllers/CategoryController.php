@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Category;
-use Illuminate\Support\Str;
 use App\Http\Requests\CategoryRequest;
+use App\Models\Category;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class CategoryController extends Controller
 {
@@ -17,17 +17,37 @@ class CategoryController extends Controller
 
     public function parentCategories()
     {
-        $categories = Category::whereNull('parent_id')->orderBy('name')->paginate(15);
-        return view('categories.parents', compact('categories'));
+        // Show only MAIN categories (no parent)
+        $categories = Category::with('children', 'products')
+            ->whereNull('parent_id')
+            ->orderBy('name', 'asc')
+            ->paginate(15);
+
+        return view('categories.main_categories', compact('categories'));
     }
 
+    public function subCategories()
+    {
+        // Show only SUB-categories (has parent)
+        $categories = Category::with('parent', 'products')
+            ->whereNotNull('parent_id')
+            ->orderBy('name', 'asc')
+            ->paginate(15);
+
+        return view('categories.sub_categories', compact('categories'));
+    }
 
     public function storeParent(CategoryRequest $request)
     {
         $data = $this->prepareData($request);
         Category::create($data);
 
-        return redirect()->route('categories.parents')->with('success', 'Category created successfully.');
+        // Check if it's a main category or sub-category
+        if ($request->parent_id) {
+            return redirect()->route('categories.subcategories')->with('success', 'Sub-category created successfully.');
+        }
+
+        return redirect()->route('categories.index')->with('success', 'Category created successfully.');
     }
 
     public function editParent(Category $category)
@@ -35,69 +55,36 @@ class CategoryController extends Controller
         return view('categories.index', compact('category'));
     }
 
-
     public function updateParent(CategoryRequest $request, Category $category)
     {
         $data = $this->prepareData($request, $category->id, $category);
         $category->update($data);
 
-        return redirect()->route('categories.parents')->with('success', 'Category updated successfully.');
+        // Check if it's a main category or sub-category
+        if ($category->parent_id) {
+            return redirect()->route('categories.subcategories')->with('success', 'Sub-category updated successfully.');
+        }
+
+        return redirect()->route('categories.index')->with('success', 'Category updated successfully.');
     }
 
     public function destroyParent(Category $category)
     {
         if ($category->logo) {
-            Storage::disk('public')->delete($category->logo);
+            // Remove 'public/' prefix if exists before deleting
+            $logoPath = str_replace('public/storage/', '', $category->logo);
+            Storage::disk('public')->delete($logoPath);
         }
         $category->delete();
 
-        return redirect()->route('categories.parents')->with('success', 'Category deleted successfully.');
-    }
+        // Check if it was a main category or sub-category
+        $wasSubCategory = $category->parent_id !== null;
 
-    /*
-    |--------------------------------------------------------------------------
-    | SUBCATEGORIES
-    |--------------------------------------------------------------------------
-    */
-
-    public function subCategories()
-    {
-        $parents = Category::whereNull('parent_id')->orderBy('name')->get();
-        $categories = Category::whereNotNull('parent_id')->with('parent')->orderBy('name')->paginate(15);
-        return view('categories.subcategories', compact('categories', 'parents'));
-    }
-
-
-    public function storeSub(CategoryRequest $request)
-    {
-        $data = $this->prepareData($request);
-        Category::create($data);
-
-        return redirect()->route('categories.subcategories')->with('success', 'Subcategory created successfully.');
-    }
-
-    public function editSub(Category $category)
-    {
-        $parents = Category::whereNull('parent_id')->where('id', '!=', $category->id)->orderBy('name')->get();
-        return view('categories.subcategories', compact('category', 'parents'));
-    }
-
-    public function updateSub(CategoryRequest $request, Category $category)
-    {
-        $data = $this->prepareData($request, $category->id, $category);
-        $category->update($data);
-
-        return redirect()->route('categories.subcategories')->with('success', 'Subcategory updated successfully.');
-    }
-
-    public function destroySub(Category $category)
-    {
-        if ($category->logo) {
-            Storage::disk('public')->delete($category->logo);
+        if ($wasSubCategory) {
+            return redirect()->route('categories.subcategories')->with('success', 'Sub-category deleted successfully.');
         }
-        $category->delete();
 
-        return redirect()->route('categories.subcategories')->with('success', 'Subcategory deleted successfully.');
+        return redirect()->route('categories.index')->with('success', 'Category deleted successfully.');
     }
 
     /*
@@ -113,13 +100,6 @@ class CategoryController extends Controller
 
         return redirect()->back()->with('success', 'Category status updated.');
     }
-    public function toggleStatusSub(Category $category)
-    {
-        $category->status = $category->status === 'active' ? 'inactive' : 'active';
-        $category->save();
-
-        return redirect()->back()->with('success', 'Subcategory status updated.');
-    }
 
     /*
     |--------------------------------------------------------------------------
@@ -133,11 +113,26 @@ class CategoryController extends Controller
         $data['slug'] = $this->uniqueSlug($data['name'], $ignoreId);
         $data['status'] = $data['status'] ?? 'active';
 
+        // Handle logo upload
         if ($request->hasFile('logo')) {
             if ($existingCategory && $existingCategory->logo) {
-                Storage::disk('public')->delete($existingCategory->logo);
+                // Remove 'public/storage/' prefix if exists before deleting
+                $oldPath = str_replace('public/storage/', '', $existingCategory->logo);
+                Storage::disk('public')->delete($oldPath);
             }
-            $data['logo'] = $request->file('logo')->store('category_logos', 'public');
+            // Store file and add 'public/storage/' prefix
+            $path = $request->file('logo')->store('category_logos', 'public');
+            $data['logo'] = 'public/storage/' . $path;
+        }
+
+        // Handle logo removal
+        if ($request->has('remove_logo') && $request->remove_logo == '1') {
+            if ($existingCategory && $existingCategory->logo) {
+                // Remove 'public/' prefix if exists before deleting
+                $oldPath = str_replace('public/storage/', '', $existingCategory->logo);
+                Storage::disk('public')->delete($oldPath);
+            }
+            $data['logo'] = null;
         }
 
         return $data;
@@ -151,12 +146,38 @@ class CategoryController extends Controller
 
         while (
             Category::where('slug', $slug)
-                ->when($ignoreId, fn($query) => $query->where('id', '!=', $ignoreId))
+                ->when($ignoreId, fn ($query) => $query->where('id', '!=', $ignoreId))
                 ->exists()
         ) {
-            $slug = $base . '-' . $i++;
+            $slug = $base.'-'.$i++;
         }
 
         return $slug;
+    }
+
+    public function createCategoryModal()
+    {
+        $parentCategories = Category::whereNull('parent_id')->orderBy('name')->get();
+
+        return view('categories.partials.create_category_modal', compact('parentCategories'));
+    }
+
+    public function createSubCategoryModal()
+    {
+        $parentCategories = Category::whereNull('parent_id')->orderBy('name')->get();
+
+        return view('categories.partials.create_subcategory_modal', compact('parentCategories'));
+    }
+
+    public function viewModal(Category $category)
+    {
+        return view('categories.partials.view_modal', compact('category'));
+    }
+
+    public function editModal(Category $category)
+    {
+        $parentCategories = Category::whereNull('parent_id')->where('id', '!=', $category->id)->orderBy('name')->get();
+
+        return view('categories.partials.edit_modal', compact('category', 'parentCategories'));
     }
 }
