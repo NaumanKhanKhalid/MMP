@@ -142,6 +142,84 @@
             body { margin: 0; padding: 0; }
             .invoice-container { box-shadow: none; }
             .no-print { display: none; }
+            .page-break { page-break-before: always; }
+        }
+        
+        /* Terms and Conditions Styles - Compact for single page */
+        .terms-container {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        
+        .terms-title {
+            margin: 0 0 8px 0;
+            color: #007bff;
+            font-size: 14px;
+            font-weight: bold;
+            text-align: center;
+            text-transform: uppercase;
+        }
+        
+        .terms-subtitle {
+            margin: 8px 0 6px 0;
+            font-size: 10px;
+            font-weight: bold;
+            text-align: center;
+            color: #333;
+        }
+        
+        .terms-content {
+            font-size: 9px;
+            line-height: 1.3;
+            color: #333;
+        }
+        
+        .terms-list {
+            margin: 6px 0;
+            padding-left: 15px;
+        }
+        
+        .terms-list li {
+            margin-bottom: 3px;
+        }
+        
+        .signature-section {
+            margin-top: 15px;
+            border-top: 1px solid #ccc;
+            padding-top: 10px;
+        }
+        
+        .signature-text {
+            margin: 3px 0;
+            font-size: 10px;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        .signature-fields {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            font-size: 9px;
+        }
+        
+        .signature-field {
+            text-align: center;
+            flex: 1;
+        }
+        
+        .signature-field p {
+            margin: 0;
+            font-weight: bold;
+        }
+        
+        .signature-line {
+            border-bottom: 1px solid #000;
+            height: 20px;
+            margin: 3px 10px 0 10px;
         }
     </style>
 </head>
@@ -309,6 +387,21 @@
             @endswitch
         </div>
 
+        <!-- Banking Details -->
+        @if(\App\Models\Setting::showBankOnInvoices())
+        <div style="margin-top: 20px; padding: 15px; background-color: #fff3cd; border-radius: 5px; border-left: 4px solid #ffc107;">
+            <h4 style="margin-top: 0; color: #856404;">Banking Details:</h4>
+            <div style="font-size: 14px; color: #856404;">
+                <strong>Bank:</strong> {{ \App\Models\Setting::bankName() }}<br>
+                <strong>Account Name:</strong> {{ \App\Models\Setting::bankAccountName() }}<br>
+                <strong>Account Type:</strong> {{ \App\Models\Setting::bankAccountType() }}<br>
+                <strong>Account Number:</strong> {{ \App\Models\Setting::bankAccountNumber() }}<br>
+                <strong>Branch Code:</strong> {{ \App\Models\Setting::bankBranchCode() }}<br>
+                <strong>Reference:</strong> {{ \App\Models\Setting::bankReference() }}
+            </div>
+        </div>
+        @endif
+
         <!-- Notes -->
         @if($invoice->notes)
         <div class="notes">
@@ -324,6 +417,69 @@
             @if($invoice->reference)
             <p><strong>Reference:</strong> {{ $invoice->reference }}</p>
             @endif
+        </div>
+
+        <!-- Terms and Conditions -->
+        <div class="page-break"></div>
+        
+        <div class="terms-container">
+            <h3 class="terms-title">DELIVERY NOTE/ TERMS & CONDITIONS/ PURCHASE AGREEMENT:</h3>
+            
+            <p class="terms-subtitle">
+                UPON SIGNING THIS DOCUMENT, IT MEANS THAT THE CLIENT HAS READ AND AGREED TO ALL THE STIPULATED POINTS MENTIONED BELOW:
+            </p>
+            
+            <div class="terms-content">
+                <ol class="terms-list">
+                    <li>THE PURCHASER CONFIRMS THAT HE/SHE HAS EXAMINED AND/OR INSPECTED THE PARTS BEFORE PURCHASING AND SUPPLIED TO HIM/HER.</li>
+                    <li>PARTS CORRECTLY SUPPLIED ARE NOT RETURNABLE/ REFUNDABLE. NO EXCEPTIONS.</li>
+                    <li>INCORRECTLY SUPPLIED OR FAULTY PARTS MUST BE RETURNED TO THE SUPPLIER WITHIN 3 WORKING DAYS OF PURCHASE UNLESS OTHERWISE ARRANGED IN WRITING WITH MANAGEMENT.</li>
+                    <li>PLEASE ALLOW UP TO 24 HOURS TO PROCESS EXCHANGE/RETURN PARTS.</li>
+                    <li>THERE WILL BE NO RETURN/EXCHANGE OR CREDIT ON AN INCORRECTLY SUPPLIED PART IF:
+                        <br>a. PURCHASER FAILS TO RETURN THE PART WITHIN 3 DAYS OF PURCHASE
+                        <br>b. PURCHASER ACQUIRES THE PART ELSEWHERE WITHOUT MAKING PRIOR ARRANGEMENTS WITH THE SUPPLIER.
+                        <br>c. THE PART HAS BEEN PARTIALLY OR ENTIRELY DISASSEMBLED, PHYSICALLY ALTERED, INSTALLED/AFFIXED/ATTACHED/JOINED/ADDED TO/BLENDED OR COMBINED WITHIN OTHER GOODS OR PROPERTY, TAMPERED WITH, MODIFIED, STRIPPED OR OPENED IN ANY WAY. NO DAMAGE REPORT HAS BEEN FILLED OUT.
+                    </li>
+                    <li>THERE IS NO GUARANTEE OR EXCHANGE OF ELECTRICAL PARTS WHATSOEVER.</li>
+                    <li>DO NOT USE SILICONE ON THE ELECTRIC WATER PUMPS!</li>
+                    <li>WATER PUMPS ARE AN ELECTRICAL ITEM AND THUS DO NOT CARRY ANY WARRANTY!</li>
+                    <li>PARTS WILL ONLY BE EXCHANGED ON PRESENTATION OF THE ORIGINAL INVOICE SIGNED BY THE PURCHASER.</li>
+                    <li>CREDIT NOTES ARE VALID FOR 6 MONTHS AND ARE NOT TRANSFERABLE, GOODS WILL ONLY BE SUPPLIED ON CREDIT, ON PRESENTATION OF THE ORIGINAL CREDIT NOTE.</li>
+                    <li>NO CUT SECTIONS WILL BE TAKEN BACK BY THE SUPPLIER. SECTIONS MUST BE PAID FOR IN FULL BEFORE THE SUPPLIER WILL BEGIN CUTTING AND MUST BE MARKED OUT BY THE CLIENT WITH THE SALESMAN.</li>
+                    <li>NO VEHICLE OR SHELLS WILL BE TAKEN BACK BY THE SUPPLIER. 50% DEPOSIT MUST BE PAID FOR IN FULL BEFORE THE SUPPLIER WILL BEGIN STRIPPING AND BALANCE PAID AND RELEVANT DOCUMENTATION PROVIDED BEFORE THE SHELL/VEHICLE IS RELEASED.</li>
+                    <li>ENGINES AND/OR GEARBOX WARRANTYS ARE ONLY VALID IF THE PURCHASER HAS SIGNED AN ENGINE/GEARBOX CONTRACT FORM WITH THE SUPPLIER.</li>
+                    <li>INTERNAL SECONDHAND ENGINE PARTS (INJECTORS, PISTONS, CAMSHAFTS, OIL PUMPS.CRANKSHAFT ETC) CARRY NO GUARANTEE OR WARRANTY UNLESS STATED OTHERWISE IN WRITING.</li>
+                    <li>THE SUPPLIER IS NOT LIABLE FOR ANY COURIER/TRANSPORT/LABOUR/ENGINEERING OR MECHANICAL OR RECURRING COSTS INCURRED SHOULD THE PART BE EXCHANGED.</li>
+                    <li>THE RISK IN AND TO ANY PARTS SHALL BE PASSED ONTO THE PURCHASER ON THE DATE OF DELIVERY/PURCHASE. THE SUPPLIER IS FURTHER NOT LIABLE FOR ANY DAMAGES OR LOSS INCURRED BY THE COURIER COMPANY FOR GOODS IN TRANSIT AND INSURANCE OF SUCH ITEMS IS AT THE DISCRETION OF THE PURCHASER.</li>
+                    <li>A DEPOSIT SALE IS A BINDING CONTRACT BETWEEN BOTH THE SUPPLIER AND THE CLIENT. A DEPOSIT SALE IS TO BE PAID IN FULL WITHIN 30 DAYS UNLESS OTHERWISE STIPULATED. SHOULD THE BALANCE OF THE DEPOSIT NOT BE PAID WITHIN THE PRESCRIBED PERIOD, THERE WILL BE NO REFUND OR CREDIT NOTE ISSUED AND THE DEPOSIT WILL BE FORFEITED. SHOULD THE CLIENT WISH TO CANCEL THE CONTRACT WITHIN THE 30-DAY PERIOD AND ONLY IF SUCH IS AGREED BY THE MANAGEMENT, THE CLIENT WILL BE CHARGED A 20% HANDLING FEE OF THE FULL PRICE OF THE CONTRACT AND THE REFUND OF THE AMOUNT LESS 20% WILL ONLY BE MADE ONCE THE SUPPLIER HAS RESOLD THE PART OR VEHICLE.</li>
+                    <li>NO LIABILITY WHATSOEVER SHALL ARISE FURTHERMORE ON THE PART OF THE SUPPLIER FROM ANY REPRESENTATION(S) MADE OR ALLEGED TO HAVE BEEN MADE AT ANY TIME IN RESPECT OF PARTS SUPPLIED BY THE SUPPLIER AND ITS REPRESENTATIVES TO THE PURCHASER.</li>
+                    <li>GOODS REMAIN ON PROPERTY UNTIL PAID IN FULL</li>
+                    <li>NO REFUNDS ARE GIVEN ONLY CREDIT, UNLESS STIPULATED OTHERWISE BY THE SUPPLIER IN WRITING.</li>
+                    <li>USED PARTS SALES: USED PARTS ARE SOLD "AS IS" AND ARE NOT RETURNABLE, EXCHANGEABLE, OR WARRANTED, UNLESS OTHERWISE STIPULATED IN WRITING BY THE SELLER. NO WARRANTY IS GIVEN ON USED PARTS, UNLESS EXPLICITLY STATED IN WRITING PRIOR TO SALE.</li>
+                    <li>THERE WILL BE A HANDLING FEE OF 5% FOR PARTS SUPPLIED CORRECTLY THAT ARE RETURNED/EXCHANGED DUE TO INCORRECT DIAGNOSIS. THIS STRICTLY EXCLUDES ALL ELECTRICAL PARTS.</li>
+                </ol>
+                
+                <div class="signature-section">
+                    <p class="signature-text">
+                        I, ______________________________________ (CLIENT NAME), UNDERSTAND AND AGREE TO THE ABOVE TERMS AND CONDITIONS.
+                    </p>
+                    
+                    <div class="signature-fields">
+                        <div class="signature-field">
+                            <p>CLIENTS SIGNATURE</p>
+                            <div class="signature-line"></div>
+                        </div>
+                        <div class="signature-field">
+                            <p>INVOICE NUMBER</p>
+                            <div class="signature-line"></div>
+                        </div>
+                        <div class="signature-field">
+                            <p>DATE</p>
+                            <div class="signature-line"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 

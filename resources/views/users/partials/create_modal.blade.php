@@ -29,9 +29,9 @@
             </div>
             <div class="col-md-6 mb-3">
                 <label class="form-label fw-bold">User Role <span class="text-danger">*</span></label>
-                <select name="role_id" class="form-control" required id="user_role_select">
-                    @foreach(\App\Models\Role::all() as $role)
-                        <option value="{{ $role->id }}">{{ ucfirst($role->name) }}</option>
+                <select name="role" class="form-control" required id="user_role_select">
+                    @foreach(\App\Models\Role::whereIn('name', ['staff', 'manager'])->get() as $role)
+                        <option value="{{ $role->name }}">{{ ucfirst($role->name) }}</option>
                     @endforeach
                 </select>
             </div>
@@ -66,21 +66,36 @@
 
 <script>
 $(document).ready(function() {
-    // Show/hide 2FA based on role
-    $('#user_role_select').on('change', function() {
-        var roleId = $(this).val();
-        var roleName = $(this).find('option:selected').text().toLowerCase();
+    // Handle form submission
+    $('#userCreateForm').on('submit', function(e) {
+        e.preventDefault();
         
-        if (roleName === 'owner') {
-            $('#create_two_factor_enabled').prop('disabled', false);
-            $('label[for="create_two_factor_enabled"]').text('Enable 2FA');
-        } else {
-            $('#create_two_factor_enabled').prop('disabled', true).prop('checked', false);
-            $('label[for="create_two_factor_enabled"]').text('Enable 2FA (Owner Only)');
-        }
+        var $form = $(this);
+        var submitBtn = $form.find('button[type="submit"]');
+        var originalText = submitBtn.html();
+        
+        submitBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span> Adding...');
+        
+        $.ajax({
+            url: $form.attr('action'),
+            method: 'POST',
+            data: $form.serialize(),
+            success: function(response) {
+                toastr.success('User created successfully!');
+                $('#userModal').modal('hide');
+                location.reload();
+            },
+            error: function(xhr) {
+                var errorMsg = 'Failed to create user';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMsg = xhr.responseJSON.message;
+                } else if (xhr.responseJSON && xhr.responseJSON.errors) {
+                    errorMsg = Object.values(xhr.responseJSON.errors).flat().join('<br>');
+                }
+                toastr.error(errorMsg);
+                submitBtn.prop('disabled', false).html(originalText);
+            }
+        });
     });
-    
-    // Trigger change on page load
-    $('#user_role_select').trigger('change');
 });
 </script>

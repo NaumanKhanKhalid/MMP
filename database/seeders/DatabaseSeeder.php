@@ -45,7 +45,7 @@ class DatabaseSeeder extends Seeder
             ProductFitmentsSeeder::class,
             ProductOENumbersSeeder::class,
             ProductCrossRefsSeeder::class,
-            ProductSuppliersSeeder::class,
+            // ProductSuppliersSeeder::class, // Commented out - using direct supplier_id on products table
             ProductImagesSeeder::class,
         ]);
 

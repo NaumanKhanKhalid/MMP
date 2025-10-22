@@ -3,10 +3,15 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Supplier extends Model
 {
+    use SoftDeletes;
+    
     protected $guarded = [];
+
+    protected $dates = ['deleted_at'];
 
     protected $fillable = [
         'name',
@@ -95,7 +100,7 @@ class Supplier extends Model
         $this->update(['balance' => $this->calculateBalance()]);
     }
 
-    // Helper methods
+    // Helper methods                       
     public function isActive()
     {
         return $this->status === 'active';

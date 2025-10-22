@@ -7,6 +7,7 @@ use App\Models\Supplier;
 use App\Models\StockBatch;
 use App\Models\StockLedger;
 use App\Models\GoodsReceipt;
+use App\Models\GoodsReceiptItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
@@ -16,10 +17,20 @@ class GoodsReceiptController extends Controller
     // AJAX: Return view modal HTML for a GRN
     public function viewModal($id)
     {
-        $purchaseOrders = \App\Models\PurchaseOrder::with('items.product')->get();
+        $grn = GoodsReceipt::with([
+            'supplier', 
+            'purchaseOrder.supplier', 
+            'items.product', 
+            'user'
+        ])->findOrFail($id);
+        return view('goods_receipts.partials.view_modal', compact('grn'))->render();
+    }
 
-        $grn = GoodsReceipt::with(['supplier', 'batches.product'])->findOrFail($id);
-        return view('goods_receipts.partials.view_modal', compact('grn', 'purchaseOrders'))->render();
+    // Print GRN
+    public function print(GoodsReceipt $grn)
+    {
+        $grn->load(['supplier', 'purchaseOrder', 'items.product', 'user']);
+        return view('goods_receipts.print', compact('grn'));
     }
 
     // AJAX: Return edit modal HTML for a GRN
@@ -33,16 +44,24 @@ class GoodsReceiptController extends Controller
     public function index(Request $request)
     {
         $purchaseOrders = \App\Models\PurchaseOrder::with('items.product')->get();
-        $grns = GoodsReceipt::with(['supplier', 'user'])
-            ->when($request->search, fn($q) => $q->where('grn_number', 'like', "%{$request->search}%"))
+        
+        $grns = GoodsReceipt::with(['supplier', 'user', 'purchaseOrder', 'items'])
+            ->when($request->search, function($q) use ($request) {
+                $q->where(function($query) use ($request) {
+                    $query->where('grn_number', 'like', "%{$request->search}%")
+                          ->orWhereHas('purchaseOrder', function($subQ) use ($request) {
+                              $subQ->where('po_number', 'like', "%{$request->search}%");
+                          });
+                });
+            })
             ->when($request->supplier_id, fn($q) => $q->where('supplier_id', $request->supplier_id))
             ->when($request->status, fn($q) => $q->where('status', $request->status))
-            ->when($request->date, fn($q) => $q->whereDate('received_date', $request->date))
+            ->when($request->date_from, fn($q) => $q->whereDate('received_date', '>=', $request->date_from))
+            ->when($request->date_to, fn($q) => $q->whereDate('received_date', '<=', $request->date_to))
             ->latest()
             ->paginate(15);
 
         $products = Product::orderBy('name')->get();
-
         $suppliers = Supplier::orderBy('name')->get();
 
         return view('goods_receipts.index', compact('grns', 'suppliers', 'products', 'purchaseOrders'));
@@ -103,69 +122,113 @@ class GoodsReceiptController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'grn_number' => 'required|unique:goods_receipts,grn_number',
+        $validated = $request->validate([
+            'grn_number' => 'nullable|unique:goods_receipts,grn_number',
             'received_date' => 'required|date',
-            'supplier_id' => 'required|exists:suppliers,id',
+            'supplier_id' => 'required_without:purchase_order_id|exists:suppliers,id',
+            'purchase_order_id' => 'nullable|exists:purchase_orders,id',
             'invoice_number' => 'nullable|string',
-            'total_amount' => 'required|numeric|min:0',
-            'status' => 'required|in:pending,completed,cancelled',
             'notes' => 'nullable|string',
             'items' => 'required|array|min:1',
+            'items.*.purchase_order_item_id' => 'nullable|exists:purchase_order_items,id',
             'items.*.product_id' => 'required|exists:products,id',
-            'items.*.quantity' => 'required|numeric|min:1',
-            'items.*.purchase_price' => 'required|numeric|min:0',
+            'items.*.ordered_qty' => 'required|numeric|min:0',
+            'items.*.received_qty' => 'required|numeric|min:0',
+            'items.*.unit_cost' => 'required|numeric|min:0',
+            'items.*.line_total' => 'required|numeric|min:0',
         ]);
 
-        DB::transaction(function () use ($request) {
+        try {
+            DB::beginTransaction();
+
+            // Generate GRN number if not provided
+            $grnNumber = $validated['grn_number'] ?? GoodsReceipt::generateGRNNumber();
+
+            // Get supplier_id from validated data or from PO
+            $supplierId = $validated['supplier_id'] ?? null;
+            if (!$supplierId && $validated['purchase_order_id']) {
+                $po = \App\Models\PurchaseOrder::find($validated['purchase_order_id']);
+                $supplierId = $po ? $po->supplier_id : null;
+            }
+
             $grn = GoodsReceipt::create([
-                'grn_number' => $request->grn_number,
-                'received_date' => $request->received_date,
-                'supplier_id' => $request->supplier_id,
-                'invoice_number' => $request->invoice_number,
+                'grn_number' => $grnNumber,
+                'received_date' => $validated['received_date'],
+                'supplier_id' => $supplierId,
+                'purchase_order_id' => $validated['purchase_order_id'] ?? null,
+                'invoice_number' => $validated['invoice_number'] ?? null,
                 'total_amount' => 0, // will update after loop
-                'status' => $request->status,
-                'notes' => $request->notes,
+                'status' => 'pending', // Always create as pending
+                'notes' => $validated['notes'] ?? null,
                 'user_id' => auth()->id(),
             ]);
 
             $total = 0;
-            foreach ($request->items as $item) {
-                $batch = StockBatch::create([
-                    'product_id' => $item['product_id'],
-                    'batch_code' => $request->invoice_number,
-                    'qty_received' => $item['quantity'],
-                    'qty_left' => $item['quantity'],
-                    'landed_unit_cost' => $item['purchase_price'],
-                    'received_date' => $request->received_date,
-                    'grn_id' => $grn->id,
+            foreach ($validated['items'] as $itemData) {
+                $product = \App\Models\Product::findOrFail($itemData['product_id']);
+                
+                // Create GRN item
+                \App\Models\GoodsReceiptItem::create([
+                    'goods_receipt_id' => $grn->id,
+                    'purchase_order_item_id' => $itemData['purchase_order_item_id'] ?? null,
+                    'product_id' => $product->id,
+                    'product_name' => $product->name,
+                    'product_sku' => $product->sku,
+                    'ordered_qty' => $itemData['ordered_qty'],
+                    'received_qty' => $itemData['received_qty'],
+                    'unit_cost' => $itemData['unit_cost'],
+                    'line_total' => $itemData['line_total'],
+                    'batch_number' => GoodsReceiptItem::generateBatchNumber(),
+                    'status' => 'pending',
                 ]);
 
-                StockLedger::create([
-                    'product_id' => $item['product_id'],
-                    'document_type' => 'GRN',
-                    'document_id' => $grn->id,
-                    'qty' => $item['quantity'],
-                    'unit_cost' => $item['purchase_price'],
-                    'total_cost' => $item['quantity'] * $item['purchase_price'],
-                    'user_id' => auth()->id(),
-                    'notes' => 'Received via GRN',
-                ]);
-
-                $total += $item['quantity'] * $item['purchase_price'];
+                $total += $itemData['line_total'];
             }
+            
             $grn->update(['total_amount' => $total]);
 
-            // Update PO status if this GRN is linked to a PO
-            if ($request->purchase_order_id) {
-                $po = \App\Models\PurchaseOrder::find($request->purchase_order_id);
+            // Auto-post GRN if created from PO
+            if ($grn->purchase_order_id) {
+                // Post GRN automatically
+                $this->postGRNInternal($grn);
+                
+                // Update PO status
+                $po = \App\Models\PurchaseOrder::find($grn->purchase_order_id);
                 if ($po) {
                     \App\Http\Controllers\PurchaseOrderController::updatePOStatusFromGRN($po);
                 }
             }
-        });
 
-        return redirect()->route('goods-receipts.index')->with('success', 'GRN created successfully!');
+            DB::commit();
+
+            // Return JSON for AJAX requests
+            if ($request->ajax()) {
+                $message = $grn->purchase_order_id 
+                    ? 'Stock received and posted successfully!' 
+                    : 'GRN created successfully!';
+                    
+                return response()->json([
+                    'success' => true,
+                    'message' => $message,
+                    'grn_id' => $grn->id,
+                    'grn_number' => $grn->grn_number,
+                ]);
+            }
+
+            return redirect()->route('goods-receipts.index')->with('success', 'GRN created successfully!');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to create GRN: ' . $e->getMessage()
+                ], 500);
+            }
+            
+            return redirect()->route('goods-receipts.index')->with('error', 'Failed to create GRN: ' . $e->getMessage());
+        }
     }
 
     // public function show(GoodsReceipt $grn)
@@ -283,6 +346,292 @@ class GoodsReceiptController extends Controller
     {
         $grn = GoodsReceipt::with('supplier')->findOrFail($id);
         return response()->json($grn);
+    }
+
+    /**
+     * Post/Complete a GRN (update stock, create batches)
+     */
+    public function post($id)
+    {
+        try {
+            DB::beginTransaction();
+
+            $grn = GoodsReceipt::with(['items.product', 'purchaseOrder.items'])->findOrFail($id);
+
+            if (!$grn->isPending()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'GRN is already posted or cancelled.'
+                ], 422);
+            }
+
+            // Post GRN using internal method
+            $this->postGRNInternal($grn);
+
+            // Update PO status if linked
+            if ($grn->purchase_order_id) {
+                $po = \App\Models\PurchaseOrder::find($grn->purchase_order_id);
+                if ($po) {
+                    \App\Http\Controllers\PurchaseOrderController::updatePOStatusFromGRN($po);
+                }
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'GRN posted successfully! Stock updated.',
+                'grn' => $grn
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to post GRN: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Internal method to post GRN (called from store or post)
+     */
+    private function postGRNInternal($grn)
+    {
+        // Load relationships if not already loaded
+        if (!$grn->relationLoaded('items')) {
+            $grn->load(['items.product']);
+        }
+
+        // Process each item
+        foreach ($grn->items as $item) {
+            // Create FIFO stock batch
+            $batch = StockBatch::create([
+                'product_id' => $item->product_id,
+                'batch_number' => $item->batch_number ?? GoodsReceiptItem::generateBatchNumber(),
+                'supplier_id' => $grn->supplier_id,
+                'purchase_order_id' => $grn->purchase_order_id,
+                'goods_receipt_id' => $grn->id,
+                'cost_per_unit' => $item->unit_cost,
+                'qty_received' => $item->received_qty,
+                'qty_left' => $item->received_qty,
+                'expiry_date' => $item->expiry_date,
+                'received_date' => $grn->received_date,
+            ]);
+
+            // Update product stock
+            $product = $item->product;
+            $product->increment('on_hand', $item->received_qty);
+            $product->decrement('on_order', $item->ordered_qty);
+            $product->update(['last_cost' => $item->unit_cost]);
+
+            // Create stock ledger entry
+            $lineTotal = $item->received_qty * $item->unit_cost;
+            StockLedger::create([
+                'product_id' => $item->product_id,
+                'document_type' => 'GRN',
+                'document_id' => $grn->id,
+                'qty' => $item->received_qty,
+                'unit_cost' => $item->unit_cost,
+                'total_cost' => $lineTotal,
+                'notes' => 'GRN #' . $grn->grn_number . ' - Batch: ' . $batch->batch_number,
+                'user_id' => auth()->id(),
+            ]);
+
+            // Update item status
+            $item->update(['status' => 'received']);
+        }
+
+        // Update GRN status
+        $grn->update([
+            'status' => 'completed',
+        ]);
+    }
+
+    /**
+     * Get PO items for GRN creation
+     */
+    public function getPOItems($poId)
+    {
+        try {
+            $po = \App\Models\PurchaseOrder::with(['items.product', 'supplier'])->findOrFail($poId);
+
+            $items = $po->items->map(function ($item) {
+                // Calculate received quantity from GRN items
+                $receivedQty = \App\Models\GoodsReceiptItem::where('purchase_order_item_id', $item->id)
+                    ->sum('received_qty');
+                $remainingQty = $item->quantity - $receivedQty;
+                
+                return [
+                    'id' => $item->id,
+                    'product_id' => $item->product_id,
+                    'product_name' => $item->product->name ?? 'Unknown',
+                    'product_sku' => $item->product->sku ?? 'N/A',
+                    'quantity' => $item->quantity,
+                    'received_qty' => $receivedQty,
+                    'remaining_qty' => $remainingQty,
+                    'unit_price' => $item->unit_price,
+                    'can_receive' => $remainingQty > 0,
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'po' => [
+                    'id' => $po->id,
+                    'po_number' => $po->po_number,
+                    'supplier' => [
+                        'id' => $po->supplier->id,
+                        'name' => $po->supplier->name,
+                    ],
+                ],
+                'items' => $items
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load PO items: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Export GRNs
+     */
+    public function export(Request $request)
+    {
+        $query = GoodsReceipt::with(['supplier', 'purchaseOrder', 'items']);
+
+        // Apply same filters as index
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('grn_number', 'like', "%{$search}%")
+                  ->orWhereHas('purchaseOrder', function ($subQ) use ($search) {
+                      $subQ->where('po_number', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('supplier_id')) {
+            $query->where('supplier_id', $request->supplier_id);
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('received_date', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('received_date', '<=', $request->date_to);
+        }
+
+        $grns = $query->latest()->get();
+
+        $format = $request->get('format', 'csv');
+        
+        switch ($format) {
+            case 'excel':
+                return $this->exportExcel($grns);
+            case 'pdf':
+                return $this->exportPDF($grns);
+            default:
+                return $this->exportCSV($grns);
+        }
+    }
+
+    /**
+     * Export to CSV
+     */
+    private function exportCSV($grns)
+    {
+        $filename = 'goods_receipts_' . date('Y-m-d_H-i-s') . '.csv';
+        
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
+
+        $callback = function() use ($grns) {
+            $file = fopen('php://output', 'w');
+            
+            // CSV Headers
+            fputcsv($file, [
+                'GRN Number', 'Supplier', 'PO Number', 'Received Date', 
+                'Total Items', 'Total Amount', 'Status', 'Created By'
+            ]);
+            
+            // CSV Data
+            foreach ($grns as $grn) {
+                fputcsv($file, [
+                    $grn->grn_number,
+                    $grn->supplier->name ?? 'N/A',
+                    $grn->purchaseOrder->po_number ?? '-',
+                    $grn->received_date->format('Y-m-d'),
+                    $grn->items->count(),
+                    $grn->total_amount ?? 0,
+                    ucfirst($grn->status),
+                    $grn->user->name ?? 'N/A',
+                ]);
+            }
+            
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    /**
+     * Export to Excel
+     */
+    private function exportExcel($grns)
+    {
+        // For now, redirect to CSV
+        return $this->exportCSV($grns);
+    }
+
+    /**
+     * Export to PDF
+     */
+    private function exportPDF($grns)
+    {
+        // For now, redirect to CSV
+        return $this->exportCSV($grns);
+    }
+
+    /**
+     * Search products for Direct GRN
+     */
+    public function searchProducts(Request $request)
+    {
+        $search = $request->get('search', '');
+        
+        if (empty($search)) {
+            return response()->json(['success' => false, 'products' => []]);
+        }
+
+        $products = Product::where('name', 'like', "%{$search}%")
+            ->orWhere('sku', 'like', "%{$search}%")
+            ->orWhere('supplier_code', 'like', "%{$search}%")
+            ->with(['category', 'brand'])
+            ->limit(10)
+            ->get()
+            ->map(function ($product) {
+                return [
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'sku' => $product->sku,
+                    'supplier_code' => $product->supplier_code,
+                    'category' => $product->category->name ?? '',
+                    'brand' => $product->brand->name ?? '',
+                    'cost' => $product->cost_price ?? 0,
+                ];
+            });
+
+        return response()->json(['success' => true, 'products' => $products]);
     }
 
 }

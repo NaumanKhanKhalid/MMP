@@ -212,6 +212,42 @@ class Setting extends Model
         return self::get('show_bank_on_quotes', false);
     }
 
+    public static function showBankOnInvoices()
+    {
+        return self::get('show_bank_on_invoices', false);
+    }
+
+    // Banking Settings
+    public static function bankName()
+    {
+        return self::get('bank_name', 'First National Bank');
+    }
+
+    public static function bankAccountName()
+    {
+        return self::get('bank_account_name', 'Ubunye Products & Services');
+    }
+
+    public static function bankAccountType()
+    {
+        return self::get('bank_account_type', 'Business Cheque Account');
+    }
+
+    public static function bankAccountNumber()
+    {
+        return self::get('bank_account_number', '6310 9803 155');
+    }
+
+    public static function bankBranchCode()
+    {
+        return self::get('bank_branch_code', '250 655');
+    }
+
+    public static function bankReference()
+    {
+        return self::get('bank_reference', 'Your Quotation Number & Name');
+    }
+
     // Security Settings
     public static function sessionTimeout()
     {
@@ -223,4 +259,3 @@ class Setting extends Model
         return self::get('two_factor_enabled', false);
     }
 }
-

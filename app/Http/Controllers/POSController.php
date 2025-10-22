@@ -10,6 +10,7 @@ use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\StockBatch;
 use App\Models\StockLedger;
+use App\Models\Setting;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -29,6 +30,8 @@ class POSController extends Controller
     public function getProducts()
     {
         $products = Product::with(['brand', 'category'])
+            ->withSum('stockBatches as on_hand_sum', 'qty_left')
+            ->withSum('stockBatches as reserved', 'reserved_qty')
             ->where('status', 'active')
             ->orderBy('name')
             ->get()
@@ -41,7 +44,9 @@ class POSController extends Controller
                     'price_normal' => $product->price_normal,
                     'price_online' => $product->price_online,
                     'price_workshop' => $product->price_workshop,
-                    'on_hand' => $product->on_hand,
+                    'on_hand' => $product->on_hand_sum ?? 0,
+                    'reserved' => $product->reserved ?? 0,
+                    'available' => ($product->on_hand_sum ?? 0) - ($product->reserved ?? 0),
                     'image' => $product->images->first() ? asset('storage/' . $product->images->first()->image_path) : null,
                     'category_id' => $product->category_id,
                     'category_name' => $product->category->name ?? 'Uncategorized',
@@ -57,7 +62,7 @@ class POSController extends Controller
      */
     public function getCustomers()
     {
-        $customers = Customer::select('id', 'name', 'email', 'phone')
+        $customers = Customer::select('id', 'name', 'email', 'phone', 'customer_type', 'credit_limit', 'balance')
             ->orderBy('name')
             ->get();
 
@@ -88,9 +93,11 @@ class POSController extends Controller
             'cart.*.quantity' => 'required|numeric|min:0.001',
             'cart.*.price' => 'required|numeric|min:0',
             'customer_id' => 'nullable|exists:customers,id',
-            'payment_method' => 'required|in:cash,card,eft,account',
-            'discount_amount' => 'nullable|numeric|min:0',
-            'discount_type' => 'nullable|in:fixed,percentage',
+            'payment_method' => 'required|in:cash,card,eft,on_account',
+            'amount_paid' => 'required|numeric|min:0',
+            'payment_reference' => 'nullable|string',
+            'vat_enabled' => 'nullable|boolean',
+            'vat_rate' => 'nullable|numeric|min:0|max:100',
         ]);
 
         DB::beginTransaction();
@@ -99,19 +106,54 @@ class POSController extends Controller
             $cart = $request->cart;
             $customerId = $request->customer_id;
             $paymentMethod = $request->payment_method;
-            $discountAmount = $request->discount_amount ?? 0;
-            $discountType = $request->discount_type ?? 'fixed';
+            $amountPaid = $request->amount_paid ?? 0;
+            $paymentReference = $request->payment_reference;
+            $vatEnabled = $request->boolean('vat_enabled');
+            $vatRate = $request->vat_rate ?? 15;
+
+            // Get customer if exists
+            $customer = $customerId ? Customer::find($customerId) : null;
+            
+            // Validate customer type and payment method
+            if ($paymentMethod === 'on_account') {
+                if (!$customer || $customer->customer_type !== 'credit') {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Only credit customers can use on account payment'
+                    ], 400);
+                }
+                
+                // Check credit limit
+                $availableCredit = (float)($customer->credit_limit ?? 0) - abs((float)($customer->balance ?? 0));
+                $grandTotal = 0; // Will be calculated below
+                
+                if ($grandTotal > $availableCredit) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => "Insufficient credit limit. Available: R " . number_format($availableCredit, 2)
+                    ], 400);
+                }
+            }
 
             // Calculate totals
             $subtotal = 0;
             $items = [];
+            $stockIssues = [];
 
             foreach ($cart as $cartItem) {
                 $product = Product::findOrFail($cartItem['id']);
                 
                 // Check stock availability
-                if ($product->on_hand < $cartItem['quantity']) {
-                    throw new \Exception("Insufficient stock for product: {$product->name}");
+                $availableStock = $product->stockBatches->sum('qty_left');
+                
+                if ($availableStock < $cartItem['quantity']) {
+                    $stockIssues[] = [
+                        'product' => $product->name,
+                        'sku' => $product->sku,
+                        'required' => $cartItem['quantity'],
+                        'available' => $availableStock,
+                        'short' => $cartItem['quantity'] - $availableStock,
+                    ];
                 }
 
                 $lineTotal = $cartItem['quantity'] * $cartItem['price'];
@@ -125,39 +167,98 @@ class POSController extends Controller
                 ];
             }
 
-            // Apply discount
-            $discount = 0;
-            if ($discountAmount > 0) {
-                if ($discountType === 'percentage') {
-                    $discount = $subtotal * ($discountAmount / 100);
-                } else {
-                    $discount = $discountAmount;
+            // Check setting: Allow out-of-stock sale
+            $allowOutOfStockSale = Setting::allowOutOfStockSale();
+
+            // If stock issues exist and setting is OFF, block sale
+            if (count($stockIssues) > 0 && !$allowOutOfStockSale) {
+                \DB::rollBack();
+                
+                $errorMessage = 'Insufficient stock. Cannot complete sale:<br><br>';
+                foreach ($stockIssues as $issue) {
+                    $errorMessage .= '• <strong>'.$issue['product'].'</strong> (SKU: '.$issue['sku'].')<br>';
+                    $errorMessage .= '&nbsp;&nbsp;Required: '.$issue['required'].' units | Available: '.$issue['available'].' units | Short: <span class="text-danger fw-bold">'.$issue['short'].' units</span><br><br>';
                 }
+                $errorMessage .= '<small class="text-muted">Note: Out-of-stock sales are currently disabled in settings.</small>';
+
+                return response()->json([
+                    'success' => false,
+                    'message' => $errorMessage,
+                    'stock_issues' => $stockIssues,
+                ], 400);
             }
 
-            $grandTotal = $subtotal - $discount;
+            // Warning for stock issues (if setting is ON, allow sale with warning)
+            $stockWarning = null;
+            if (count($stockIssues) > 0 && $allowOutOfStockSale) {
+                $warningMessage = '⚠️ Stock shortage detected:<br><br>';
+                foreach ($stockIssues as $issue) {
+                    $warningMessage .= '• <strong>'.$issue['product'].'</strong> (SKU: '.$issue['sku'].')<br>';
+                    $warningMessage .= '&nbsp;&nbsp;Required: '.$issue['required'].' units | Available: '.$issue['available'].' units | Short: <span class="text-warning fw-bold">'.$issue['short'].' units</span><br><br>';
+                }
+                $warningMessage .= '<small class="text-muted">Sale will proceed with negative stock.</small>';
+                $stockWarning = $warningMessage;
+            }
+
+            // Calculate VAT
+            $vatAmount = 0;
+            if ($vatEnabled) {
+                $vatAmount = $subtotal * ($vatRate / 100);
+            }
+
+            $grandTotal = $subtotal + $vatAmount;
+            
+            // Validate payment amount for non-account payments
+            if ($paymentMethod !== 'on_account' && $amountPaid < $grandTotal) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Amount paid must be equal to or greater than total'
+                ], 400);
+            }
+
+            // Determine payment status based on amount paid
+            $paymentStatus = 'paid'; // Default for cash customers
+            if ($paymentMethod === 'on_account') {
+                // Credit customer
+                if ($amountPaid == 0) {
+                    $paymentStatus = 'unpaid';
+                } elseif ($amountPaid > 0 && $amountPaid < $grandTotal) {
+                    $paymentStatus = 'partially_paid';
+                } else {
+                    $paymentStatus = 'paid';
+                }
+            } else {
+                // Cash/Card/EFT - must pay full amount
+                $paymentStatus = 'paid';
+            }
 
             // Create invoice
             $invoice = Invoice::create([
                 'invoice_number' => Invoice::generateInvoiceNumber(),
                 'customer_id' => $customerId,
-                'customer_name' => $customerId ? Customer::find($customerId)->name : 'Walk-in Customer',
-                'customer_email' => $customerId ? Customer::find($customerId)->email : null,
-                'customer_phone' => $customerId ? Customer::find($customerId)->phone : null,
+                'customer_name' => $customer ? $customer->name : 'Walk-in Customer',
+                'customer_email' => $customer ? $customer->email : null,
+                'customer_phone' => $customer ? $customer->phone : null,
+                'vehicle_make' => $request->vehicle_make,
+                'vehicle_model' => $request->vehicle_model,
+                'vehicle_reg' => $request->vehicle_reg,
+                'vehicle_vin' => $request->vehicle_vin,
+                'vehicle_mileage' => $request->vehicle_mileage,
                 'subtotal' => $subtotal,
-                'discount_amount' => $discount,
-                'discount_percentage' => $discountType === 'percentage' ? $discountAmount : 0,
-                'vat_amount' => 0, // VAT calculation can be added later
+                'discount_amount' => $request->discount_amount ?? 0,
+                'discount_percentage' => $request->discount_type === 'percentage' ? $request->discount_amount : 0,
+                'shipping' => $request->shipping ?? 0,
+                'vat_amount' => $vatAmount,
                 'grand_total' => $grandTotal,
-                'payment_status' => $paymentMethod === 'account' ? 'posted' : 'paid',
+                'payment_status' => $paymentStatus,
                 'payment_method' => $paymentMethod,
-                'amount_paid' => $paymentMethod === 'account' ? 0 : $grandTotal,
-                'balance_due' => $paymentMethod === 'account' ? $grandTotal : 0,
-                'vat_enabled' => false,
-                'vat_rate' => 0,
+                'amount_paid' => $amountPaid,
+                'balance_due' => $grandTotal - $amountPaid,
+                'vat_enabled' => $vatEnabled,
+                'vat_rate' => $vatRate,
                 'vat_inclusive' => false,
                 'notes' => 'POS Sale',
-                'reference' => 'POS-' . now()->format('YmdHis'),
+                'reference' => $paymentReference ?? ('POS-' . now()->format('YmdHis')),
                 'user_id' => auth()->id(),
             ]);
 
@@ -192,17 +293,42 @@ class POSController extends Controller
             // Update invoice totals
             $invoice->update([
                 'subtotal' => $invoice->items->sum('line_total'),
-                'grand_total' => $invoice->subtotal - $invoice->discount_amount,
+                'grand_total' => $invoice->subtotal + $invoice->vat_amount,
             ]);
 
+            // Create customer ledger entry for credit customers
+            if ($customer && $customer->customer_type === 'credit') {
+                \App\Models\CustomerLedger::create([
+                    'customer_id' => $customer->id,
+                    'transaction_type' => 'invoice',
+                    'transaction_id' => $invoice->id,
+                    'transaction_date' => now(),
+                    'description' => 'POS Sale - Invoice #' . $invoice->invoice_number,
+                    'debit' => $grandTotal,
+                    'credit' => $amountPaid,
+                    'balance' => $grandTotal - $amountPaid,
+                    'created_by' => auth()->id(),
+                ]);
+                
+                // Update customer balance
+                $customer->balance = ($customer->balance ?? 0) + ($grandTotal - $amountPaid);
+                $customer->save();
+            }
+
             DB::commit();
+
+            $message = 'Sale completed successfully';
+            if ($stockWarning) {
+                $message .= '|' . $stockWarning;
+            }
 
             return response()->json([
                 'success' => true,
                 'invoice_id' => $invoice->id,
                 'invoice_number' => $invoice->invoice_number,
                 'pdf_url' => route('pos.invoice-pdf', $invoice),
-                'message' => 'Sale completed successfully'
+                'message' => $message,
+                'stock_warning' => $stockWarning
             ]);
 
         } catch (\Exception $e) {
@@ -407,7 +533,7 @@ class POSController extends Controller
 
         $invoice->load(['customer', 'items.product', 'user']);
         
-        if ($request->method === 'whatsapp') {
+        if ($request->input('method') === 'whatsapp') {
             // Generate WhatsApp message
             $message = $this->generateWhatsAppMessage($invoice);
             $whatsappUrl = "https://wa.me/{$request->contact}?text=" . urlencode($message);
@@ -430,7 +556,7 @@ class POSController extends Controller
     /**
      * Generate WhatsApp message
      */
-    private function generateWhatsAppMessage(Invoice $invoice)
+    public function generateWhatsAppMessage(Invoice $invoice)
     {
         $message = "🏪 *MMP Auto-Meister*\n\n";
         $message .= "📋 *Invoice: {$invoice->invoice_number}*\n";
@@ -445,10 +571,10 @@ class POSController extends Controller
         
         $message .= "\n📦 *Items:*\n";
         foreach ($invoice->items as $item) {
-            $message .= "• {$item->product_name} (Qty: {$item->quantity}) - $" . number_format($item->line_total, 2) . "\n";
+            $message .= "• {$item->product_name} (Qty: {$item->quantity}) - R" . number_format((float)$item->line_total, 2) . "\n";
         }
         
-        $message .= "\n💰 *Total: $" . number_format($invoice->grand_total, 2) . "*\n";
+        $message .= "\n💰 *Total: R" . number_format((float)$invoice->grand_total, 2) . "*\n";
         $message .= "💳 Payment: " . ucfirst($invoice->payment_method) . "\n\n";
         $message .= "Thank you for your business! 🚗";
         

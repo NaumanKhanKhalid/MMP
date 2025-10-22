@@ -3,10 +3,13 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 
 class User extends Authenticatable
 {
+    use SoftDeletes;
+    
     protected $guarded = [];
 
     protected $fillable = [
@@ -34,6 +37,7 @@ class User extends Authenticatable
         'two_factor_expires_at' => 'datetime',
         'last_login_at' => 'datetime',
         'locked_until' => 'datetime',
+        'deleted_at' => 'datetime',
         'two_factor_enabled' => 'boolean',
         'force_password_change' => 'boolean',
         'first_login' => 'boolean',

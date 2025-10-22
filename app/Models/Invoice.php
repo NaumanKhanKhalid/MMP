@@ -32,6 +32,7 @@ class Invoice extends Model
         'payment_method',
         'amount_paid',
         'balance_due',
+        'payment_reference',
         'vat_enabled',
         'vat_rate',
         'vat_inclusive',

@@ -19,6 +19,7 @@ return new class extends Migration {
             $table->integer('lead_time')->nullable()->comment('Days required to deliver');
             $table->decimal('balance', 15, 2)->default(0)->comment('Calculated field');
             $table->enum('status', ['active', 'inactive'])->default('active');
+            $table->softDeletes();
             $table->timestamps();
         });
 

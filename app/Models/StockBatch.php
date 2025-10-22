@@ -10,6 +10,7 @@ class StockBatch extends Model
         'product_id',
         'qty_received',
         'qty_left',
+        'reserved_qty',
         'landed_unit_cost',
         'received_date',
         'document_type',
@@ -20,6 +21,7 @@ class StockBatch extends Model
     protected $casts = [
         'qty_received' => 'decimal:3',
         'qty_left' => 'decimal:3',
+        'reserved_qty' => 'decimal:3',
         'landed_unit_cost' => 'decimal:2',
         'received_date' => 'datetime',
     ];

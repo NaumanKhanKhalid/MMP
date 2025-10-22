@@ -14,7 +14,6 @@ class DashboardController extends Controller
 {
     public function index(Request $request)
     {
-        // Get date filter (default to current month)
         $filterType = $request->get('filter', 'month');
         
         switch ($filterType) {

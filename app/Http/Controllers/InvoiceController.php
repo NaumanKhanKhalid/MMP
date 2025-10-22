@@ -14,13 +14,47 @@ use Illuminate\Support\Facades\Auth;
 
 class InvoiceController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $invoices = Invoice::with(['customer', 'user', 'items'])
-            ->latest()
-            ->paginate(20);
+        $query = Invoice::with(['customer', 'user', 'items', 'quote']);
+
+        // Apply filters
+        if ($request->filled('search')) {
+            $search = $request->get('search');
+            $query->where(function($q) use ($search) {
+                $q->where('invoice_number', 'like', "%{$search}%")
+                  ->orWhere('customer_name', 'like', "%{$search}%")
+                  ->orWhere('customer_phone', 'like', "%{$search}%")
+                  ->orWhereHas('customer', function($customerQuery) use ($search) {
+                      $customerQuery->where('name', 'like', "%{$search}%")
+                                   ->orWhere('phone', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('quote', function($quoteQuery) use ($search) {
+                      $quoteQuery->where('quote_number', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('payment_status', $request->get('status'));
+        }
+
+        if ($request->filled('customer')) {
+            $query->where('customer_id', $request->get('customer'));
+        }
+
+        if ($request->filled('date_from')) {
+            $query->whereDate('created_at', '>=', $request->get('date_from'));
+        }
+
+        if ($request->filled('date_to')) {
+            $query->whereDate('created_at', '<=', $request->get('date_to'));
+        }
+
+        $invoices = $query->latest()->paginate(20);
+        $customers = Customer::orderBy('name')->get();
         
-        return view('invoices.index', compact('invoices'));
+        return view('invoices.index', compact('invoices', 'customers'));
     }
 
     public function create()
@@ -327,11 +361,6 @@ class InvoiceController extends Controller
         ]);
     }
 
-    public function viewModal($id)
-    {
-        $invoice = Invoice::with(['customer', 'user', 'items.product'])->findOrFail($id);
-        return view('invoices.partials.view_modal', compact('invoice'))->render();
-    }
 
     public function editModal($id)
     {
@@ -355,6 +384,54 @@ class InvoiceController extends Controller
         $invoice = Invoice::with(['customer', 'user', 'items.product'])->findOrFail($id);
         return view('invoices.print', compact('invoice'));
     }
+
+    // public function export(Request $request)
+    // {
+    //     $query = Invoice::with(['customer', 'user', 'quote']);
+
+    //     // Apply same filters as index method
+    //     if ($request->filled('search')) {
+    //         $search = $request->get('search');
+    //         $query->where(function($q) use ($search) {
+    //             $q->where('invoice_number', 'like', "%{$search}%")
+    //               ->orWhere('customer_name', 'like', "%{$search}%")
+    //               ->orWhere('customer_phone', 'like', "%{$search}%")
+    //               ->orWhereHas('customer', function($customerQuery) use ($search) {
+    //                   $customerQuery->where('name', 'like', "%{$search}%")
+    //                                ->orWhere('phone', 'like', "%{$search}%");
+    //               })
+    //               ->orWhereHas('quote', function($quoteQuery) use ($search) {
+    //                   $quoteQuery->where('quote_number', 'like', "%{$search}%");
+    //               });
+    //         });
+    //     }
+
+    //     if ($request->filled('status')) {
+    //         $query->where('payment_status', $request->get('status'));
+    //     }
+
+    //     if ($request->filled('customer')) {
+    //         $query->where('customer_id', $request->get('customer'));
+    //     }
+
+    //     if ($request->filled('date_from')) {
+    //         $query->whereDate('created_at', '>=', $request->get('date_from'));
+    //     }
+
+    //     if ($request->filled('date_to')) {
+    //         $query->whereDate('created_at', '<=', $request->get('date_to'));
+    //     }
+
+    //     $invoices = $query->latest()->get();
+    //     $format = $request->get('format', 'pdf');
+
+    //     if ($format === 'excel') {
+    //         return view('invoices.export_excel', compact('invoices'));
+    //     }
+
+    //     // Default to PDF
+    //     return view('invoices.export_pdf', compact('invoices'));
+    // }
 
     public function post(Invoice $invoice)
     {
@@ -461,5 +538,72 @@ class InvoiceController extends Controller
                 'received_date' => now(),
             ]);
         }
+    }
+
+    // View Invoice Modal
+    public function viewModal($id)
+    {
+        $invoice = Invoice::with(['customer', 'items.product', 'quote', 'user'])->findOrFail($id);
+        return view('invoices.partials.view_modal', compact('invoice'))->render();
+    }
+
+    // Export Invoices
+    public function export(Request $request)
+    {
+        $format = $request->get('format', 'pdf');
+        $invoices = Invoice::with(['customer', 'items'])->get();
+
+        if ($format === 'csv') {
+            return $this->exportCSV($invoices);
+        } elseif ($format === 'excel') {
+            return $this->exportExcel($invoices);
+        } else {
+            return $this->exportPDF($invoices);
+        }
+    }
+
+    private function exportCSV($invoices)
+    {
+        $filename = 'invoices_' . now()->format('Y-m-d_His') . '.csv';
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => "attachment; filename=\"$filename\"",
+        ];
+
+        $callback = function() use ($invoices) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, ['Invoice Number', 'Customer', 'Items Count', 'Grand Total', 'Paid', 'Balance', 'Status', 'Date']);
+
+            foreach ($invoices as $invoice) {
+                fputcsv($file, [
+                    $invoice->invoice_number,
+                    $invoice->customer->name ?? $invoice->customer_name ?? 'Cash Sale',
+                    $invoice->items->count(),
+                    number_format($invoice->grand_total ?? 0, 2),
+                    number_format($invoice->amount_paid ?? 0, 2),
+                    number_format($invoice->balance_due ?? 0, 2),
+                    ucfirst($invoice->payment_status),
+                    $invoice->created_at->format('Y-m-d H:i'),
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    private function exportExcel($invoices)
+    {
+        $filename = 'invoices_' . now()->format('Y-m-d_His') . '.html';
+        return response()->view('invoices.export_excel', compact('invoices'))
+            ->header('Content-Type', 'application/vnd.ms-excel')
+            ->header('Content-Disposition', "attachment; filename=\"$filename\"");
+    }
+
+    private function exportPDF($invoices)
+    {
+        $pdf = \PDF::loadView('invoices.export_pdf', compact('invoices'));
+        return $pdf->download('invoices_' . now()->format('Y-m-d_His') . '.pdf');
     }
 }

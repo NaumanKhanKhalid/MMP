@@ -16284,6 +16284,9 @@ span.flatpickr-weekday {
 .select2.select2-container {
   width: 100% !important;
 }
+.select2.select2-container  {
+  width: 100% !important;
+}
 .select2-container--default .select2-selection--single .select2-selection__rendered {
   padding-inline-start: 12px !important;
   padding-inline-end: 20px !important;

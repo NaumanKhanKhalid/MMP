@@ -191,3 +191,4 @@ class JobCardSeeder extends Seeder
     }
 }
 
+

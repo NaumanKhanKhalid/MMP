@@ -68,7 +68,7 @@
                                         <div class="d-flex align-items-start gap-3">
                                             <div>
                                                 @if(\App\Models\Setting::get('company_logo'))
-                                                    <img src="{{ Storage::url(\App\Models\Setting::get('company_logo')) }}" 
+                                                    <img src="{{ asset(\App\Models\Setting::get('company_logo')) }}" 
                                                          alt="Company Logo" 
                                                          class="rounded border" 
                                                          style="max-height: 100px;" 
@@ -163,6 +163,75 @@
                                         <label class="form-label">Branch Code</label>
                                         <input type="text" name="bank_branch_code" class="form-control" 
                                                value="{{ $companySettings['bank_branch_code'] ?? '' }}">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Account Type</label>
+                                        <input type="text" name="bank_account_type" class="form-control" 
+                                               value="{{ $companySettings['bank_account_type'] ?? '' }}"
+                                               placeholder="e.g., Business Cheque Account">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Payment Reference</label>
+                                        <input type="text" name="bank_reference" class="form-control" 
+                                               value="{{ $companySettings['bank_reference'] ?? '' }}"
+                                               placeholder="e.g., Your Quotation Number & Name">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" name="show_bank_on_quotes" 
+                                                   id="showBankOnQuotes" value="1" 
+                                                   {{ ($companySettings['show_bank_on_quotes'] ?? false) ? 'checked' : '' }}>
+                                            <label class="form-check-label fw-semibold" for="showBankOnQuotes">
+                                                Show Banking Details on Quotes
+                                            </label>
+                                        </div>
+                                        <small class="text-muted">When enabled, banking details will be displayed on printed quotations</small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" name="show_bank_on_invoices" 
+                                                   id="showBankOnInvoices" value="1" 
+                                                   {{ ($companySettings['show_bank_on_invoices'] ?? false) ? 'checked' : '' }}>
+                                            <label class="form-check-label fw-semibold" for="showBankOnInvoices">
+                                                Show Banking Details on Invoices
+                                            </label>
+                                        </div>
+                                        <small class="text-muted">When enabled, banking details will be displayed on printed invoices</small>
+                                    </div>
+                                </div>
+
+                                <!-- Terms & Conditions PDF -->
+                                <div class="col-md-12 mt-4">
+                                    <h6 class="border-bottom pb-2">Terms & Conditions PDF</h6>
+                                </div>
+                                <div class="col-md-12">
+                                    <label class="form-label fw-semibold">Terms & Conditions PDF</label>
+                                    <div class="d-flex align-items-start gap-3">
+                                        <div>
+                                            @if(\App\Models\Setting::get('terms_pdf'))
+                                                <div class="border rounded p-3 text-center" style="width: 200px;">
+                                                    <i class="ri-file-pdf-line fs-1 text-danger"></i>
+                                                    <p class="text-muted mb-0 small">Terms PDF uploaded</p>
+                                                    <a href="{{ asset(\App\Models\Setting::get('terms_pdf')) }}" target="_blank" class="btn btn-sm btn-outline-primary mt-2">
+                                                        <i class="ri-eye-line me-1"></i> View PDF
+                                                    </a>
+                                                </div>
+                                            @else
+                                                <div class="border rounded p-4 text-center" style="width: 200px;">
+                                                    <i class="ri-file-pdf-line fs-1 text-muted"></i>
+                                                    <p class="text-muted mb-0 small">No PDF uploaded</p>
+                                                </div>
+                                            @endif
+                                        </div>
+                                        <div>
+                                            <input type="file" name="terms_pdf" class="form-control mb-2" accept=".pdf" id="termsPdfInput">
+                                            <small class="text-muted">Upload Terms & Conditions PDF (max 5MB)</small>
+                                            @if(\App\Models\Setting::get('terms_pdf'))
+                                                <br><button type="button" class="btn btn-sm btn-danger mt-2" onclick="removeTermsPdf()">
+                                                    <i class="ri-delete-bin-line me-1"></i> Remove PDF
+                                                </button>
+                                            @endif
+                                        </div>
                                     </div>
 
                                     <div class="col-md-12 text-end mt-4">

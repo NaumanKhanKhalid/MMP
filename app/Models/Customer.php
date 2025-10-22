@@ -4,12 +4,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Customer extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $guarded = [];
+
+    protected $dates = ['deleted_at'];
 
     protected $fillable = [
         'name',
@@ -35,6 +38,7 @@ class Customer extends Model
         'company_name',
         'contact_person',
         'customer_type',
+        'customer_category',
         'customer_status',
         'marketing_consent',
         'sms_consent',
@@ -62,8 +66,18 @@ class Customer extends Model
 
     public static function generateCustomerCode()
     {
-        $lastCustomer = self::orderBy('id', 'desc')->first();
-        $nextNumber = $lastCustomer ? (int) filter_var($lastCustomer->customer_code, FILTER_SANITIZE_NUMBER_INT) + 1 : 1;
+        // Get max number from existing customer codes using regex in SQL
+        $maxCode = self::whereNotNull('customer_code')
+            ->where('customer_code', 'REGEXP', '^CUST-[0-9]+$')
+            ->orderByRaw('CAST(SUBSTRING(customer_code, 6) AS UNSIGNED) DESC')
+            ->value('customer_code');
+        
+        $nextNumber = 1;
+        
+        if ($maxCode && preg_match('/CUST-(\d+)/', $maxCode, $matches)) {
+            $nextNumber = (int) $matches[1] + 1;
+        }
+        
         return 'CUST-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT); // CUST-0001, CUST-0002...
     }
 
@@ -93,6 +107,16 @@ class Customer extends Model
         return $this->hasMany(CreditNote::class);
     }
 
+    public function vehicles()
+    {
+        return $this->hasMany(CustomerVehicle::class)->orderBy('is_primary', 'desc');
+    }
+
+    public function primaryVehicle()
+    {
+        return $this->hasOne(CustomerVehicle::class)->where('is_primary', true);
+    }
+
     // Calculate current balance from ledger
     public function calculateBalance()
     {
@@ -117,20 +141,9 @@ class Customer extends Model
         return $this->customer_status === 'inactive';
     }
 
-    public function isSuspended()
-    {
-        return $this->customer_status === 'suspended';
-    }
 
-    public function isIndividual()
-    {
-        return $this->customer_type === 'individual';
-    }
 
-    public function isBusiness()
-    {
-        return $this->customer_type === 'business';
-    }
+    // Removed old methods - now using customer_category instead of customer_type for individual/business
 
     public function hasCreditLimit()
     {
@@ -139,12 +152,12 @@ class Customer extends Model
 
     public function getAvailableCreditAttribute()
     {
-        return $this->credit_limit - abs($this->balance);
+        return $this->credit_limit - abs((float) $this->balance);
     }
 
     public function isOverCreditLimit()
     {
-        return $this->hasCreditLimit() && abs($this->balance) > $this->credit_limit;
+        return $this->hasCreditLimit() && abs((float) $this->balance) > $this->credit_limit;
     }
 
     public function getFullAddressAttribute()
@@ -167,7 +180,7 @@ class Customer extends Model
     public function getAgeAttribute()
     {
         if ($this->date_of_birth) {
-            return $this->date_of_birth->age;
+            return \Carbon\Carbon::parse($this->date_of_birth)->age;
         }
         return null;
     }
@@ -183,19 +196,26 @@ class Customer extends Model
         return $query->where('customer_status', 'inactive');
     }
 
-    public function scopeSuspended($query)
-    {
-        return $query->where('customer_status', 'suspended');
-    }
+    
 
     public function scopeIndividuals($query)
     {
-        return $query->where('customer_type', 'individual');
+        return $query->where('customer_category', 'individual');
     }
 
     public function scopeBusinesses($query)
     {
-        return $query->where('customer_type', 'business');
+        return $query->where('customer_category', 'business');
+    }
+
+    public function scopeCashCustomers($query)
+    {
+        return $query->where('customer_type', 'cash');
+    }
+
+    public function scopeCreditCustomers($query)
+    {
+        return $query->where('customer_type', 'credit');
     }
 
     public function scopeWithCreditLimit($query)
@@ -206,5 +226,67 @@ class Customer extends Model
     public function scopeOverCreditLimit($query)
     {
         return $query->whereRaw('ABS(balance) > credit_limit AND credit_limit > 0');
+    }
+
+    // Customer Type Methods
+    public function isCashCustomer()
+    {
+        return $this->customer_type === 'cash';
+    }
+
+    public function isCreditCustomer()
+    {
+        return $this->customer_type === 'credit';
+    }
+
+    public function isIndividual()
+    {
+        return $this->customer_category === 'individual';
+    }
+
+    public function isBusiness()
+    {
+        return $this->customer_category === 'business';
+    }
+
+    // Payment terms based on customer type
+    public function getDefaultPaymentTerms()
+    {
+        return $this->customer_type === 'cash' ? 'cash' : 'credit';
+    }
+
+    // Credit limit validation for credit customers
+    public function canMakeCreditPurchase($amount)
+    {
+        if ($this->isCashCustomer()) {
+            return false; // Cash customers cannot make credit purchases
+        }
+
+        if ($this->isCreditCustomer()) {
+            $currentBalance = abs((float) $this->balance);
+            return ($currentBalance + $amount) <= $this->credit_limit;
+        }
+
+        return true;
+    }
+
+    // Get customer type display name
+    public function getCustomerTypeDisplayAttribute()
+    {
+        return match($this->customer_type) {
+            'cash' => 'Cash Customer',
+            'credit' => 'Credit Customer',
+            default => 'Unknown'
+        };
+    }
+
+    // Get customer category display name
+    public function getCustomerCategoryDisplayAttribute()
+    {
+        return match($this->customer_category) {
+            'individual' => 'Individual',
+            'business' => 'Business',
+            default => 'Unknown'
+        };
     }
 }

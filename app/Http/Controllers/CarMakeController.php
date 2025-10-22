@@ -8,8 +8,13 @@ use Illuminate\Support\Str;
 
 class CarMakeController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        if ($request->expectsJson()) {
+            $makes = CarMake::where('status', 'active')->orderBy('name')->get(['id', 'name']);
+            return response()->json($makes);
+        }
+        
         $makes = CarMake::orderBy('name')->paginate(15);
         return view('car_makes.index', compact('makes'));
     }
@@ -51,5 +56,26 @@ class CarMakeController extends Controller
         return redirect()->back()->with('success', 'Car Make status updated.');
     }
 
-    
+    /**
+     * Quick add for Select2 tagging
+     */
+    public function quickAdd(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255|unique:car_makes,name',
+        ]);
+
+        $make = CarMake::create([
+            'name' => $validated['name'],
+            'status' => 'active',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'id' => $make->id,
+                'name' => $make->name,
+            ]
+        ]);
+    }
 }

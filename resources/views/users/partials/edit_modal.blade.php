@@ -24,9 +24,9 @@
                 </div>
                 <div class="col-md-6 mb-3">
                     <label class="form-label fw-bold">User Role <span class="text-danger">*</span></label>
-                    <select name="role_id" class="form-control" required>
-                        @foreach(\App\Models\Role::all() as $role)
-                            <option value="{{ $role->id }}" @if($user->role_id == $role->id) selected @endif>{{ ucfirst($role->name) }}</option>
+                    <select name="role" class="form-control" required>
+                        @foreach(\App\Models\Role::whereIn('name', ['staff', 'manager'])->get() as $role)
+                            <option value="{{ $role->name }}" @if($user->role->name == $role->name) selected @endif>{{ ucfirst($role->name) }}</option>
                         @endforeach
                     </select>
                 </div>
@@ -59,3 +59,39 @@
         </button>
     </div>
 </form>
+
+<script>
+$(document).ready(function() {
+    // Handle form submission
+    $('#userEditForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        var $form = $(this);
+        var submitBtn = $form.find('button[type="submit"]');
+        var originalText = submitBtn.html();
+        
+        submitBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span> Updating...');
+        
+        $.ajax({
+            url: $form.attr('action'),
+            method: 'POST',
+            data: $form.serialize(),
+            success: function(response) {
+                toastr.success('User updated successfully!');
+                $('#userModal').modal('hide');
+                location.reload();
+            },
+            error: function(xhr) {
+                var errorMsg = 'Failed to update user';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMsg = xhr.responseJSON.message;
+                } else if (xhr.responseJSON && xhr.responseJSON.errors) {
+                    errorMsg = Object.values(xhr.responseJSON.errors).flat().join('<br>');
+                }
+                toastr.error(errorMsg);
+                submitBtn.prop('disabled', false).html(originalText);
+            }
+        });
+    });
+});
+</script>

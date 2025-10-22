@@ -3,6 +3,7 @@
     <meta charset="UTF-8">
     <meta name='viewport' content='width=device-width, initial-scale=1.0'>
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Admin Panel')</title>
     <meta name="Description" content="Bootstrap Responsive Admin Web Dashboard HTML5 Template">
     <meta name="Author" content="Wcsrm Software Private Limited">
@@ -110,6 +111,16 @@
         .modal-backdrop {
             z-index: 1050 !important;
         }
+
+        #customerSelect{
+            width: 95% !important;
+        }
+
+        .select2-container{
+            border: #e2e6f1 1px solid;
+            border-radius: 5px;
+        }
     </style>
+
     @stack('styles')
 </head>

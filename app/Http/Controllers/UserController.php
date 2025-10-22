@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use App\Models\Role;
@@ -14,8 +15,10 @@ class UserController extends Controller
     public function index()
     {
         try {
-            $users = User::whereHas('role', fn($q) => $q->where('name', '!=', 'Owner'))
-                ->paginate(10);
+            $users = User::with('role')
+                ->whereHas('role', fn ($q) => $q->where('name', '!=', 'Owner'))
+                ->latest()
+                ->paginate(15);
 
             return view('users.index', compact('users'));
         } catch (\Exception $e) {
@@ -30,7 +33,7 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'phone' => 'nullable|string|max:20',
-            'role' => 'required|in:staff,manager',
+            'role' => 'required|in:Staff,Manager',
             'status' => 'required|in:active,inactive',
             'password' => 'required|min:6',
             'notes' => 'nullable|string|max:1000',
@@ -39,7 +42,7 @@ class UserController extends Controller
         try {
             $role = Role::where('name', $request->role)->first();
 
-            if (!$role) {
+            if (! $role) {
                 return back()->with('error', 'Role not found.');
             }
 
@@ -58,8 +61,9 @@ class UserController extends Controller
         } catch (\Illuminate\Validation\ValidationException $e) {
             return back()->withErrors($e->validator)->withInput();
         } catch (\Exception $e) {
-            Log::error("User create error: " . $e->getMessage());
-            return back()->with('error', 'Something went wrong while creating user.' . $e->getMessage());
+            Log::error('User create error: '.$e->getMessage());
+
+            return back()->with('error', 'Something went wrong while creating user.'.$e->getMessage());
         }
     }
 
@@ -68,9 +72,9 @@ class UserController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $user->id,
+            'email' => 'required|email|unique:users,email,'.$user->id,
             'phone' => 'nullable|string|max:20',
-            'role' => 'required|in:staff,manager',
+            'role' => 'required|in:Staff,Manager',
             'status' => 'required|in:active,inactive',
             'notes' => 'nullable|string|max:1000',
         ]);
@@ -78,7 +82,7 @@ class UserController extends Controller
         try {
             $role = Role::where('name', $request->role)->first();
 
-            if (!$role) {
+            if (! $role) {
                 return back()->with('error', 'Role not found.');
             }
 
@@ -95,21 +99,70 @@ class UserController extends Controller
         } catch (\Illuminate\Validation\ValidationException $e) {
             return back()->withErrors($e->validator)->withInput();
         } catch (\Exception $e) {
-            Log::error("User update error: " . $e->getMessage());
+            Log::error('User update error: '.$e->getMessage());
+
             return back()->with('error', 'Failed to update user.');
         }
     }
 
-
-    // Delete
+    // Soft Delete
     public function destroy(User $user)
     {
         try {
-            $user->delete();
-            return back()->with('success', 'User deleted successfully!');
+            // Prevent deleting owner
+            if ($user->role->name === 'Owner') {
+                return response()->json(['message' => 'Cannot delete owner account!'], 403);
+            }
+
+            $user->delete(); // Soft delete
+
+            return response()->json([
+                'success' => true,
+                'message' => 'User deleted successfully!',
+            ]);
         } catch (\Exception $e) {
-            Log::error("User delete error: " . $e->getMessage());
-            return back()->with('error', 'Failed to delete user.');
+            Log::error('User delete error: '.$e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete user: '.$e->getMessage(),
+            ], 500);
+        }
+    }
+
+    // Restore soft deleted user
+    public function restore($id)
+    {
+        try {
+            $user = User::withTrashed()->findOrFail($id);
+            $user->restore();
+
+            return back()->with('success', 'User restored successfully!');
+        } catch (\Exception $e) {
+            Log::error('User restore error: '.$e->getMessage());
+
+            return back()->with('error', 'Failed to restore user.');
+        }
+    }
+
+    // Permanent delete
+    public function forceDestroy($id)
+    {
+        try {
+            $user = User::withTrashed()->findOrFail($id);
+
+            // Prevent force deleting owner
+            if ($user->role->name === 'Owner') {
+                return back()->with('error', 'Cannot permanently delete owner account!');
+            }
+
+            $user->forceDelete();
+
+            return back()->with('success', 'User permanently deleted!');
+        } catch (\Exception $e) {
+            Log::error('User force delete error: '.$e->getMessage());
+
+            return back()->with('error', 'Failed to permanently delete user.');
         }
     }
 
@@ -117,7 +170,6 @@ class UserController extends Controller
     {
         return view('users.profile_settings');
     }
-
 
     public function userPasswordUpdate(Request $request)
     {
@@ -128,8 +180,7 @@ class UserController extends Controller
         ]);
         try {
 
-
-            if (!Hash::check($request->current_password, $request->user()->password)) {
+            if (! Hash::check($request->current_password, $request->user()->password)) {
                 return back()->with('error', 'Current password is incorrect.');
             }
 
@@ -139,7 +190,8 @@ class UserController extends Controller
 
             return back()->with('success', 'Password updated successfully!');
         } catch (\Exception $e) {
-            Log::error("Password update error: " . $e->getMessage());
+            Log::error('Password update error: '.$e->getMessage());
+
             return back()->with('error', 'Failed to update password.');
         }
     }
@@ -148,7 +200,7 @@ class UserController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $request->user()->id,
+            'email' => 'required|email|unique:users,email,'.$request->user()->id,
             'phone' => 'nullable|string|max:20',
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
         ]);
@@ -159,14 +211,15 @@ class UserController extends Controller
             // Avatar upload
             if ($request->hasFile('avatar')) {
                 $path = $request->file('avatar')->store('avatars', 'public');
-                $data['avatar'] = asset('storage/app/public/' . $path);
+                $data['avatar'] = asset('storage/app/public/'.$path);
             }
 
             $request->user()->update($data);
 
             return back()->with('success', 'Profile updated successfully!');
         } catch (\Exception $e) {
-            Log::error("Profile update error: " . $e->getMessage());
+            Log::error('Profile update error: '.$e->getMessage());
+
             return back()->with('error', 'Failed to update profile.');
         }
     }
@@ -186,7 +239,8 @@ class UserController extends Controller
 
             return back()->with('success', 'Avatar removed successfully.');
         } catch (\Exception $e) {
-            Log::error("Avatar remove error: " . $e->getMessage());
+            Log::error('Avatar remove error: '.$e->getMessage());
+
             return back()->with('error', 'Failed to remove avatar.');
         }
     }
@@ -239,5 +293,4 @@ class UserController extends Controller
     {
         return view('users.partials.edit_modal', compact('user'));
     }
-
 }

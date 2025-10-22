@@ -5,6 +5,7 @@ use App\Http\Controllers\BrandController;
 use App\Http\Controllers\CarMakeController;
 use App\Http\Controllers\CarModelController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\CreditNoteController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EngineController;
 use App\Http\Controllers\GoodsReceiptController;
@@ -18,6 +19,9 @@ use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\UserController;
 use App\Models\Customer;
 use App\Models\Product;
+use App\Models\CarMake;
+use App\Models\CarModel;
+use App\Models\Engine;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -57,6 +61,8 @@ Route::middleware(['auth', 'security'])->group(function () {
     Route::put('/update-users/{user}', [UserController::class, 'update'])->name('users.update');
     Route::post('/user-password-update', [UserController::class, 'userPasswordUpdate'])->name('user.password.update');
     Route::delete('/delete-user/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+    Route::post('/restore-user/{id}', [UserController::class, 'restore'])->name('users.restore');
+    Route::delete('/force-delete-user/{id}', [UserController::class, 'forceDestroy'])->name('users.force-destroy');
     
     // User Modals
     Route::get('/users/create-modal', [UserController::class, 'createModal'])->name('users.create-modal');
@@ -110,6 +116,8 @@ Route::middleware(['auth', 'security'])->group(function () {
     Route::post('/suppliers', [SupplierController::class, 'store'])->name('suppliers.store');
     Route::put('/suppliers/{supplier}', [SupplierController::class, 'update'])->name('suppliers.update');
     Route::delete('/suppliers/{supplier}', [SupplierController::class, 'destroy'])->name('suppliers.destroy');
+    // Route::patch('/suppliers/{id}/restore', [SupplierController::class, 'restore'])->name('suppliers.restore');
+    // Route::delete('/suppliers/{id}/force-delete', [SupplierController::class, 'forceDelete'])->name('suppliers.force-delete');
     Route::patch('/toggle-supplier-status/{supplier}', [SupplierController::class, 'toggleStatus'])->name('suppliers.toggle.status');
     
     // Supplier Modals
@@ -123,6 +131,7 @@ Route::middleware(['auth', 'security'])->group(function () {
     // 🔹 Car Makes
     Route::get('/car-makes', [CarMakeController::class, 'index'])->name('car-makes.index');
     Route::post('/car-makes', [CarMakeController::class, 'store'])->name('car-makes.store');
+    Route::post('/car-makes/quick-add', [CarMakeController::class, 'quickAdd'])->name('car-makes.quick-add');
     Route::put('/car-makes/{make}', [CarMakeController::class, 'update'])->name('car-makes.update');
     Route::delete('/car-makes/{make}', [CarMakeController::class, 'destroy'])->name('car-makes.destroy');
     Route::patch('/toggle-car-make-status/{make}', [CarMakeController::class, 'toggleStatus'])->name('toggle.car-make.status');
@@ -130,6 +139,7 @@ Route::middleware(['auth', 'security'])->group(function () {
     // 🔹 Car Models
     Route::get('/car-models', [CarModelController::class, 'index'])->name('car-models.index');
     Route::post('/car-models', [CarModelController::class, 'store'])->name('car-models.store');
+    Route::post('/car-models/quick-add', [CarModelController::class, 'quickAdd'])->name('car-models.quick-add');
     Route::put('/car-models/{model}', [CarModelController::class, 'update'])->name('car-models.update');
     Route::delete('/car-models/{model}', [CarModelController::class, 'destroy'])->name('car-models.destroy');
     Route::patch('/toggle-car-model-status/{model}', [CarModelController::class, 'toggleStatus'])->name('toggle.car-model.status');
@@ -141,6 +151,7 @@ Route::middleware(['auth', 'security'])->group(function () {
     // Engines
     Route::get('/engines', [EngineController::class, 'index'])->name('engines.index');
     Route::post('/engines', [EngineController::class, 'store'])->name('engines.store');
+    Route::post('/car-engines/quick-add', [EngineController::class, 'quickAdd'])->name('car-engines.quick-add');
     Route::get('/engines/{engine}/edit', [EngineController::class, 'edit'])->name('engines.edit');
     Route::put('/engines/{engine}', [EngineController::class, 'update'])->name('engines.update');
     Route::delete('/engines/{engine}', [EngineController::class, 'destroy'])->name('engines.destroy');
@@ -167,37 +178,94 @@ Route::middleware(['auth', 'security'])->group(function () {
 
     Route::middleware(['auth', 'security'])->group(function () {
         Route::get('/products', [ProductController::class, 'index'])->name('products.index');
-        Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
         Route::post('/products', [ProductController::class, 'store'])->name('products.store');
+        Route::post('/products/quick-add', [ProductController::class, 'quickAdd'])->name('products.quickAdd');
+        Route::get('/products/export', [ProductController::class, 'export'])->name('products.export');
+        Route::get('/products/test-pdf', [ProductController::class, 'testPdf'])->name('products.testPdf');
+        
+        // These routes with {product} parameter must come AFTER specific routes
+        Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
         Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update'); // ✅ Changed to PUT
         Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
         Route::patch('/products/{product}/toggle-status', [ProductController::class, 'toggleStatus'])->name('products.toggleStatus');
-        Route::post('/products/quick-add', [ProductController::class, 'quickAdd'])->name('products.quickAdd');
-    });
+    }); 
 
+    // Goods Receipts - Specific routes MUST come BEFORE resource route
+    Route::get('/goods-receipts/po/{poId}/items', [GoodsReceiptController::class, 'getPOItems'])
+        ->name('goods-receipts.get-po-items');
+    
+    Route::get('/goods-receipts/export', [GoodsReceiptController::class, 'export'])
+        ->name('goods-receipts.export');
+    
+    Route::get('/goods-receipts/search-products', [GoodsReceiptController::class, 'searchProducts'])
+        ->name('goods-receipts.search-products');
+    
+    Route::get('/goods-receipts/{grn}/print', [GoodsReceiptController::class, 'print'])
+        ->name('goods-receipts.print');
+    
     Route::resource('goods-receipts', GoodsReceiptController::class);
+    
+    // Purchase Orders - Specific routes MUST come BEFORE resource route
+    Route::get('/purchase-orders/create-modal', [PurchaseOrderController::class, 'createModal'])
+        ->name('purchase-orders.create-modal');
+    Route::get('/purchase-orders/export', [PurchaseOrderController::class, 'export'])
+        ->name('purchase-orders.export');
+    Route::get('/purchase-orders/search-products', [PurchaseOrderController::class, 'searchProducts'])
+        ->name('purchase-orders.search-products');
+    
+    Route::resource('purchase-orders', PurchaseOrderController::class);
+    
+    // Purchase Order Status Change (PATCH)
+    Route::patch('/purchase-orders/{purchaseOrder}/change-status', [PurchaseOrderController::class, 'changeStatus'])
+        ->name('purchase-orders.change-status');
 
-Route::resource('purchase-orders', PurchaseOrderController::class);
+    // AJAX: PO modals
+    Route::get('/purchase-orders/{id}/view-modal', [PurchaseOrderController::class, 'viewModal'])
+        ->name('purchase-orders.view-modal');
+    Route::get('/purchase-orders/{id}/edit-modal', [PurchaseOrderController::class, 'editModal'])
+        ->name('purchase-orders.edit-modal');
 
-// Purchase Order Status Change (PATCH)
-Route::patch('/purchase-orders/{purchaseOrder}/change-status', [PurchaseOrderController::class, 'changeStatus'])
-    ->name('purchase-orders.change-status');
+    // Purchase Order actions
+    Route::get('/purchase-orders/{purchaseOrder}/print', [PurchaseOrderController::class, 'print'])
+        ->name('purchase-orders.print');
 
-// AJAX: PO view/edit modals
-Route::get('/purchase-orders/{id}/view-modal', [PurchaseOrderController::class, 'viewModal'])
-    ->name('purchase-orders.view-modal');
-Route::get('/purchase-orders/{id}/edit-modal', [PurchaseOrderController::class, 'editModal'])
-    ->name('purchase-orders.edit-modal');
+    // PO Approval and Closing
+    Route::post('/purchase-orders/{id}/approve', [PurchaseOrderController::class, 'approve'])
+        ->name('purchase-orders.approve');
+    Route::post('/purchase-orders/{id}/close', [PurchaseOrderController::class, 'close'])
+        ->name('purchase-orders.close');
+
+    // Goods Receipts modals
+    Route::get('/goods-receipts/{id}/view-modal', [GoodsReceiptController::class, 'viewModal'])
+        ->name('goods-receipts.view-modal');
+    Route::get('/goods-receipts/{id}/edit-modal', [GoodsReceiptController::class, 'editModal'])
+        ->name('goods-receipts.edit-modal');
+
+    // GRN Posting
+    Route::post('/goods-receipts/{id}/post', [GoodsReceiptController::class, 'post'])
+        ->name('goods-receipts.post');
 
 // Quotes CRUD + modals
 // Print Quotation
 Route::get('/quotes/{quote}/print', [App\Http\Controllers\QuoteController::class, 'print'])->name('quotes.print');
+// Export Quotations
+Route::get('/quotes/export', [App\Http\Controllers\QuoteController::class, 'export'])->name('quotes.export');
 
 Route::get('/quotes/create', function () {
         $customers = Customer::orderBy('name')->get();
         $products = Product::orderBy('name')->get();
+        $makes = CarMake::where('status', 'active')->orderBy('name')->get();
+        $models = CarModel::where('status', 'active')->orderBy('name')->get();
+        $engines = Engine::where('status', 'active')->orderBy('code')->get();
+        
+        // Get VAT settings from database
+        $vatSettings = [
+            'enabled' => App\Models\Setting::vatEnabled(),
+            'rate' => App\Models\Setting::vatRate(),
+            'inclusive' => App\Models\Setting::vatInclusive(),
+        ];
 
-    return view('quotes.partials.create_modal', compact('customers', 'products'))->render();
+    return view('quotes.partials.create_modal', compact('customers', 'products', 'makes', 'models', 'engines', 'vatSettings'))->render();
 })->name('quotes.create');
 
 Route::get('/quotes/{id}/view-modal', [App\Http\Controllers\QuoteController::class, 'viewModal'])
@@ -205,10 +273,16 @@ Route::get('/quotes/{id}/view-modal', [App\Http\Controllers\QuoteController::cla
 Route::get('/quotes/{id}/edit-modal', [App\Http\Controllers\QuoteController::class, 'editModal'])
     ->name('quotes.edit-modal');
 
+// Get Customer Info for Payment Options
+Route::get('/quotes/{id}/customer-info', [App\Http\Controllers\QuoteController::class, 'getCustomerInfo'])->name('quotes.customer-info');
 // Convert to Invoice
 Route::post('/quotes/{id}/convert-to-invoice', [App\Http\Controllers\QuoteController::class, 'convertToInvoice'])->name('quotes.convert-to-invoice');
 // Duplicate Quote
 Route::post('/quotes/{id}/duplicate', [App\Http\Controllers\QuoteController::class, 'duplicate'])->name('quotes.duplicate');
+// Search Products for Quote
+Route::get('/quotes/search-products', [App\Http\Controllers\QuoteController::class, 'searchProducts'])->name('quotes.search-products');
+// Search Customers for Quote
+Route::get('/customers/search', [App\Http\Controllers\CustomerController::class, 'searchCustomers'])->name('customers.search');
 
 Route::resource('quotes', App\Http\Controllers\QuoteController::class)->except(['create']);
 
@@ -218,13 +292,13 @@ Route::get('/customers/create', function () {
 })->name('customers.create');
 
 Route::get('/customers/{id}/view-modal', function ($id) {
-        $customer = Customer::findOrFail($id);
+        $customer = Customer::with(['vehicles.make', 'vehicles.model', 'vehicles.engine'])->findOrFail($id);
 
     return view('customers.partials.view_modal', compact('customer'))->render();
 })->name('customers.view-modal');
 
 Route::get('/customers/{id}/edit-modal', function ($id) {
-        $customer = Customer::findOrFail($id);
+        $customer = Customer::with(['vehicles.make', 'vehicles.model', 'vehicles.engine'])->findOrFail($id);
 
     return view('customers.partials.edit_modal', compact('customer'))->render();
 })->name('customers.edit-modal');
@@ -234,11 +308,13 @@ Route::resource('customers', App\Http\Controllers\CustomerController::class)->ex
 // Customer toggle status route
 Route::patch('/customers/{customer}/toggle-status', [App\Http\Controllers\CustomerController::class, 'toggleStatus'])->name('customers.toggle-status');
 
-// Goods Receipts modals
-Route::get('/goods-receipts/{id}/view-modal', [GoodsReceiptController::class, 'viewModal'])
-    ->name('goods-receipts.view-modal');
-Route::get('/goods-receipts/{id}/edit-modal', [GoodsReceiptController::class, 'editModal'])
-    ->name('goods-receipts.edit-modal');
+// Customer Vehicle API Routes
+Route::get('/api/car-makes', [App\Http\Controllers\CustomerController::class, 'getMakes'])->name('api.car-makes');
+Route::get('/api/car-models', [App\Http\Controllers\CustomerController::class, 'getModels'])->name('api.car-models');
+Route::get('/api/engines', [App\Http\Controllers\CustomerController::class, 'getEngines'])->name('api.engines');
+Route::post('/customers/{customer}/vehicles', [App\Http\Controllers\CustomerController::class, 'storeVehicle'])->name('customers.vehicles.store');
+Route::delete('/customers/{customer}/vehicles/{vehicle}', [App\Http\Controllers\CustomerController::class, 'deleteVehicle'])->name('customers.vehicles.delete');
+
 Route::get('/quotes/{id}/view-modal', [QuoteController::class, 'viewModal'])->name('quotes.view-modal');
 Route::get('/quotes/{id}/edit-modal', [QuoteController::class, 'editModal'])->name('quotes.edit-modal');
 
@@ -258,10 +334,22 @@ Route::get('/quotes/{id}/edit-modal', [QuoteController::class, 'editModal'])->na
     // Print Invoice
     Route::get('/invoices/{invoice}/print', [App\Http\Controllers\InvoiceController::class, 'print'])->name('invoices.print');
 
+    // Export Invoices
+    Route::get('/invoices/export', [App\Http\Controllers\InvoiceController::class, 'export'])->name('invoices.export');
+
     // Post Invoice (update stock)
     Route::post('/invoices/{invoice}/post', [App\Http\Controllers\InvoiceController::class, 'post'])->name('invoices.post');
 
     Route::resource('invoices', App\Http\Controllers\InvoiceController::class)->except(['create', 'edit', 'show']);
+
+    // Credit Notes Routes
+    Route::post('/credit-notes/get-invoice-details', [App\Http\Controllers\CreditNoteController::class, 'getInvoiceDetails'])->name('credit-notes.get-invoice-details');
+    Route::post('/credit-notes/{id}/post', [App\Http\Controllers\CreditNoteController::class, 'post'])->name('credit-notes.post');
+    Route::post('/credit-notes/{id}/void', [App\Http\Controllers\CreditNoteController::class, 'void'])->name('credit-notes.void');
+    Route::get('/credit-notes/{id}/pdf', [App\Http\Controllers\CreditNoteController::class, 'pdf'])->name('credit-notes.pdf');
+    Route::post('/credit-notes/{id}/email', [App\Http\Controllers\CreditNoteController::class, 'email'])->name('credit-notes.email');
+    Route::post('/credit-notes/{id}/whatsapp', [App\Http\Controllers\CreditNoteController::class, 'whatsapp'])->name('credit-notes.whatsapp');
+    Route::resource('credit-notes', App\Http\Controllers\CreditNoteController::class);
 
     // Returns & Credit Notes Routes
     Route::get('/returns/create', [App\Http\Controllers\ReturnsController::class, 'create'])->name('returns.create');
@@ -289,6 +377,7 @@ Route::get('/quotes/{id}/edit-modal', [QuoteController::class, 'editModal'])->na
     Route::post('/job-cards/{jobCard}/add-item', [JobCardController::class, 'addItem'])->name('job-cards.add-item');
     Route::post('/job-cards/{jobCard}/add-labour', [JobCardController::class, 'addLabour'])->name('job-cards.add-labour');
     Route::get('/job-cards/{jobCard}/pdf', [JobCardController::class, 'generatePDF'])->name('job-cards.pdf');
+    Route::get('/job-cards/export/{format}', [JobCardController::class, 'export'])->name('job-cards.export');
     Route::resource('job-cards', JobCardController::class)->only(['index']);
 
     // POS Routes
@@ -365,6 +454,7 @@ Route::get('/quotes/{id}/edit-modal', [QuoteController::class, 'editModal'])->na
         Route::post('/whatsapp', [App\Http\Controllers\SettingsController::class, 'updateWhatsApp'])->name('settings.update-whatsapp');
         Route::post('/security', [App\Http\Controllers\SettingsController::class, 'updateSecurity'])->name('settings.update-security');
         Route::post('/remove-logo', [App\Http\Controllers\SettingsController::class, 'removeLogo'])->name('settings.remove-logo');
+        Route::post('/remove-terms-pdf', [App\Http\Controllers\SettingsController::class, 'removeTermsPdf'])->name('settings.remove-terms-pdf');
     });
 
     // Statements Routes

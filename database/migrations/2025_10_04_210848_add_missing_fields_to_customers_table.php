@@ -36,7 +36,7 @@ return new class extends Migration
             $table->string('country')->default('South Africa')->after('postal_code')->comment('Country');
             
             // Customer status
-            $table->enum('customer_status', ['active', 'inactive', 'suspended'])->default('active')->after('customer_type')->comment('Customer status');
+            $table->enum('customer_status', ['active', 'inactive'])->default('active')->after('customer_type')->comment('Customer status');
             
             // Marketing preferences
             $table->boolean('marketing_consent')->default(false)->after('customer_status')->comment('Marketing communication consent');

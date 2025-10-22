@@ -12,11 +12,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('stock_batches', function (Blueprint $table) {
-            // Add document tracking columns
-            $table->string('document_type')->nullable()->after('received_date')
-                  ->comment('Type of document: grn, return, adjustment, etc.');
-            $table->unsignedBigInteger('document_id')->nullable()->after('document_type')
-                  ->comment('ID of the source document');
+            // Add document tracking columns only if they don't exist
+            if (!Schema::hasColumn('stock_batches', 'document_type')) {
+                $table->string('document_type')->nullable()->after('received_date')
+                      ->comment('Type of document: grn, return, adjustment, etc.');
+            }
+            if (!Schema::hasColumn('stock_batches', 'document_id')) {
+                $table->unsignedBigInteger('document_id')->nullable()->after('document_type')
+                      ->comment('ID of the source document');
+            }
         });
     }
 

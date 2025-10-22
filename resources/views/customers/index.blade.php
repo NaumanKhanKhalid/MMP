@@ -3,16 +3,63 @@
 @section('content')
     <div class="container-fluid py-4">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <h4>Customers</h4   >
+            <h4 class="mb-0"><i class="ri-user-line me-2"></i> Customers (Debtors)</h4>
             <button class="btn btn-primary" id="openCreateCustomerModal">
-                <i class="bi bi-person-plus me-1"></i> New Customer
+                <i class="ri-user-add-line me-1"></i> Add Customer
             </button>
         </div>
 
+        <!-- Search and Filters -->
+        <div class="card shadow-sm mb-3">
+            <div class="card-body">
+                <form method="GET" action="{{ route('customers.index') }}" id="customerSearchForm">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Search</label>
+                            <input type="text" name="search" class="form-control" placeholder="Name, Code, Email, Phone..." value="{{ request('search') }}">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-bold">Status</label>
+                            <select name="status" class="form-control">
+                                <option value="">All</option>
+                                <option value="active" {{ request('status') == 'active' ? 'selected' : '' }}>Active</option>
+                                <option value="inactive" {{ request('status') == 'inactive' ? 'selected' : '' }}>Inactive</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-bold">Type</label>
+                            <select name="type" class="form-control">
+                                <option value="">All</option>
+                                <option value="cash" {{ request('type') == 'cash' ? 'selected' : '' }}>Cash</option>
+                                <option value="credit" {{ request('type') == 'credit' ? 'selected' : '' }}>Credit</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-bold">Category</label>
+                            <select name="category" class="form-control">
+                                <option value="">All</option>
+                                <option value="individual" {{ request('category') == 'individual' ? 'selected' : '' }}>Individual</option>
+                                <option value="business" {{ request('category') == 'business' ? 'selected' : '' }}>Business</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-bold">&nbsp;</label>
+                            <div class="d-flex gap-2">
+                                <a href="{{ route('customers.index') }}" class="btn btn-light">
+                                    <i class="ri-refresh-line"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <div class="card shadow-sm">
-            <div class="card-body table-responsive">
+            <div class="card-body">
+                <div class="table-responsive" style="max-height: 60vh; overflow-y: auto;">
                 <table class="table table-bordered table-striped">
-                    <thead>
+                    <thead class="sticky-top bg-white" style="z-index: 10;">
                         <tr>
                             <th>#</th>
                             <th>Code</th>
@@ -26,142 +73,47 @@
                             <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        @foreach ($customers as $customer)
-                            <tr>
-                                <td>{{ $loop->iteration }}</td>
-                                <td>
-                                    <span class="badge bg-info-transparent">{{ $customer->customer_code }}</span>
-                                </td>
-                                <td>
-                                    <div>
-                                        <strong>{{ $customer->display_name }}</strong>
-                                        @if($customer->isBusiness() && $customer->company_name)
-                                            <br><small class="text-muted">{{ $customer->name }}</small>
-                                        @endif
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="badge bg-{{ $customer->customer_type === 'business' ? 'primary' : 'secondary' }}-transparent">
-                                        {{ ucfirst($customer->customer_type) }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <div>
-                                        @if($customer->email)
-                                            <span class="d-block mb-1"><i class="ri-mail-line me-2 align-middle fs-14 text-muted"></i>{{ $customer->email }}</span>
-                                        @endif
-                                        @if($customer->phone)
-                                            <span class="d-block"><i class="ri-phone-line me-2 align-middle fs-14 text-muted"></i>{{ $customer->phone }}</span>
-                                        @endif
-                                        @if($customer->contact_person)
-                                            <small class="text-muted">{{ $customer->contact_person }}</small>
-                                        @endif
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="badge bg-{{ $customer->terms === 'on_account' ? 'warning' : 'success' }}-transparent">
-                                        {{ ucfirst($customer->terms) }}
-                                    </span>
-                                </td>
-                                <td>
-                                    @if($customer->credit_limit > 0)
-                                        <span class="text-success">R{{ number_format($customer->credit_limit, 2) }}</span>
-                                    @else
-                                        <span class="text-muted">No limit</span>
-                                    @endif
-                                </td>
-                                <td>
-                                    <span class="{{ $customer->balance < 0 ? 'text-danger' : ($customer->balance > 0 ? 'text-success' : 'text-muted') }}">
-                                        R{{ number_format($customer->balance, 2) }}
-                                    </span>
-                                    @if($customer->isOverCreditLimit())
-                                        <br><small class="text-danger">Over limit!</small>
-                                    @endif
-                                </td>
-                                <td>
-                                    @if($customer->customer_status === 'active')
-                                        <span class="badge rounded-pill bg-success-transparent">Active</span>
-                                    @elseif($customer->customer_status === 'inactive')
-                                        <span class="badge rounded-pill bg-secondary-transparent">Inactive</span>
-                                    @else
-                                        <span class="badge rounded-pill bg-danger-transparent">Suspended</span>
-                                    @endif
-                                </td>
-                                <td>
-                                    <div class="btn-list d-inline-flex gap-1">
-                                        <button class="btn btn-sm btn-primary-light btn-icon openViewCustomerModal" data-id="{{ $customer->id }}" title="View">
-                                            <i class="ri-eye-line"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-success-light btn-icon openEditCustomerModal" data-id="{{ $customer->id }}" title="Edit">
-                                            <i class="ri-pencil-line"></i>
-                                        </button>
-                                        <form action="{{ route('customers.toggle-status', $customer) }}" method="POST" style="display:inline-block">
-                                            @csrf
-                                            @method('PATCH')
-                                            <button class="btn btn-sm btn-warning-light btn-icon" title="Toggle Status">
-                                                <i class="ri-toggle-line"></i>
-                                            </button>
-                                        </form>
-                                        <button class="btn btn-sm btn-danger-light btn-icon" data-bs-toggle="modal" data-bs-target="#deleteCustomer{{ $customer->id }}" title="Delete">
-                                                <i class="ri-delete-bin-line"></i>
-                                            </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        @endforeach
+                    <tbody id="customersTableBody">
+                        @include('customers.partials.table')
                     </tbody>
                 </table>
-                {{ $customers->links() }}
+                </div>
+            </div>
+            <div class="card-footer">
+                <div id="paginationContainer">
+                    @include('customers.partials.pagination')
+                </div>
+            </div>
+        </div>
 
-                <!-- Delete Modals for each customer -->
-                @foreach ($customers as $customer)
-                    <div class="modal fade" id="deleteCustomer{{ $customer->id }}" tabindex="-1" aria-hidden="true">
-                        <div class="modal-dialog">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title">Confirm Delete</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                </div>
-                                <div class="modal-body">
-                                    <div class="text-center">
-                                        <i class="ri-delete-bin-line text-danger" style="font-size: 3rem;"></i>
-                                        <h4 class="mt-3">Are you sure?</h4>
-                                        <p class="text-muted">You are about to delete customer:</p>
-                                        
-                                        <p class="text-danger mt-3">
-                                            <strong>This action cannot be undone!</strong>
-                                        </p>
-                                        @if($customer->quotes()->count() > 0 || $customer->invoices()->count() > 0 )
-                                            <div class="alert alert-warning mt-3">
-                                                <i class="ri-alert-line me-2"></i>
-                                                This customer has associated records and cannot be deleted.
-                                            </div>
-                                        @endif
-                                    </div>
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                                    @if($customer->quotes()->count() == 0 && $customer->invoices()->count() == 0 )
-                                        <form action="{{ route('customers.destroy', $customer) }}" method="POST" style="display:inline-block">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-danger">
-                                                <i class="ri-delete-bin-line me-1"></i> Delete Customer
-                                            </button>
-                                        </form>
-                                    @else
-                                        <button type="button" class="btn btn-danger" disabled>
-                                            <i class="ri-delete-bin-line me-1"></i> Cannot Delete
-                                        </button>
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
+        <!-- Delete Modal -->
+        <div class="modal fade" id="deleteCustomerModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title">
+                            <i class="ri-delete-bin-line me-2"></i>Delete Customer
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
-                @endforeach
+                    <div class="modal-body">
+                        <p>Are you sure you want to delete the customer <strong id="deleteCustomerName"></strong>?</p>
+                        <p class="text-muted">This action cannot be undone.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                        <form id="deleteCustomerForm" method="POST" class="d-inline">
+                            @csrf @method('DELETE')
+                            <button type="submit" class="btn btn-danger">
+                                <i class="ri-delete-bin-line me-1"></i>Delete
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-                <!-- Customer Modals -->
+        <!-- Customer Modals -->
                 <div class="modal fade" id="customerModal" tabindex="-1" aria-hidden="true">
                     <div class="modal-dialog modal-xl">
                         <div class="modal-content" id="customerModalContent"></div>
@@ -171,6 +123,51 @@
 
             @push('scripts')
                 <script>
+                    // Global variables and functions for customer filtering
+                    let currentPage = {{ $customers->currentPage() }};
+                    let isLoading = false;
+
+                    function loadCustomers() {
+                        if (isLoading) return;
+                        
+                        isLoading = true;
+                        showLoading();
+                        
+                        const params = {
+                            search: $('input[name="search"]').val(),
+                            status: $('select[name="status"]').val(),
+                            type: $('select[name="type"]').val(),
+                            category: $('select[name="category"]').val(),
+                            page: currentPage,
+                            ajax: 1
+                        };
+                        
+                        $.get('{{ route("customers.index") }}', params, function(data) {
+                            $('#customersTableBody').html(data.table);
+                            $('#paginationContainer').html(data.pagination);
+                            hideLoading();
+                            isLoading = false;
+                        }).fail(function(xhr, status, error) {
+                            console.error('AJAX error:', xhr.status, xhr.statusText);
+                            toastr.error('Error loading customers: ' + xhr.status + ' ' + xhr.statusText);
+                            hideLoading();
+                            isLoading = false;
+                        });
+                    }
+
+                    function loadCustomersPage(page) {
+                        currentPage = page;
+                        loadCustomers();
+                    }
+
+                    function showLoading() {
+                        $('#customersTableBody').html('<tr><td colspan="9" class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></td></tr>');
+                    }
+
+                    function hideLoading() {
+                        // Loading removed by new content
+                    }
+
                     $(function() {
                         // Create Customer
                         $('#openCreateCustomerModal').on('click', function() {
@@ -197,6 +194,111 @@
                                 $('#customerModal').modal('show');
                             });
                         });
+
+                        // Delete Customer
+                        $(document).on('click', '.openDeleteCustomerModal', function(e) {
+                            e.stopPropagation();
+                            var id = $(this).data('id');
+                            var name = $(this).data('name');
+                            $('#deleteCustomerName').text(name);
+                            $('#deleteCustomerForm').attr('action', "{{ route('customers.destroy', ':id') }}".replace(':id', id));
+                            $('#deleteCustomerModal').modal('show');
+                        });
+
+                        // Handle Delete Form Submission
+                        $(document).on('submit', '#deleteCustomerForm', function(e) {
+                            e.preventDefault();
+                            var $form = $(this);
+                            var $button = $form.find('button[type="submit"]');
+                            
+                            $button.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Deleting...');
+                            
+                            $.ajax({
+                                url: $form.attr('action'),
+                                method: 'POST',
+                                data: $form.serialize(),
+                                success: function(response) {
+                                    $('#deleteCustomerModal').modal('hide');
+                                    toastr.success('Customer deleted successfully!');
+                                    loadCustomers();
+                                },
+                                error: function(xhr) {
+                                    var error = xhr.responseJSON?.message || 'Failed to delete customer';
+                                    toastr.error(error);
+                                    $button.prop('disabled', false).html('<i class="ri-delete-bin-line me-1"></i>Delete');
+                                }
+                            });
+                        });
+
+                        // Row Click to View
+                        $(document).on('click', '.clickable-row', function(e) {
+                            // Don't trigger if clicking on buttons or forms
+                            if ($(e.target).closest('button, form, a').length === 0) {
+                                var id = $(this).data('id');
+                                $.get("{{ route('customers.view-modal', ':id') }}".replace(':id', id), function(html) {
+                                    $('#customerModalContent').html(html);
+                                    $('#customerModal').modal('show');
+                                });
+                            }
+                        });
+
+                        // Toggle Status with AJAX
+                        $(document).on('submit', '.toggle-status-form', function(e) {
+                            e.preventDefault();
+                            
+                            var $form = $(this);
+                            var $button = $form.find('button[type="submit"]');
+                            var $icon = $button.find('i');
+                            var originalIcon = $icon.attr('class');
+                            
+                            // Show loading state
+                            $icon.attr('class', 'ri-loader-4-line spinner-border spinner-border-sm');
+                            $button.prop('disabled', true);
+                            
+                            $.ajax({
+                                url: $form.attr('action'),
+                                method: 'POST',
+                                data: $form.serialize(),
+                                success: function(response) {
+                                    // Reload the table to show updated status
+                                    loadCustomers();
+                                    toastr.success('Customer status updated successfully!');
+                                },
+                                error: function(xhr) {
+                                    // Restore original state
+                                    $icon.attr('class', originalIcon);
+                                    $button.prop('disabled', false);
+                                    toastr.error('Failed to update status');
+                                }
+                            });
+                        });
+
+                        // Initialize filters with debounce
+                        function initializeFilters() {
+                            let searchTimeout;
+                            
+                            $('input[name="search"]').on('keyup', function() {
+                                clearTimeout(searchTimeout);
+                                searchTimeout = setTimeout(function() {
+                                    currentPage = 1;
+                                    loadCustomers();
+                                }, 500);
+                            });
+                            
+                            $('select[name="status"], select[name="type"], select[name="category"]').on('change', function() {
+                                currentPage = 1;
+                                loadCustomers();
+                            });
+                            
+                            // Prevent form submission
+                            $('#customerSearchForm').on('submit', function(e) {
+                                e.preventDefault();
+                                currentPage = 1;
+                                loadCustomers();
+                            });
+                        }
+
+                        initializeFilters();
                     });
                 </script>
             @endpush

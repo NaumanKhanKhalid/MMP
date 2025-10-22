@@ -1,9 +1,11 @@
 <?php
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         // Products
@@ -17,10 +19,11 @@ return new class extends Migration {
 
             // Basic Info
             $table->string('name');
+            $table->foreignId('supplier_id')->nullable()->constrained()->nullOnDelete();
+            $table->text('supplier_code')->nullable()->comment('Supplier part number');
             $table->foreignId('brand_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('category_id')->nullable()->constrained()->nullOnDelete();
             $table->foreignId('subcategory_id')->nullable()->constrained('categories')->nullOnDelete();
-            $table->text('description')->nullable();
 
             // Unit & Location
             $table->enum('unit', ['PCS', 'SET'])->default('PCS');
@@ -44,7 +47,6 @@ return new class extends Migration {
 
             // Audit
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
-            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
 
             $table->timestamps();
             $table->softDeletes();
@@ -56,7 +58,6 @@ return new class extends Migration {
             $table->index('name');
             $table->index('status');
         });
-
 
         // OE numbers
         Schema::create('product_oe_numbers', function (Blueprint $table) {
@@ -74,19 +75,6 @@ return new class extends Migration {
             $table->timestamps();
         });
 
-        Schema::create('product_supplier', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('product_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('supplier_id')->constrained()->cascadeOnDelete();
-            $table->decimal('purchase_price', 15, 4)->default(0);
-            $table->string('currency', 10)->default('PKR');
-            $table->integer('lead_time')->nullable(); // days
-            $table->string('supplier_sku')->nullable();
-            $table->timestamps();
-
-            $table->unique(['product_id', 'supplier_id']);
-        });
-
         Schema::create('stock_batches', function (Blueprint $table) {
             $table->id();
             $table->foreignId('product_id')->constrained()->cascadeOnDelete();
@@ -95,6 +83,8 @@ return new class extends Migration {
             $table->decimal('qty_left', 14, 4)->default(0);
             $table->decimal('landed_unit_cost', 18, 4)->default(0);
             $table->date('received_date')->nullable();
+            $table->string('document_type')->nullable()->comment('Type of document: grn, return, adjustment, etc.');
+            $table->unsignedBigInteger('document_id')->nullable()->comment('ID of the source document');
             $table->foreignId('grn_id')->nullable()->constrained('goods_receipts')->nullOnDelete();
             $table->timestamps();
         });
@@ -115,10 +105,10 @@ return new class extends Migration {
 
     public function down(): void
     {
-        Schema::dropIfExists('products');
         Schema::dropIfExists('stock_ledger');
-        Schema::dropIfExists('product_suppliers');
+        Schema::dropIfExists('stock_batches');
         Schema::dropIfExists('product_cross_refs');
         Schema::dropIfExists('product_oe_numbers');
+        Schema::dropIfExists('products');
     }
 };

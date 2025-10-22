@@ -7,8 +7,21 @@ use Illuminate\Http\Request;
 
 class EngineController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        if ($request->expectsJson()) {
+            $query = Engine::where('status', 'active')->orderBy('code');
+            
+            if ($request->has('model_id')) {
+                $query->whereHas('models', function($q) use ($request) {
+                    $q->where('model_id', $request->model_id);
+                });
+            }
+            
+            $engines = $query->get(['id', 'code']);
+            return response()->json($engines);
+        }
+        
         $engines = Engine::orderBy('code')->paginate(15);
         return view('engines.index', compact('engines'));
     }
@@ -58,5 +71,29 @@ class EngineController extends Controller
         $engine->save();
 
         return redirect()->back()->with('success', 'Engine status updated.');
+    }
+
+    /**
+     * Quick add for Select2 tagging
+     */
+    public function quickAdd(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+        ]);
+
+        // Use name as code for quick add
+        $engine = Engine::create([
+            'code' => $validated['name'],
+            'status' => 'active',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'id' => $engine->id,
+                'name' => $engine->code,
+            ]
+        ]);
     }
 }

@@ -115,3 +115,4 @@ class InvoiceSeeder extends Seeder
     }
 }
 
+

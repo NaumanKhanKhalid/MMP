@@ -11,6 +11,7 @@ use App\Models\Product;
 use App\Models\User;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
+use App\Models\StockBatch;
 use App\Models\StockLedger;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -61,7 +62,12 @@ class JobCardController extends Controller
 
         $jobCards = $query->orderBy('created_at', 'desc')->paginate(20);
 
-        return view('job-cards.index', compact('jobCards'));
+        // Get VAT settings
+        $vatEnabled = \App\Models\Setting::vatEnabled();
+        $vatRate = \App\Models\Setting::vatRate();
+        $vatInclusive = \App\Models\Setting::vatInclusive();
+
+        return view('job-cards.index', compact('jobCards', 'vatEnabled', 'vatRate', 'vatInclusive'));
     }
 
     /**
@@ -76,7 +82,12 @@ class JobCardController extends Controller
             ->get();
         $technicians = User::where('status', 'active')->get();
 
-        return view('job-cards.partials.create_modal', compact('customers', 'products', 'technicians'))->render();
+        // Get VAT settings
+        $vatEnabled = \App\Models\Setting::vatEnabled();
+        $vatRate = \App\Models\Setting::vatRate();
+        $vatInclusive = \App\Models\Setting::vatInclusive();
+
+        return view('job-cards.partials.create_modal', compact('customers', 'products', 'technicians', 'vatEnabled', 'vatRate', 'vatInclusive'))->render();
     }
 
     /**
@@ -195,7 +206,22 @@ class JobCardController extends Controller
                 foreach ($request->items as $item) {
                     $product = Product::find($item['product_id']);
                     if ($product) {
-                        $product->increment('reserved', $item['quantity_used']);
+                        // Reserve from stock batches (FIFO)
+                        $qtyToReserve = $item['quantity_used'];
+                        $batches = StockBatch::where('product_id', $product->id)
+                            ->whereRaw('qty_left - reserved_qty > 0')
+                            ->orderBy('received_date', 'asc')
+                            ->get();
+                        
+                        foreach ($batches as $batch) {
+                            if ($qtyToReserve <= 0) break;
+                            
+                            $available = $batch->qty_left - $batch->reserved_qty;
+                            $reserveFromBatch = min($qtyToReserve, $available);
+                            
+                            $batch->increment('reserved_qty', $reserveFromBatch);
+                            $qtyToReserve -= $reserveFromBatch;
+                        }
                         
                         // Create stock ledger entry for reservation
                         StockLedger::create([
@@ -233,10 +259,25 @@ class JobCardController extends Controller
     /**
      * Display the specified job card
      */
-    public function show(JobCard $jobCard)
+    public function show(Request $request, JobCard $jobCard)
     {
         $jobCard->load(['customer', 'createdBy', 'items.product', 'labour.technician']);
         
+        // If AJAX request for JSON data
+        if ($request->ajax() && $request->get('format') === 'json') {
+            return response()->json([
+                'success' => true,
+                'job_card' => [
+                    'id' => $jobCard->id,
+                    'job_card_number' => $jobCard->job_card_number,
+                    'grand_total' => $jobCard->grand_total,
+                    'customer_type' => $jobCard->customer->customer_type ?? 'cash',
+                    'customer_id' => $jobCard->customer_id,
+                ]
+            ]);
+        }
+        
+        // Return HTML modal
         return view('job-cards.partials.view_modal', compact('jobCard'))->render();
     }
 
@@ -365,7 +406,22 @@ class JobCardController extends Controller
                     foreach ($jobCard->items as $item) {
                         $product = Product::find($item->product_id);
                         if ($product) {
-                            $product->increment('reserved', $item->quantity_used);
+                            // Reserve from stock batches (FIFO)
+                            $qtyToReserve = $item->quantity_used;
+                            $batches = StockBatch::where('product_id', $product->id)
+                                ->whereRaw('qty_left - reserved_qty > 0')
+                                ->orderBy('received_date', 'asc')
+                                ->get();
+                            
+                            foreach ($batches as $batch) {
+                                if ($qtyToReserve <= 0) break;
+                                
+                                $available = $batch->qty_left - $batch->reserved_qty;
+                                $reserveFromBatch = min($qtyToReserve, $available);
+                                
+                                $batch->increment('reserved_qty', $reserveFromBatch);
+                                $qtyToReserve -= $reserveFromBatch;
+                            }
                             
                             // Create stock ledger entry for reservation
                             StockLedger::create([
@@ -391,7 +447,22 @@ class JobCardController extends Controller
                         foreach ($jobCard->items as $item) {
                             $product = Product::find($item->product_id);
                             if ($product) {
-                                $product->increment('reserved', $item->quantity_used);
+                                // Reserve from stock batches (FIFO)
+                                $qtyToReserve = $item->quantity_used;
+                                $batches = StockBatch::where('product_id', $product->id)
+                                    ->whereRaw('qty_left - reserved_qty > 0')
+                                    ->orderBy('received_date', 'asc')
+                                    ->get();
+                                
+                                foreach ($batches as $batch) {
+                                    if ($qtyToReserve <= 0) break;
+                                    
+                                    $available = $batch->qty_left - $batch->reserved_qty;
+                                    $reserveFromBatch = min($qtyToReserve, $available);
+                                    
+                                    $batch->increment('reserved_qty', $reserveFromBatch);
+                                    $qtyToReserve -= $reserveFromBatch;
+                                }
                                 
                                 StockLedger::create([
                                     'product_id' => $product->id,
@@ -416,14 +487,28 @@ class JobCardController extends Controller
                     break;
                     
                 case 'cancelled':
+                    $oldStatus = $jobCard->status;
                     $jobCard->cancel();
                     
-                    // Release reserved parts if cancelled
-                    if (in_array($jobCard->status, ['booked', 'in_progress'])) {
+                    // Release reserved parts if cancelled (only if was booked or in_progress)
+                    if (in_array($oldStatus, ['booked', 'in_progress'])) {
                         foreach ($jobCard->items as $item) {
                             $product = Product::find($item->product_id);
                             if ($product) {
-                                $product->decrement('reserved', $item->quantity_used);
+                                // Release from stock batches (FIFO - reverse order)
+                                $qtyToRelease = $item->quantity_used;
+                                $batches = StockBatch::where('product_id', $product->id)
+                                    ->where('reserved_qty', '>', 0)
+                                    ->orderBy('received_date', 'desc')
+                                    ->get();
+                                
+                                foreach ($batches as $batch) {
+                                    if ($qtyToRelease <= 0) break;
+                                    
+                                    $reserveFromBatch = min($qtyToRelease, $batch->reserved_qty);
+                                    $batch->decrement('reserved_qty', $reserveFromBatch);
+                                    $qtyToRelease -= $reserveFromBatch;
+                                }
                                 
                                 StockLedger::create([
                                     'product_id' => $product->id,
@@ -460,7 +545,7 @@ class JobCardController extends Controller
     /**
      * Convert job card to final invoice
      */
-    public function convertToInvoice(JobCard $jobCard)
+    public function convertToInvoice(Request $request, JobCard $jobCard)
     {
         if (!$jobCard->canConvertToInvoice()) {
             return response()->json([
@@ -472,7 +557,77 @@ class JobCardController extends Controller
         DB::beginTransaction();
 
         try {
-            // Create invoice
+            // Get payment information from request
+            $paymentMethod = $request->get('payment_method', 'on_account');
+            $amountPaid = (float) ($request->get('amount_paid', 0));
+            $paymentReference = $request->get('payment_reference', null);
+            
+            // Get customer
+            $customer = Customer::find($jobCard->customer_id);
+            
+            // Validate payment method based on customer type
+            if ($customer) {
+                if ($customer->isCashCustomer() && $paymentMethod === 'on_account') {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Cash customers cannot make credit purchases. Please select Cash, Card, or EFT payment method.'
+                    ], 400);
+                }
+                
+                // Credit customers - check credit limit
+                if ($customer->isCreditCustomer() && $paymentMethod === 'on_account') {
+                    if (!$customer->canMakeCreditPurchase((float) $jobCard->grand_total)) {
+                        $availableCredit = (float) $customer->credit_limit - abs((float) $customer->balance);
+                        return response()->json([
+                            'success' => false,
+                            'message' => "Credit limit exceeded. Available credit: R " . number_format($availableCredit, 2) . ". Required: R " . number_format((float) $jobCard->grand_total, 2)
+                        ], 400);
+                    }
+                }
+            }
+            
+            // Validate payment amount
+            if ($amountPaid > $jobCard->grand_total) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Amount paid cannot exceed invoice total.'
+                ], 400);
+            }
+            
+            // Determine payment status based on payment method and amount
+            if ($paymentMethod === 'on_account') {
+                // Credit customer
+                if ($amountPaid == 0) {
+                    $paymentStatus = 'unpaid';
+                } elseif ($amountPaid > 0 && $amountPaid < $jobCard->grand_total) {
+                    $paymentStatus = 'partially_paid';
+                } else {
+                    $paymentStatus = 'paid';
+                }
+            } else {
+                // Cash/Card/EFT - must pay full amount
+                if ($amountPaid >= $jobCard->grand_total) {
+                    $paymentStatus = 'paid';
+                } elseif ($amountPaid > 0 && $amountPaid < $jobCard->grand_total) {
+                    $paymentStatus = 'partially_paid';
+                } else {
+                    $paymentStatus = 'unpaid';
+                }
+            }
+            
+            // Calculate subtotal from parts and labour
+            $partsTotal = $jobCard->items->sum('line_total');
+            $labourTotal = $jobCard->labour->sum('total_amount');
+            $subtotal = $partsTotal + $labourTotal;
+            
+            // Get discount, shipping, and VAT from job card
+            $discountAmount = $jobCard->discount ?? 0;
+            $shippingAmount = $jobCard->shipping ?? 0;
+            $vatEnabled = $jobCard->vat_enabled ?? false;
+            $vatRate = $jobCard->vat_rate ?? 0;
+            $vatAmount = $jobCard->vat_amount ?? 0;
+            
+            // Create invoice with proper values from job card
             $invoice = Invoice::create([
                 'customer_id' => $jobCard->customer_id,
                 'customer_name' => $jobCard->customer_name,
@@ -483,16 +638,19 @@ class JobCardController extends Controller
                 'vehicle_vin' => $jobCard->vehicle_vin,
                 'vehicle_reg' => $jobCard->vehicle_registration,
                 'vehicle_mileage' => $jobCard->vehicle_mileage,
-                'subtotal' => $jobCard->grand_total,
-                'discount_amount' => 0,
+                'subtotal' => $subtotal,
+                'discount_amount' => $discountAmount,
                 'discount_type' => 'fixed',
-                'shipping' => 0,
-                'vat_amount' => 0,
-                'vat_enabled' => false,
-                'vat_rate' => 0,
+                'shipping' => $shippingAmount,
+                'vat_amount' => $vatAmount,
+                'vat_enabled' => $vatEnabled,
+                'vat_rate' => $vatRate,
                 'grand_total' => $jobCard->grand_total,
-                'payment_status' => 'draft',
-                'payment_method' => 'on_account',
+                'payment_status' => $paymentStatus,
+                'payment_method' => $paymentMethod,
+                'amount_paid' => (float) $amountPaid,
+                'balance_due' => (float) ($jobCard->grand_total - $amountPaid),
+                'payment_reference' => $paymentReference,
                 'notes' => "Final invoice for Job Card: {$jobCard->job_card_number}",
                 'user_id' => auth()->id(),
                 'created_by' => auth()->id(),
@@ -515,11 +673,24 @@ class JobCardController extends Controller
                 // Release reservation and consume stock (Requirements: reserved parts released on invoice)
                 $product = Product::find($item->product_id);
                 if ($product) {
-                    // Release from reserved
-                    $product->decrement('reserved', $item->quantity_used);
+                    // Release reserved_qty from stock batches and consume from qty_left (FIFO)
+                    $qtyToConsume = $item->quantity_used;
+                    $batches = StockBatch::where('product_id', $product->id)
+                        ->where('reserved_qty', '>', 0)
+                        ->orderBy('received_date', 'asc')
+                        ->get();
                     
-                    // Consume from on_hand (allows negative if product allows)
-                    $product->decrement('on_hand', $item->quantity_used);
+                    foreach ($batches as $batch) {
+                        if ($qtyToConsume <= 0) break;
+                        
+                        $reservedQty = $batch->reserved_qty;
+                        $consumeFromBatch = min($qtyToConsume, $reservedQty);
+                        
+                        // Release reserved_qty and consume from qty_left
+                        $batch->decrement('reserved_qty', $consumeFromBatch);
+                        $batch->decrement('qty_left', $consumeFromBatch);
+                        $qtyToConsume -= $consumeFromBatch;
+                    }
                     
                     // Stock ledger entry for consumption
                     StockLedger::create([
@@ -554,6 +725,71 @@ class JobCardController extends Controller
             $jobCard->update([
                 'final_invoice_id' => $invoice->id,
             ]);
+            
+            // Handle customer ledger entries (only for credit customers)
+            if ($customer && $customer->isCreditCustomer()) {
+                $currentBalance = (float) $customer->balance;
+                
+                // Entry 1: Invoice (Debit - Customer owes this amount)
+                $currentBalance += (float) $invoice->grand_total;
+                
+                \App\Models\CustomerLedger::create([
+                    'customer_id' => $customer->id,
+                    'transaction_type' => 'invoice',
+                    'transaction_id' => $invoice->id,
+                    'transaction_date' => now(),
+                    'description' => "Invoice #{$invoice->invoice_number} - Job Card {$jobCard->job_card_number}",
+                    'debit' => (float) $invoice->grand_total,
+                    'credit' => 0,
+                    'balance' => $currentBalance,
+                ]);
+                
+                // Entry 2: Payment (Credit - Customer paid)
+                if ($amountPaid > 0) {
+                    $currentBalance -= $amountPaid;
+                    
+                    // Create payment record
+                    $payment = \App\Models\Payment::create([
+                        'payment_number' => \App\Models\Payment::generatePaymentNumber(),
+                        'payment_type' => 'customer',
+                        'customer_id' => $customer->id,
+                        'payment_date' => now(),
+                        'payment_method' => $paymentMethod,
+                        'gross_amount' => (float) $amountPaid,
+                        'fee_amount' => 0.00,
+                        'net_amount' => (float) $amountPaid,
+                        'allocated_amount' => (float) $amountPaid,
+                        'unallocated_amount' => 0.00,
+                        'reference' => $paymentReference,
+                        'notes' => "Payment for Invoice #{$invoice->invoice_number}",
+                        'user_id' => auth()->id(),
+                    ]);
+                    
+                    // Link payment to invoice (allocation)
+                    \App\Models\PaymentAllocation::create([
+                        'payment_id' => $payment->id,
+                        'invoice_id' => $invoice->id,
+                        'allocated_amount' => (float) $amountPaid,
+                        'allocation_date' => now(),
+                    ]);
+                    
+                    // Create ledger entry for payment
+                    \App\Models\CustomerLedger::create([
+                        'customer_id' => $customer->id,
+                        'transaction_type' => 'payment',
+                        'transaction_id' => $payment->id,
+                        'transaction_date' => now(),
+                        'description' => "Payment #{$payment->payment_number} - " . strtoupper($paymentMethod),
+                        'debit' => 0,
+                        'credit' => $amountPaid,
+                        'balance' => $currentBalance,
+                    ]);
+                }
+                
+                // Update customer's final balance
+                $customer->balance = $currentBalance;
+                $customer->save();
+            }
 
             DB::commit();
 
@@ -562,6 +798,10 @@ class JobCardController extends Controller
                 'message' => 'Job card converted to invoice successfully',
                 'invoice_id' => $invoice->id,
                 'invoice_number' => $invoice->invoice_number,
+                'payment_status' => $paymentStatus,
+                'amount_paid' => $amountPaid,
+                'balance_due' => $invoice->balance_due,
+                'redirect' => route('invoices.index'),
             ]);
 
         } catch (\Exception $e) {
@@ -693,6 +933,80 @@ class JobCardController extends Controller
         $pdf->setPaper('A4', 'portrait');
         
         return $pdf->download("Job-Card-{$jobCard->job_card_number}.pdf");
+    }
+
+    /**
+     * Export job cards in different formats
+     */
+    public function export(Request $request, $format = 'pdf')
+    {
+        $jobCards = JobCard::with(['customer', 'createdBy', 'items', 'labour'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        switch ($format) {
+            case 'pdf':
+                $pdf = Pdf::loadView('job-cards.export', compact('jobCards'));
+                $pdf->setPaper('A4', 'landscape');
+                return $pdf->download('job-cards-' . date('Y-m-d') . '.pdf');
+                
+            case 'csv':
+                $filename = 'job-cards-' . date('Y-m-d') . '.csv';
+                $headers = [
+                    'Content-Type' => 'text/csv',
+                    'Content-Disposition' => "attachment; filename=\"$filename\"",
+                ];
+                
+                $callback = function() use ($jobCards) {
+                    $file = fopen('php://output', 'w');
+                    fputcsv($file, ['Job Card #', 'Customer', 'Vehicle', 'Status', 'Total', 'Created']);
+                    
+                    foreach ($jobCards as $jobCard) {
+                        fputcsv($file, [
+                            $jobCard->job_card_number,
+                            $jobCard->customer_name,
+                            $jobCard->vehicle_make . ' ' . $jobCard->vehicle_model,
+                            $jobCard->status,
+                            $jobCard->grand_total,
+                            $jobCard->created_at->format('Y-m-d H:i:s')
+                        ]);
+                    }
+                    fclose($file);
+                };
+                
+                return response()->stream($callback, 200, $headers);
+                
+            case 'excel':
+                // For Excel, you would typically use Laravel Excel package
+                // For now, we'll return CSV with .xlsx extension
+                $filename = 'job-cards-' . date('Y-m-d') . '.xlsx';
+                $headers = [
+                    'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                    'Content-Disposition' => "attachment; filename=\"$filename\"",
+                ];
+                
+                $callback = function() use ($jobCards) {
+                    $file = fopen('php://output', 'w');
+                    fputcsv($file, ['Job Card #', 'Customer', 'Vehicle', 'Status', 'Total', 'Created']);
+                    
+                    foreach ($jobCards as $jobCard) {
+                        fputcsv($file, [
+                            $jobCard->job_card_number,
+                            $jobCard->customer_name,
+                            $jobCard->vehicle_make . ' ' . $jobCard->vehicle_model,
+                            $jobCard->status,
+                            $jobCard->grand_total,
+                            $jobCard->created_at->format('Y-m-d H:i:s')
+                        ]);
+                    }
+                    fclose($file);
+                };
+                
+                return response()->stream($callback, 200, $headers);
+                
+            default:
+                return redirect()->back()->with('error', 'Invalid export format');
+        }
     }
 
     /**

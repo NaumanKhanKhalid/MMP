@@ -14,6 +14,7 @@ class SettingsController extends Controller
     public function index()
     {
         $companySettings = Setting::getGroup('company');
+        $bankingSettings = Setting::getGroup('banking');
         $vatSettings = Setting::getGroup('vat');
         $feeSettings = Setting::getGroup('fees');
         $numberingSettings = Setting::getGroup('numbering');
@@ -21,6 +22,9 @@ class SettingsController extends Controller
         $emailSettings = Setting::getGroup('email');
         $whatsappSettings = Setting::getGroup('whatsapp');
         $securitySettings = Setting::getGroup('security');
+
+        // Merge banking settings into company settings for display
+        $companySettings = array_merge($companySettings, $bankingSettings);
 
         return view('settings.index', compact(
             'companySettings',
@@ -51,28 +55,59 @@ class SettingsController extends Controller
             'company_vat_number' => 'nullable|string',
             'bank_name' => 'nullable|string',
             'bank_account_name' => 'nullable|string',
+            'bank_account_type' => 'nullable|string',
             'bank_account_number' => 'nullable|string',
             'bank_branch_code' => 'nullable|string',
+            'bank_reference' => 'nullable|string',
+            'show_bank_on_quotes' => 'nullable|boolean',
             'company_logo' => 'nullable|image|max:2048', // 2MB max
+            'terms_pdf' => 'nullable|file|mimes:pdf|max:5120', // 5MB max
         ]);
 
         // Handle logo upload
         if ($request->hasFile('company_logo')) {
-            $logoPath = $request->file('company_logo')->store('logos', 'public');
-            
             // Delete old logo if exists
             $oldLogo = Setting::get('company_logo');
             if ($oldLogo) {
-                Storage::disk('public')->delete($oldLogo);
+                // Remove 'public/storage/' prefix if exists to get the actual file path
+                $oldPath = str_replace('public/storage/', '', $oldLogo);
+                Storage::disk('public')->delete($oldPath);
             }
             
-            $validated['company_logo'] = $logoPath;
+            // Store file and add 'public/storage/' prefix (same format as brands/categories)
+            $path = $request->file('company_logo')->store('logos', 'public');
+            $validated['company_logo'] = 'public/storage/' . $path;
+        }
+
+        // Handle terms PDF upload
+        if ($request->hasFile('terms_pdf')) {
+            // Delete old PDF if exists
+            $oldPdf = Setting::get('terms_pdf');
+            if ($oldPdf) {
+                // Remove 'public/storage/' prefix if exists to get the actual file path
+                $oldPath = str_replace('public/storage/', '', $oldPdf);
+                Storage::disk('public')->delete($oldPath);
+            }
+            
+            // Store PDF file and add 'public/storage/' prefix
+            $path = $request->file('terms_pdf')->store('terms', 'public');
+            $validated['terms_pdf'] = 'public/storage/' . $path;
         }
 
         // Update all settings
         foreach ($validated as $key => $value) {
-            if ($key !== 'company_logo' || $request->hasFile('company_logo')) {
-                Setting::set($key, $value, 'string', 'company', ucwords(str_replace('_', ' ', $key)));
+            if (($key !== 'company_logo' && $key !== 'terms_pdf') || 
+                ($key === 'company_logo' && $request->hasFile('company_logo')) ||
+                ($key === 'terms_pdf' && $request->hasFile('terms_pdf'))) {
+                
+                // Determine field type
+                $type = 'string';
+                if (in_array($key, ['show_bank_on_quotes', 'show_bank_on_invoices'])) {
+                    $type = 'boolean';
+                    $value = (bool) $value;
+                }
+                
+                Setting::set($key, $value, $type, 'company', ucwords(str_replace('_', ' ', $key)));
             }
         }
 
@@ -273,7 +308,9 @@ class SettingsController extends Controller
         $logo = Setting::get('company_logo');
         
         if ($logo) {
-            Storage::disk('public')->delete($logo);
+            // Remove 'public/storage/' prefix if exists to get the actual file path
+            $logoPath = str_replace('public/storage/', '', $logo);
+            Storage::disk('public')->delete($logoPath);
             Setting::set('company_logo', '', 'image', 'company', 'Company Logo');
             Setting::clearCache();
         }
@@ -281,6 +318,27 @@ class SettingsController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Company logo removed successfully!',
+        ]);
+    }
+
+    /**
+     * Remove terms PDF
+     */
+    public function removeTermsPdf()
+    {
+        $pdf = Setting::get('terms_pdf');
+        
+        if ($pdf) {
+            // Remove 'public/storage/' prefix if exists to get the actual file path
+            $pdfPath = str_replace('public/storage/', '', $pdf);
+            Storage::disk('public')->delete($pdfPath);
+            Setting::set('terms_pdf', '', 'file', 'company', 'Terms PDF');
+            Setting::clearCache();
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Terms PDF removed successfully!',
         ]);
     }
 }

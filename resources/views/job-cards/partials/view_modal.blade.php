@@ -335,6 +335,85 @@
                     <i class="ri-edit-line me-1"></i>Edit
                 </button>
                 @endif
+                @if($jobCard->status === 'completed' && !$jobCard->final_invoice_id)
+                <button type="button" class="btn btn-primary" onclick="showConvertToInvoiceModal({{ $jobCard->id }})">
+                    <i class="ri-file-add-line me-1"></i>Convert to Invoice
+                </button>
+                @endif
+                @if($jobCard->final_invoice_id)
+                <a href="{{ route('invoices.show', $jobCard->final_invoice_id) }}" class="btn btn-success">
+                    <i class="ri-file-list-3-line me-1"></i>View Invoice
+                </a>
+                @endif
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Convert to Invoice Payment Modal -->
+<div class="modal fade" id="convertToInvoiceModal" tabindex="-1" aria-labelledby="convertToInvoiceModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="convertToInvoiceModalLabel">
+                    <i class="ri-money-dollar-circle-line me-2"></i>Convert to Invoice - Payment Options
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="customerTypeAlert"></div>
+                
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Payment Method</label>
+                    <select class="form-select" id="invoicePaymentMethod" onchange="updateInvoicePaymentFields()">
+                        <option value="cash">Cash</option>
+                        <option value="card">Card</option>
+                        <option value="eft">EFT</option>
+                        <option value="on_account" id="invoiceOnAccountOption" style="display: none;">On Account</option>
+                    </select>
+                </div>
+
+                <div class="mb-3" id="invoiceAmountPaidRow">
+                    <label class="form-label fw-bold">Amount Paid <span class="text-danger">*</span></label>
+                    <div class="input-group input-group-lg">
+                        <span class="input-group-text">R</span>
+                        <input type="number" class="form-control" id="invoiceAmountPaid" step="0.01" min="0" value="0">
+                    </div>
+                    <div class="text-danger mt-1" id="cashCustomerWarning" style="display: none;">
+                        <i class="ri-alert-line me-1"></i>Cash customers must pay in full.
+                    </div>
+                </div>
+
+                <div class="mb-3" id="invoicePaymentReferenceRow">
+                    <label class="form-label">Payment Reference (Optional)</label>
+                    <input type="text" class="form-control" id="invoicePaymentReference" placeholder="Transaction reference, receipt number, etc.">
+                </div>
+
+                <div class="alert alert-info mb-0" id="invoiceChangeRow">
+                    <div class="d-flex justify-content-between">
+                        <span>Change:</span>
+                        <span class="fw-bold" id="invoiceChangeAmount">R 0.00</span>
+                    </div>
+                </div>
+                
+                <div class="mt-3 p-3 border rounded" style="background: #f8f9fa;">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Invoice Total:</span>
+                        <span class="fw-bold text-primary" id="invoiceTotalDisplay">R 0.00</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span class="text-muted">Balance Due:</span>
+                        <span class="fw-bold text-danger" id="balanceDueDisplay">R 0.00</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+                    <i class="ri-close-line me-1"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-primary" onclick="confirmConvertToInvoice()">
+                    <i class="ri-refresh-line me-1"></i>Convert to Invoice
+                </button>
             </div>
         </div>
     </div>

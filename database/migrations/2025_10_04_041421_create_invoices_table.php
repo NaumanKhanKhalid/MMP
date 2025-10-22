@@ -36,7 +36,7 @@ return new class extends Migration
             $table->decimal('grand_total', 15, 2)->default(0);
             
             // Payment details
-            $table->enum('payment_status', ['draft', 'posted', 'paid', 'cancelled'])->default('draft');
+            $table->enum('payment_status', ['draft', 'posted', 'paid', 'unpaid', 'partially_paid', 'cancelled'])->default('draft');
             $table->enum('payment_method', ['cash', 'card', 'eft', 'on_account'])->nullable();
             $table->decimal('amount_paid', 15, 2)->default(0);
             $table->decimal('balance_due', 15, 2)->default(0);

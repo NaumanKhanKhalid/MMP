@@ -2,114 +2,209 @@
 
 @section('title', 'Workshop Job Cards')
 
-@section('content')
+@push('styles')
 <style>
     .modal-dialog-scrollable .modal-body {
         max-height: calc(100vh - 200px);
         overflow-y: auto;
     }
-    .table-responsive {
-        border: none;
+    .clickable-row {
+        transition: background-color 0.2s ease;
+        cursor: pointer;
     }
-    .card {
-        border: 1px solid #e9ecef;
-        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-    }
-    
-    /* Prevent unnecessary page scrolling */
-    .main-content {
-        max-height: calc(100vh - 80px);
-        overflow-y: auto;
+    .clickable-row:hover {
+        background-color: #f8f9fa !important;
     }
     
-    /* Ensure content fits properly */
+    /* Print Styles */
+    @media print {
+        body {
+            margin: 0;
+            padding: 10px;
+        }
+        
     .container-fluid {
-        padding: 1rem;
+            padding: 0 !important;
+        }
+        
+        .d-flex.justify-content-between,
+        .card.shadow-sm,
+        .btn,
+        .dropdown,
+        .pagination,
+        .card-footer {
+            display: none !important;
+        }
+        
+        .card {
+            border: none !important;
+            box-shadow: none !important;
+        }
+        
+        .card-body {
+            padding: 0 !important;
+        }
+        
+        .table {
+            font-size: 10px !important;
+        }
+        
+        .table thead th {
+            background-color: #007bff !important;
+            color: white !important;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        
+        .badge {
+            border: 1px solid #000;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        
+        .text-primary {
+            color: #007bff !important;
+        }
+        
+        .text-success {
+            color: #28a745 !important;
+        }
+        
+        @page {
+            margin: 1cm;
+            size: A4 landscape;
+        }
     }
 </style>
-<div class="container-fluid">
+@endpush
+
+@section('content')
+<div class="container-fluid py-4">
     <!-- Page Header -->
-    <div class="d-md-flex align-items-center justify-content-between mb-4">
-        <div>
-            <h2 class="mb-1">
-                <i class="bi bi-wrench me-2"></i>Workshop Job Cards
-            </h2>
-            <p class="text-muted mb-0">Manage workshop jobs and track progress</p>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex align-items-center">
+            <h4 class="mb-0 me-3">
+                <i class="ri-tools-line me-2"></i>Workshop Job Cards
+            </h4>
         </div>
-        <div class="mt-3 mt-md-0">
-            <button class="btn btn-primary" onclick="openCreateModal()">
-                <i class="bi bi-plus-circle me-1"></i>New Job Card
+        <div class="d-flex gap-2 flex-wrap">
+            <!-- New Job Card Button -->
+            <button class="btn btn-primary-light btn-wave me-2 waves-effect waves-light" onclick="openCreateModal()">
+                <i class="ri-add-line me-1"></i>New Job Card
             </button>
         </div>
     </div>
 
     <!-- Filters -->
-    <div class="row mb-4">
-        <div class="col-md-12">
-            <div class="card">
+    <div class="card shadow-sm mb-3">
                 <div class="card-body">
-                    <div class="row g-3">
+            <form id="filterForm" method="GET" action="{{ route('job-cards.index') }}">
+                <div class="row g-2">
                         <div class="col-md-3">
-                            <label class="form-label">Status</label>
-                            <select class="form-select" id="statusFilter">
+                        <input type="text" name="search" id="searchInput" class="form-control"
+                            placeholder="Search by job number, customer..." value="{{ request('search') }}">
+                    </div>
+                    <div class="col-md-2">
+                        <select name="status" id="statusFilter" class="form-select">
                                 <option value="">All Status</option>
-                                <option value="pending">Pending</option>
-                                <option value="booked">Booked In</option>
-                                <option value="in_progress">In Progress</option>
-                                <option value="completed">Completed</option>
-                                <option value="cancelled">Cancelled</option>
+                            <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                            <option value="booked" {{ request('status') == 'booked' ? 'selected' : '' }}>Booked In</option>
+                            <option value="in_progress" {{ request('status') == 'in_progress' ? 'selected' : '' }}>In Progress</option>
+                            <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Completed</option>
+                            <option value="delivered" {{ request('status') == 'delivered' ? 'selected' : '' }}>Delivered</option>
+                            <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
                             </select>
                         </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Vehicle Make</label>
-                            <select class="form-select" id="makeFilter">
+                    <div class="col-md-2">
+                        <select name="vehicle_make" id="vehicleMakeFilter" class="form-select">
                                 <option value="">All Makes</option>
-                                <option value="Toyota">Toyota</option>
-                                <option value="Honda">Honda</option>
-                                <option value="Ford">Ford</option>
-                                <option value="BMW">BMW</option>
-                                <option value="Mercedes">Mercedes</option>
+                            @foreach(\App\Models\CarMake::orderBy('name')->get() as $make)
+                                <option value="{{ $make->name }}" {{ request('vehicle_make') == $make->name ? 'selected' : '' }}>
+                                    {{ $make->name }}
+                                </option>
+                            @endforeach
                             </select>
                         </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Customer</label>
-                            <input type="text" class="form-control" id="customerFilter" placeholder="Search customer...">
+                    <div class="col-md-2">
+                        <input type="text" name="customer_name" class="form-control" 
+                            placeholder="Customer Name..." value="{{ request('customer_name') }}">
                         </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Search</label>
-                            <input type="text" class="form-control" id="searchInput" placeholder="Search job cards...">
+                    <div class="col-md-2">
+                        <input type="date" name="date_from" class="form-control" 
+                            placeholder="From Date" value="{{ request('date_from') }}">
                         </div>
+                    <div class="col-md-1">
+                        <div class="d-grid gap-1">
+                            <button type="button" class="btn btn-outline-info" id="clearFilters">
+                                Reset
+                            </button>
                     </div>
                 </div>
             </div>
+            </form>
         </div>
     </div>
 
     <!-- Job Cards Table -->
-    <div class="card">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-3">
+                <div class="card-title">
+                    Job Cards<span class="badge bg-light text-default rounded ms-1 fs-12 align-middle">{{ $jobCards->total() }}</span>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <!-- Print & Export Dropdown -->
+                    <div class="dropdown">
+                        <a href="javascript:void(0);" class="btn btn-light btn-sm btn-wave waves-effect waves-light"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                            Print / Export<i class="ri-arrow-down-s-line align-middle ms-1 d-inline-block"></i>
+                        </a>
+                        <ul class="dropdown-menu" role="menu">
+                            <li><a class="dropdown-item" href="javascript:void(0);" onclick="printJobCards()">
+                                    <i class="ri-printer-line me-2 text-secondary"></i>Print
+                                </a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
+                            <li><a class="dropdown-item" href="{{ route('job-cards.export', ['format' => 'pdf']) }}">
+                                    <i class="ri-file-pdf-line me-2 text-danger"></i>Export as PDF
+                                </a></li>
+                            <li><a class="dropdown-item" href="{{ route('job-cards.export', ['format' => 'csv']) }}">
+                                    <i class="ri-file-text-line me-2 text-info"></i>Export as CSV
+                                </a></li>
+                            <li><a class="dropdown-item" href="{{ route('job-cards.export', ['format' => 'excel']) }}">
+                                    <i class="ri-file-excel-line me-2 text-success"></i>Export as Excel
+                                </a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="table-responsive position-relative" id="jobCardsTable">
+                <table class="table table-striped align-middle table-hover">
                     <thead class="table-light">
                         <tr>
-                            <th class="border-0">Job Card #</th>
-                            <th class="border-0">Customer</th>
-                            <th class="border-0 d-none d-md-table-cell">Vehicle</th>
-                            <th class="border-0">Status</th>
-                            <th class="border-0 d-none d-lg-table-cell">Job Description</th>
-                            <th class="border-0 d-none d-xl-table-cell">Total</th>
-                            <th class="border-0 d-none d-md-table-cell">Date</th>
-                            <th class="border-0 text-end" width="250">Actions</th>
+                            <th>#</th>
+                            <th>Job Card #</th>
+                            <th>Customer</th>
+                            <th>Vehicle</th>
+                            <th>Job Description</th>
+                            <th>Status</th>
+                            <th>Total</th>
+                            <th>Created</th>
+                            <th class="text-end">Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="jobCardsTableBody">
+                    <tbody>
                         @forelse($jobCards as $jobCard)
-                        <tr>
+                        <tr class="clickable-row" onclick="openViewModal('{{ $jobCard->id }}')" style="cursor: pointer;">
+                            <td>{{ $loop->iteration + ($jobCards->currentPage() - 1) * $jobCards->perPage() }}</td>
+                            
+                            {{-- Job Card Number --}}
                             <td>
-                                <strong>{{ $jobCard->job_card_number }}</strong>
-                                <br>
-                                <small class="text-muted d-md-none">{{ $jobCard->created_at->format('M d, Y') }}</small>
+                                <strong class="text-primary">{{ $jobCard->job_card_number }}</strong>
                             </td>
+                            
+                            {{-- Customer --}}
                             <td>
                                 <div>
                                     <strong>{{ $jobCard->customer_name }}</strong>
@@ -118,7 +213,9 @@
                                     @endif
                                 </div>
                             </td>
-                            <td class="d-none d-md-table-cell">
+                            
+                            {{-- Vehicle --}}
+                            <td>
                                 <div>
                                     @if($jobCard->vehicle_make || $jobCard->vehicle_model)
                                         <strong>{{ $jobCard->vehicle_make }} {{ $jobCard->vehicle_model }}</strong>
@@ -128,20 +225,28 @@
                                     @endif
                                 </div>
                             </td>
+                            
+                            {{-- Job Description --}}
                             <td>
-                                <span class="badge bg-{{ $jobCard->status_badge }}">
-                                    {{ $jobCard->status_text }}
-                                </span>
-                            </td>
-                            <td class="d-none d-lg-table-cell">
                                 <div class="text-truncate" style="max-width: 200px;" title="{{ $jobCard->job_description }}">
                                     {{ $jobCard->job_description }}
                                 </div>
                             </td>
-                            <td class="d-none d-xl-table-cell">
-                                <strong>${{ number_format($jobCard->grand_total, 2) }}</strong>
+                            
+                            {{-- Status --}}
+                            <td>
+                                <span class="badge rounded-pill bg-{{ $jobCard->status_badge }}-transparent">
+                                    {{ $jobCard->status_text }}
+                                </span>
                             </td>
-                            <td class="d-none d-md-table-cell">
+                            
+                            {{-- Total --}}
+                            <td>
+                                <strong>R {{ number_format($jobCard->grand_total, 2) }}</strong>
+                            </td>
+                            
+                            {{-- Created Date --}}
+                            <td>
                                 {{ $jobCard->created_at->format('M d, Y') }}
                                 <br>
                                 <small class="text-muted">{{ $jobCard->created_at->format('H:i A') }}</small>
@@ -150,56 +255,56 @@
                                 <div class="btn-list">
                                     <!-- View Button -->
                                     <button type="button" class="btn btn-sm btn-info-light btn-icon" onclick="viewJobCard({{ $jobCard->id }})" title="View Details">
-                                        <i class="bi bi-eye"></i>
+                                        <i class="ri-eye-line"></i>
                                     </button>
                                     
                                     <!-- Edit Button -->
                                     @if($jobCard->status !== 'completed' && $jobCard->status !== 'cancelled')
-                                    <button type="button" class="btn btn-sm btn-warning-light btn-icon" onclick="editJobCard({{ $jobCard->id }})" title="Edit">
-                                        <i class="bi bi-pencil"></i>
+                                    <button type="button" class="btn btn-sm btn-success-light btn-icon" onclick="editJobCard({{ $jobCard->id }})" title="Edit">
+                                        <i class="ri-pencil-line"></i>
                                     </button>
                                     @endif
                                     
                                     <!-- Status Action Buttons -->
                                     @if($jobCard->status === 'pending')
                                     <button type="button" class="btn btn-sm btn-primary" onclick="changeStatus({{ $jobCard->id }}, 'booked')" title="Book In">
-                                        <i class="bi bi-calendar-check me-1"></i>Book In
+                                        <i class="ri-calendar-check-line me-1"></i>Book In
                                     </button>
                                     @endif
                                     
                                     @if($jobCard->status === 'booked')
                                     <button type="button" class="btn btn-sm btn-primary" onclick="changeStatus({{ $jobCard->id }}, 'in_progress')" title="Start Work">
-                                        <i class="bi bi-play-circle me-1"></i>Start Work
+                                        <i class="ri-play-circle-line me-1"></i>Start Work
                                     </button>
                                     @endif
                                     
                                     @if($jobCard->status === 'in_progress')
                                     <button type="button" class="btn btn-sm btn-success" onclick="changeStatus({{ $jobCard->id }}, 'completed')" title="Mark Complete">
-                                        <i class="bi bi-check-circle me-1"></i>Complete
+                                        <i class="ri-checkbox-circle-line me-1"></i>Complete
                                     </button>
                                     @endif
                                     
                                     @if($jobCard->status === 'completed' && !$jobCard->final_invoice_id)
                                     <button type="button" class="btn btn-sm btn-warning" onclick="convertToInvoice({{ $jobCard->id }})" title="Convert to Invoice">
-                                        <i class="bi bi-receipt me-1"></i>Invoice
+                                        <i class="ri-receipt-line me-1"></i>Invoice
                                     </button>
                                     @endif
                                     
                                     @if($jobCard->final_invoice_id)
                                     <button type="button" class="btn btn-sm btn-success-light btn-icon" onclick="viewJobInvoice({{ $jobCard->final_invoice_id }})" title="View Invoice">
-                                        <i class="bi bi-receipt"></i>
+                                        <i class="ri-receipt-line"></i>
                                     </button>
                                     @endif
                                     
                                     <!-- PDF Download -->
-                                    <button type="button" class="btn btn-sm btn-secondary-light btn-icon" onclick="downloadPDF({{ $jobCard->id }})" title="Download PDF">
-                                        <i class="bi bi-file-earmark-pdf"></i>
+                                    <button type="button" class="btn btn-sm btn-primary-light btn-icon" onclick="downloadPDF({{ $jobCard->id }})" title="Download PDF">
+                                        <i class="ri-printer-line"></i>
                                     </button>
                                     
                                     <!-- Delete Button -->
                                     @if($jobCard->status !== 'completed' && $jobCard->status !== 'cancelled')
                                     <button type="button" class="btn btn-sm btn-danger-light btn-icon" onclick="deleteJobCard({{ $jobCard->id }})" title="Delete">
-                                        <i class="bi bi-trash"></i>
+                                        <i class="ri-delete-bin-line"></i>
                                     </button>
                                     @endif
                                 </div>
@@ -207,7 +312,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="8" class="text-center py-4">
+                            <td colspan="9" class="text-center py-4">
                                 <div class="text-muted">
                                     <i class="ri-inbox-line fs-1 mb-3"></i>
                                     <p>No job cards found</p>
@@ -218,16 +323,9 @@
                     </tbody>
                 </table>
             </div>
-
-            <!-- Pagination -->
-            <div class="d-flex justify-content-between align-items-center mt-3">
-                <div class="text-muted">
-                    Showing {{ $jobCards->firstItem() ?? 0 }} to {{ $jobCards->lastItem() ?? 0 }} of {{ $jobCards->total() }} results
                 </div>
-                <div>
-                    {{ $jobCards->links() }}
-                </div>
-            </div>
+        <div class="card-footer">
+            {{ $jobCards->appends(request()->query())->links() }}
         </div>
     </div>
 </div>
@@ -313,6 +411,19 @@ function initializeJobCardModal() {
         productSearch.addEventListener('input', function(e) {
             handleProductSearch(e);
         });
+        
+        // Add Enter key support
+        productSearch.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const resultsDiv = document.getElementById('productSearchResults');
+                const firstResult = resultsDiv.querySelector('.product-search-result');
+                if (firstResult) {
+                    const productId = firstResult.getAttribute('data-product-id');
+                    addProductToJobCard(productId);
+                }
+            }
+        });
     }
 
     // Button event listeners
@@ -392,17 +503,48 @@ function handleProductSearch(event) {
     console.log('Filtered products:', filteredProducts.length);
     
     if (filteredProducts.length > 0) {
-        resultsDiv.innerHTML = filteredProducts.map(product => `
-            <a href="javascript:void(0)" class="list-group-item list-group-item-action" onclick="addProductToJobCard(${product.id})">
-                <div class="d-flex w-100 justify-content-between">
+        resultsDiv.innerHTML = filteredProducts.map(product => {
+            // Calculate available stock
+            const onHand = product.on_hand || 0;
+            const reserved = product.reserved || 0;
+            const available = onHand - reserved;
+            
+            // Determine stock badge
+            let stockBadge = '';
+            if (available > 0) {
+                stockBadge = `<span class="badge bg-success">Available: ${available}</span>`;
+            } else if (onHand > 0 && available <= 0) {
+                stockBadge = `<span class="badge bg-warning">Reserved</span>`;
+            } else if (onHand === 0) {
+                stockBadge = `<span class="badge bg-danger">Out of Stock</span>`;
+            } else {
+                stockBadge = `<span class="badge bg-secondary">Unknown</span>`;
+            }
+            
+            return `
+                <a href="javascript:void(0)" class="list-group-item list-group-item-action product-search-result" data-product-id="${product.id}">
+                    <div class="d-flex w-100 justify-content-between align-items-start">
+                        <div class="flex-grow-1">
                     <h6 class="mb-1">${product.name}</h6>
-                    <small class="text-primary">${product.sku}</small>
-                </div>
-                <p class="mb-1 small text-muted">${product.barcode_primary || 'No barcode'}</p>
+                            <p class="mb-1 small text-muted">${product.sku} | ${product.barcode_primary || 'No barcode'}</p>
+                            <div class="d-flex gap-2 align-items-center">
                 <small class="text-success"><strong>R${product.price_workshop || product.price_normal || 0}</strong></small>
+                                ${stockBadge}
+                            </div>
+                        </div>
+                    </div>
             </a>
-        `).join('');
+            `;
+        }).join('');
         resultsDiv.style.display = 'block';
+        
+        // Add click event listeners to search results
+        resultsDiv.querySelectorAll('.product-search-result').forEach(item => {
+            item.addEventListener('click', function() {
+                const productId = this.getAttribute('data-product-id');
+                addProductToJobCard(productId);
+            });
+        });
     } else {
         resultsDiv.innerHTML = '<div class="list-group-item text-muted"><i class="bi bi-search me-2"></i>No products found matching "' + query + '"</div>';
         resultsDiv.style.display = 'block';
@@ -437,6 +579,30 @@ function addProductToJobCard(productId) {
         return;
     }
     
+    // Calculate available stock (on_hand - reserved)
+    const onHand = product.on_hand || 0;
+    const reserved = product.reserved || 0;
+    const available = onHand - reserved;
+    
+    // Determine badge color and text
+    let badgeClass = 'bg-secondary';
+    let badgeText = 'Unknown';
+    let badgeTitle = 'Stock info unavailable';
+    
+    if (available > 0) {
+        badgeClass = 'bg-success';
+        badgeText = `Available: ${available}`;
+        badgeTitle = `Available: ${available} | Reserved: ${reserved} | Total: ${onHand}`;
+    } else if (onHand > 0 && available <= 0) {
+        badgeClass = 'bg-warning';
+        badgeText = 'Reserved';
+        badgeTitle = `All stock reserved (${reserved} reserved out of ${onHand})`;
+    } else if (onHand === 0) {
+        badgeClass = 'bg-danger';
+        badgeText = 'Out of Stock';
+        badgeTitle = 'Out of stock';
+    }
+    
     const row = document.createElement('tr');
     row.setAttribute('data-product-id', productId);
     row.innerHTML = `
@@ -459,8 +625,8 @@ function addProductToJobCard(productId) {
                    onchange="updatePartTotal(this.closest('tr'))">
         </td>
         <td class="part-total">R${product.price_workshop || 0}.00</td>
-        <td>
-            <span class="badge bg-${(product.on_hand && product.on_hand > 0) ? 'success' : 'warning'}">${(product.on_hand && product.on_hand > 0) ? 'In Stock' : 'Will Order'}</span>
+        <td class="stock-badge">
+            <span class="badge ${badgeClass}" title="${badgeTitle}">${badgeText}</span>
         </td>
         <td>
             <button type="button" class="btn btn-sm btn-danger-light btn-icon" onclick="removePartRow(this)">
@@ -592,13 +758,26 @@ function updateProductInfo(select) {
     const priceInput = row.querySelector('input[name*="unit_price"]');
     priceInput.value = price;
     
-    // Update stock badge
+    // Calculate available stock (on_hand - reserved)
+    const onHand = product?.on_hand || 0;
+    const reserved = product?.reserved || 0;
+    const available = onHand - reserved;
+    
+    // Update stock badge with detailed info
     const stockBadge = row.querySelector('.stock-badge');
-    if (product && product.on_hand > 0) {
-        stockBadge.innerHTML = '<span class="badge bg-success">In Stock</span>';
+    let badgeHTML = '';
+    
+    if (available > 0) {
+        badgeHTML = `<span class="badge bg-success" title="Available: ${available} | Reserved: ${reserved} | Total: ${onHand}">Available: ${available}</span>`;
+    } else if (onHand > 0 && available <= 0) {
+        badgeHTML = `<span class="badge bg-warning" title="All stock reserved (${reserved} reserved out of ${onHand})">Reserved</span>`;
+    } else if (onHand === 0) {
+        badgeHTML = `<span class="badge bg-danger" title="Out of stock">Out of Stock</span>`;
     } else {
-        stockBadge.innerHTML = '<span class="badge bg-warning">Will Order</span>';
+        badgeHTML = `<span class="badge bg-secondary" title="Stock info unavailable">Unknown</span>`;
     }
+    
+    stockBadge.innerHTML = badgeHTML;
     
     updatePartTotal(row);
 }
@@ -663,6 +842,7 @@ function updatePartsTotal() {
     });
     const totalElem = document.getElementById('partsTotal');
     if (totalElem) totalElem.textContent = total.toFixed(2);
+    calculateJobTotals(); // Recalculate grand total with VAT
 }
 
 function updateLabourTotalSum() {
@@ -673,6 +853,62 @@ function updateLabourTotalSum() {
     });
     const totalElem = document.getElementById('labourTotal');
     if (totalElem) totalElem.textContent = total.toFixed(2);
+    calculateJobTotals(); // Recalculate grand total with VAT
+}
+
+// Calculate Job Totals with VAT
+function calculateJobTotals() {
+    const partsTotal = parseFloat(document.getElementById('partsTotal')?.textContent || 0);
+    const labourTotal = parseFloat(document.getElementById('labourTotal')?.textContent || 0);
+    const subtotal = partsTotal + labourTotal;
+    
+    // Update Subtotal
+    const subtotalElem = document.getElementById('subtotal');
+    if (subtotalElem) {
+        subtotalElem.textContent = subtotal.toFixed(2);
+    }
+    
+    // Check if VAT is enabled
+    const vatEnabled = {{ $vatEnabled ?? false ? 'true' : 'false' }};
+    const vatInclusive = {{ $vatInclusive ?? false ? 'true' : 'false' }};
+    
+    if (vatEnabled) {
+        const vatRate = parseFloat(document.getElementById('vatRate')?.value || {{ $vatRate ?? 15 }});
+        let vatAmount, grandTotal;
+        
+        if (vatInclusive) {
+            // VAT is included in the prices
+            grandTotal = subtotal;
+            vatAmount = subtotal - (subtotal / (1 + vatRate / 100));
+        } else {
+            // VAT is added on top
+            vatAmount = (subtotal * vatRate) / 100;
+            grandTotal = subtotal + vatAmount;
+        }
+        
+        // Update VAT Amount
+        const vatAmountElem = document.getElementById('vatAmount');
+        if (vatAmountElem) {
+            vatAmountElem.value = vatAmount.toFixed(2);
+        }
+        
+        // Update Grand Total
+        const grandTotalElem = document.getElementById('grandTotal');
+        if (grandTotalElem) {
+            grandTotalElem.textContent = grandTotal.toFixed(2);
+        }
+    } else {
+        // No VAT
+        const vatAmountElem = document.getElementById('vatAmount');
+        if (vatAmountElem) {
+            vatAmountElem.value = '0.00';
+        }
+        
+        const grandTotalElem = document.getElementById('grandTotal');
+        if (grandTotalElem) {
+            grandTotalElem.textContent = subtotal.toFixed(2);
+        }
+    }
 }
 
 // Remove rows
@@ -1048,41 +1284,295 @@ function viewJobInvoice(invoiceId) {
         });
 }
 
-// Filter functions
-document.getElementById('statusFilter').addEventListener('change', filterJobCards);
-document.getElementById('makeFilter').addEventListener('change', filterJobCards);
-document.getElementById('customerFilter').addEventListener('input', debounce(filterJobCards, 500));
-document.getElementById('searchInput').addEventListener('input', debounce(filterJobCards, 500));
-
-// Debounce function
-function debounce(func, wait) {
-    let timeout;
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
+// Print Job Cards Function
+function printJobCards() {
+    window.print();
 }
 
+// AJAX Filter Functionality
+$(document).ready(function() {
+    let searchTimeout;
+
+    // Search input with debounce
+    $(document).on('input', '#searchInput', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(function() {
+            console.log('Search triggered');
+            filterJobCards();
+        }, 500);
+    });
+
+    // Select filters with immediate response
+    $(document).on('change', '#statusFilter, #vehicleMakeFilter', function() {
+        console.log('Filter changed');
+        filterJobCards();
+    });
+    
+    // Other filter inputs
+    $(document).on('change', 'input[name="customer_name"], input[name="date_from"]', function() {
+        console.log('Filter changed');
+        filterJobCards();
+    });
+
+    // Clear filters button
+    $('#clearFilters').on('click', function() {
+        $('#filterForm')[0].reset();
+        window.location.href = '{{ route('job-cards.index') }}';
+    });
+
+    // Filter function
 function filterJobCards() {
-    const status = document.getElementById('statusFilter').value;
-    const make = document.getElementById('makeFilter').value;
-    const customer = document.getElementById('customerFilter').value;
-    const search = document.getElementById('searchInput').value;
+        const formData = $('#filterForm').serialize();
+        console.log('Filtering with data:', formData);
+
+        $.ajax({
+            url: '{{ route('job-cards.index') }}',
+            type: 'GET',
+            data: formData,
+            beforeSend: function() {
+                // Show loading overlay
+                $('#jobCardsTable').append(
+                    '<div class="position-absolute top-50 start-50 translate-middle"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>'
+                );
+            },
+            success: function(response) {
+                console.log('Filter response received');
+                // Parse the response and update the table
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(response, 'text/html');
+                const newTable = doc.querySelector('.table');
+                const newPagination = doc.querySelector('.pagination');
+
+                if (newTable) {
+                    $('.table').replaceWith(newTable);
+                    console.log('Table updated');
+                }
+
+                if (newPagination) {
+                    $('.pagination').replaceWith(newPagination);
+                    console.log('Pagination updated');
+                }
+
+                // Update URL without page reload
+                const url = new URL(window.location);
+                url.search = new URLSearchParams(formData).toString();
+                window.history.pushState({}, '', url);
+
+                // Re-initialize click handlers for new content
+                initializeRowClickHandlers();
+            },
+            error: function(xhr, status, error) {
+                console.error('Filter error:', xhr, status, error);
+                toastr.error('Failed to filter job cards. Please try again.');
+            },
+            complete: function() {
+                $('.spinner-border').remove();
+            }
+        });
+    }
+
+    // Initialize row click handlers
+    function initializeRowClickHandlers() {
+        $('.clickable-row').off('click').on('click', function(e) {
+            if (!$(e.target).closest('button, .btn-list').length) {
+                const jobCardId = $(this).data('job-card-id') || $(this).attr('onclick')?.match(/\d+/)?.[0];
+                if (jobCardId) {
+                    viewJobCard(jobCardId);
+                }
+            }
+        });
+    }
+
+    // Initialize on page load
+    initializeRowClickHandlers();
     
-    // Build query string
-    const params = new URLSearchParams();
-    if (status) params.append('status', status);
-    if (make) params.append('vehicle_make', make);
-    if (customer) params.append('customer', customer);
-    if (search) params.append('search', search);
+    // Store current job card ID for conversion
+    let currentJobCardId = null;
+    let currentJobCardTotal = 0;
+    let currentCustomerType = null;
+});
+
+// Show convert to invoice modal
+function showConvertToInvoiceModal(jobCardId) {
+    currentJobCardId = jobCardId;
     
-    // Reload with filters
-    const url = '{{ route("job-cards.index") }}' + (params.toString() ? '?' + params.toString() : '');
-    window.location.href = url;
+    // Fetch job card details
+    fetch(`/job-cards/${jobCardId}?format=json`, {
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const jobCard = data.job_card;
+                currentJobCardTotal = parseFloat(jobCard.grand_total);
+                currentCustomerType = jobCard.customer_type;
+                
+                // Reset form
+                $('#invoicePaymentMethod').val('cash');
+                $('#invoiceAmountPaid').val(currentJobCardTotal.toFixed(2));
+                $('#invoicePaymentReference').val('');
+                
+                // Update display totals
+                $('#invoiceTotalDisplay').text('R ' + currentJobCardTotal.toFixed(2));
+                $('#balanceDueDisplay').text('R ' + currentJobCardTotal.toFixed(2));
+                
+                // Show/hide payment options based on customer type
+                if (currentCustomerType === 'credit') {
+                    $('#invoiceOnAccountOption').show();
+                    $('#invoicePaymentMethod').val('on_account');
+                    $('#invoiceAmountPaid').val('0.00');
+                    $('#cashCustomerWarning').hide();
+                    
+                    // Show customer type alert
+                    $('#customerTypeAlert').html(`
+                        <div class="alert alert-info">
+                            <i class="ri-information-line me-2"></i><strong>Credit Customer</strong><br>
+                            <small>Customer can pay on account or make partial/full payment now.</small>
+                        </div>
+                    `);
+                } else {
+                    $('#invoiceOnAccountOption').hide();
+                    $('#cashCustomerWarning').show();
+                    
+                    // Show customer type alert
+                    $('#customerTypeAlert').html(`
+                        <div class="alert alert-warning">
+                            <i class="ri-alert-line me-2"></i><strong>Cash Customer</strong><br>
+                            <small>Invoice Total: R ${currentJobCardTotal.toFixed(2)}</small><br>
+                            <small>Cash customers must pay immediately. Credit sales not allowed.</small>
+                        </div>
+                    `);
+                }
+                
+                // Update payment fields
+                updateInvoicePaymentFields();
+                
+                // Show modal
+                const modal = new bootstrap.Modal(document.getElementById('convertToInvoiceModal'));
+                modal.show();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            toastr.error('Error loading job card details');
+        });
+}
+
+// Update invoice payment fields based on payment method
+function updateInvoicePaymentFields() {
+    const paymentMethod = $('#invoicePaymentMethod').val();
+    
+    if (paymentMethod === 'on_account') {
+        $('#invoiceAmountPaidRow').hide();
+        $('#invoiceChangeRow').hide();
+        $('#invoiceAmountPaid').val('0.00');
+        $('#balanceDueDisplay').text('R ' + currentJobCardTotal.toFixed(2));
+    } else {
+        $('#invoiceAmountPaidRow').show();
+        $('#invoiceChangeRow').show();
+        $('#invoiceAmountPaid').val(currentJobCardTotal.toFixed(2));
+        
+        // Show/hide cash customer warning
+        if (currentCustomerType === 'cash') {
+            $('#cashCustomerWarning').show();
+        } else {
+            $('#cashCustomerWarning').hide();
+        }
+        
+        calculateInvoiceChange();
+    }
+}
+
+// Calculate change for invoice
+function calculateInvoiceChange() {
+    const amountPaid = parseFloat($('#invoiceAmountPaid').val()) || 0;
+    const change = amountPaid - currentJobCardTotal;
+    const balanceDue = currentJobCardTotal - amountPaid;
+    
+    $('#invoiceChangeAmount').text('R ' + change.toFixed(2));
+    $('#balanceDueDisplay').text('R ' + Math.max(0, balanceDue).toFixed(2));
+}
+
+// Amount paid input handler
+$(document).on('input', '#invoiceAmountPaid', function() {
+    calculateInvoiceChange();
+});
+
+// Confirm convert to invoice
+function confirmConvertToInvoice() {
+    const paymentMethod = $('#invoicePaymentMethod').val();
+    const amountPaid = parseFloat($('#invoiceAmountPaid').val()) || 0;
+    const paymentReference = $('#invoicePaymentReference').val();
+    
+    // Validation
+    if (paymentMethod === 'on_account') {
+        if (currentCustomerType !== 'credit') {
+            toastr.error('Only credit customers can use on account payment');
+            return;
+        }
+    } else {
+        // Cash customers must pay in full
+        if (currentCustomerType === 'cash' && amountPaid < currentJobCardTotal) {
+            toastr.error('Cash customers must pay in full. Amount paid must be equal to invoice total.');
+            return;
+        }
+        // Credit customers can pay partial or full
+        if (amountPaid < 0) {
+            toastr.error('Amount paid cannot be negative');
+            return;
+        }
+    }
+    
+    // Show loading
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Converting...';
+    btn.disabled = true;
+    
+    // Convert to invoice
+    fetch(`/job-cards/${currentJobCardId}/convert-to-invoice`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            payment_method: paymentMethod,
+            amount_paid: amountPaid,
+            payment_reference: paymentReference
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            toastr.success('Job card converted to invoice successfully!');
+            
+            // Close modals
+            bootstrap.Modal.getInstance(document.getElementById('convertToInvoiceModal')).hide();
+            bootstrap.Modal.getInstance(document.getElementById('viewJobCardModal')).hide();
+            
+            // Redirect to invoices or reload page
+            if (data.redirect) {
+                window.location.href = data.redirect;
+            } else {
+                location.reload();
+            }
+        } else {
+            toastr.error(data.message || 'Error converting to invoice');
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        toastr.error('Error converting to invoice');
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    });
 }
 </script>
 @endsection

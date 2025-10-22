@@ -12,10 +12,6 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="alert alert-info">
-                        <i class="bi bi-info-circle me-2"></i>
-                        Quick add creates a product with auto-generated SKU/Barcode. You can edit full details later.
-                    </div>
 
                     <div class="mb-3">
                         <label for="quick_name" class="form-label">Product Name <span class="text-danger">*</span></label>
@@ -33,9 +29,6 @@
                         <small class="text-muted">If provided, creates initial stock batch with zero cost.</small>
                     </div>
 
-                    <div class="alert alert-warning mb-0">
-                        <strong>Auto-enabled flags:</strong> Allow Negative Sale, Special Order Only
-                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>

@@ -8,8 +8,19 @@ use Illuminate\Support\Str;
 
 class CarModelController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        if ($request->expectsJson()) {
+            $query = CarModel::where('status', 'active')->orderBy('name');
+            
+            if ($request->has('make_id')) {
+                $query->where('make_id', $request->make_id);
+            }
+            
+            $models = $query->get(['id', 'name']);
+            return response()->json($models);
+        }
+        
         $models = CarModel::with('make')->orderBy('name')->paginate(15);
         $makes = CarMake::where('status', 'active')->orderBy('name')->get();
         return view('car_models.index', compact('models', 'makes'));
@@ -58,4 +69,28 @@ class CarModelController extends Controller
         return redirect()->back()->with('success', 'Car Model status updated.');
     }
 
+    /**
+     * Quick add for Select2 tagging
+     */
+    public function quickAdd(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'make_id' => 'nullable|exists:car_makes,id',
+        ]);
+
+        $model = CarModel::create([
+            'name' => $validated['name'],
+            'make_id' => $validated['make_id'] ?? null,
+            'status' => 'active',
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'id' => $model->id,
+                'name' => $model->name,
+            ]
+        ]);
+    }
 }

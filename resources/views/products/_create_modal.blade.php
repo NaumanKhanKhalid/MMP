@@ -10,48 +10,34 @@
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                         </div>
 
-                        <div class="modal-body">
-                            {{-- Tab Navigation --}}
-                            <ul class="nav nav-tabs mb-3" role="tablist">
-                                <li class="nav-item">
-                                    <a class="nav-link active" data-bs-toggle="tab" href="#create-basic">Basic Info</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" data-bs-toggle="tab" href="#create-pricing">Pricing</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" data-bs-toggle="tab" href="#create-inventory">Inventory</a>
-                                </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" data-bs-toggle="tab" href="#create-fitments">Fitments</a>
-                                </li>
-                            </ul>
+                        <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
 
-                            <div class="tab-content">
-                                {{-- Basic Info Tab --}}
-                                <div class="tab-pane fade show active" id="create-basic">
+                            {{-- Section 1: Basic Information --}}
+                            <div class="mb-4">
+                                <h6 class="border-bottom pb-2 mb-3">
+                                    <i class="bi bi-info-circle me-2"></i>Basic Information
+                                </h6>
                                     <div class="row">
-                                        <div class="col-md-6 mb-3">
-                                            <label class="form-label">SKU (Auto-generated)</label>
-                                            <input type="text" class="form-control bg-light"
-                                                placeholder="Auto-generated" disabled>
-                                            <small class="text-muted">Will be auto-generated as 0001, 0002, etc.</small>
-                                        </div>
-                                        <div class="col-md-6 mb-3">
-                                            <label class="form-label">Primary Barcode (Auto)</label>
-                                            <input type="text" class="form-control bg-light"
-                                                placeholder="Auto-generated (MMP-0001)" disabled>
-                                            <small class="text-muted">Auto-generated as MMP-XXXX</small>
-                                        </div>
-                                        <div class="col-md-6 mb-3">
-                                            <label class="form-label">Alternate Barcode (Optional)</label>
-                                            <input type="text" name="barcode_alternate" class="form-control"
-                                                placeholder="Manual barcode entry">
-                                        </div>
-                                        <div class="col-md-6 mb-3">
+                                    <div class="col-md-4 mb-3">
                                             <label class="form-label">Product Name <span
                                                     class="text-danger">*</span></label>
-                                            <input type="text" name="name" class="form-control" required>
+                                        <input type="text" name="name" class="form-control" required
+                                            placeholder="Product Name">
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">Supplier</label>
+                                        <select name="supplier_ids" class="form-select select2-create-suppliers">
+                                            <option value="">Select Supplier</option>
+                                            @foreach ($suppliers as $s)
+                                                <option value="{{ $s->id }}">{{ $s->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">Supplier Code <span
+                                                class="text-danger">*</span></label>
+                                        <input type="text" name="supplier_code" class="form-control" required
+                                            placeholder="Supplier Code">
                                         </div>
                                         <div class="col-md-4 mb-3">
                                             <label class="form-label">Brand <span class="text-danger">*</span></label>
@@ -63,10 +49,8 @@
                                             </select>
                                         </div>
                                         <div class="col-md-4 mb-3">
-                                            <label class="form-label">Category <span
-                                                    class="text-danger">*</span></label>
-                                            <select name="category_id" class="form-select select2-create-category"
-                                                required>
+                                        <label class="form-label">Category <span class="text-danger">*</span></label>
+                                        <select name="category_id" class="form-select select2-create-category" required>
                                                 <option value="">Select Category</option>
                                                 @foreach ($categories as $cat)
                                                     <option value="{{ $cat->id }}">{{ $cat->name }}</option>
@@ -75,191 +59,166 @@
                                         </div>
                                         <div class="col-md-4 mb-3">
                                             <label class="form-label">Subcategory</label>
-                                            <select name="subcategory_id"
-                                                class="form-select select2-create-subcategory">
+                                        <select name="subcategory_id" class="form-select select2-create-subcategory">
                                                 <option value="">Select Subcategory</option>
                                                 @foreach ($subCategories as $sub)
                                                     <option value="{{ $sub->id }}">{{ $sub->name }}</option>
                                                 @endforeach
                                             </select>
                                         </div>
-                                        <div class="col-md-12 mb-3">
-                                            <label class="form-label">Suppliers (Multiple)</label>
-                                            <select name="supplier_ids[]" class="form-select select2-create-suppliers"
-                                                multiple>
-                                                @foreach ($suppliers as $s)
-                                                    <option value="{{ $s->id }}">{{ $s->name }}</option>
-                                                @endforeach
-                                            </select>
-                                            <small class="text-muted">Select one or more suppliers</small>
-                                        </div>
-                                        <div class="col-md-12 mb-3">
-                                            <label class="form-label">Description</label>
-                                            <textarea name="description" class="form-control" rows="3"></textarea>
+
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Alternate Barcode (Optional)</label>
+                                        <input type="text" name="barcode_alternate" class="form-control"
+                                            placeholder="Manual barcode entry">
                                         </div>
                                     </div>
                                 </div>
 
-                                {{-- Pricing Tab --}}
-                                <div class="tab-pane fade" id="create-pricing">
+                            {{-- Section 2: Pricing --}}
+                            <div class="mb-4">
+                                <h6 class="border-bottom pb-2 mb-3">
+                                    <i class="bi bi-tag me-2"></i>Pricing
+                                </h6>
                                     <div class="row">
                                         <div class="col-md-4 mb-3">
                                             <label class="form-label">Normal Price (R)</label>
-                                            <input type="number" step="0.01" name="price_normal"
-                                                class="form-control" placeholder="0.00">
+                                        <input type="number" step="0.01" name="price_normal" class="form-control"
+                                            placeholder="0.00">
                                         </div>
                                         <div class="col-md-4 mb-3">
                                             <label class="form-label">Online Price (R)</label>
-                                            <input type="number" step="0.01" name="price_online"
-                                                class="form-control" placeholder="0.00">
+                                        <input type="number" step="0.01" name="price_online" class="form-control"
+                                            placeholder="0.00">
                                         </div>
                                         <div class="col-md-4 mb-3">
                                             <label class="form-label">Workshop Price (R)</label>
-                                            <input type="number" step="0.01" name="price_workshop"
-                                                class="form-control" placeholder="0.00">
-                                        </div>
-                                        <div class="col-md-12">
-                                            <div class="alert alert-info">
-                                                <i class="bi bi-info-circle me-2"></i>
-                                                <strong>Pricing Tiers:</strong> Normal = Retail, Online = E-commerce,
-                                                Workshop = Trade discount
-                                            </div>
+                                        <input type="number" step="0.01" name="price_workshop" class="form-control"
+                                            placeholder="0.00">
                                         </div>
                                     </div>
                                 </div>
 
-                                {{-- Inventory Tab --}}
-                                <div class="tab-pane fade" id="create-inventory">
+                            {{-- Section 3: Inventory Settings --}}
+                            <div class="mb-4">
+                                <h6 class="border-bottom pb-2 mb-3">
+                                    <i class="bi bi-boxes me-2"></i>Inventory Settings
+                                </h6>
                                     <div class="row">
-                                        <div class="col-md-6 mb-3">
+                                    <div class="col-md-4 mb-3">
                                             <label class="form-label">Unit</label>
                                             <select name="unit" class="form-select">
-                                                <option value="PCS" selected>PCS (Pieces)</option>
+                                            <option value="PCS" selected>PCS</option>
                                                 <option value="SET">SET</option>
                                             </select>
                                         </div>
-                                        <div class="col-md-6 mb-3">
-                                            <label class="form-label">Bin Location (e.g., A-16)</label>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">Bin Location</label>
                                             <input type="text" name="bin_location" class="form-control"
                                                 placeholder="A-16">
-                                            <small class="text-muted">Format: Letter-Number (e.g., A-16, B-05)</small>
                                         </div>
-                                        <div class="col-md-6 mb-3">
-                                            <label class="form-label">Reorder Level (Target Stock)</label>
-                                            <input type="number" name="reorder_level" class="form-control"
-                                                placeholder="0" min="0">
-                                            <small class="text-muted">Alert when stock falls below this level</small>
-                                        </div>
-                                        <div class="col-md-6 mb-3">
+                                    <div class="col-md-4 mb-3">
                                             <label class="form-label">Status</label>
                                             <select name="status" class="form-select" required>
                                                 <option value="active" selected>Active</option>
                                                 <option value="inactive">Inactive</option>
                                             </select>
                                         </div>
-
-                                        {{-- Opening Stock Section --}}
-                                        <div class="col-md-12 mt-3 mb-2">
-                                            <h6 class="border-bottom pb-2 text-primary">
-                                                <i class="bi bi-box-seam me-2"></i>Opening Stock (Optional)
-                                            </h6>
-                                            <small class="text-muted">Add initial stock when creating product. Leave blank if no opening stock.</small>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">Reorder Point</label>
+                                        <input type="number" name="reorder_point" class="form-control"
+                                            placeholder="5" min="0">
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <label class="form-label">Target Stock Level</label>
+                                        <input type="number" name="target_stock_level" class="form-control"
+                                            placeholder="10" min="0">
                                         </div>
-
                                         <div class="col-md-4 mb-3">
                                             <label class="form-label">Initial Quantity on Hand</label>
                                             <input type="number" name="initial_qty" class="form-control"
                                                 placeholder="0" min="0" id="initial_qty_input">
-                                            <small class="text-muted">Opening stock quantity</small>
                                         </div>
-
                                         <div class="col-md-4 mb-3">
                                             <label class="form-label">Initial Cost Price (R)</label>
-                                            <input type="number" step="0.01" name="initial_cost" class="form-control"
-                                                placeholder="0.00" min="0" id="initial_cost_input">
-                                            <small class="text-muted">Cost per unit for opening stock</small>
+                                            <input type="number" step="0.01" name="initial_cost"
+                                                class="form-control" placeholder="0.00" min="0"
+                                                id="initial_cost_input">
                                         </div>
-
                                         <div class="col-md-4 mb-3">
-                                            <label class="form-label">Primary Supplier</label>
-                                            <select name="primary_supplier_id" class="form-select select2-primary-supplier" id="primary_supplier_input">
-                                                <option value="">Select Supplier</option>
-                                                @foreach ($suppliers as $s)
-                                                    <option value="{{ $s->id }}">{{ $s->name }}</option>
-                                                @endforeach
-                                            </select>
-                                            <small class="text-muted">Main supplier for this product</small>
-                                        </div>
-
-                                        <div class="col-md-12 mb-3">
-                                            <label class="form-label">Supplier's SKU/Code</label>
-                                            <input type="text" name="supplier_sku" class="form-control"
-                                                placeholder="Supplier's product code">
-                                            <small class="text-muted">The SKU/code used by your primary supplier for this product</small>
-                                        </div>
-
-                                        <div class="col-md-12 mb-3">
-                                            <div class="form-check form-switch mb-2">
+                                        <div class="form-check form-switch h-100" style="padding-top: 18px;">
                                                 <input class="form-check-input" type="checkbox" name="allow_negative"
                                                     id="create_allow_negative" checked value="1">
                                                 <label class="form-check-label" for="create_allow_negative">
                                                     <strong>Allow Negative Sale</strong>
-                                                    <small class="d-block text-muted">Permit sales even when stock is
-                                                        zero or negative</small>
+                                                <br><small class="text-muted">Permit sales even when stock is zero
+                                                    or negative</small>
                                                 </label>
                                             </div>
-                                            <div class="form-check form-switch">
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <div class="form-check form-switch h-100" style="padding-top: 18px;">
                                                 <input class="form-check-input" type="checkbox" name="special_order"
                                                     id="create_special_order" value="1">
                                                 <label class="form-check-label" for="create_special_order">
                                                     <strong>Special Order Only</strong>
-                                                    <small class="d-block text-muted">Mark this product as special
-                                                        order item</small>
+                                                <br><small class="text-muted">Mark this product as special order
+                                                    item</small>
                                                 </label>
                                             </div>
                                         </div>
-                                        <div class="col-md-12 mb-3">
-                                            <label class="form-label">OE Numbers</label>
-                                            <input type="text" name="oe_numbers" class="form-control"
-                                                id="create_oe_numbers" placeholder="Press Enter to add">
-                                            <small class="text-muted">Original Equipment numbers - type and press
-                                                Enter</small>
-                                        </div>
-                                        <div class="col-md-12 mb-3">
-                                            <label class="form-label">Cross References</label>
-                                            <input type="text" name="cross_refs" class="form-control"
-                                                id="create_cross_refs" placeholder="Press Enter to add">
-                                            <small class="text-muted">Alternative part numbers - type and press
-                                                Enter</small>
-                                        </div>
-                                        <div class="col-md-12 mb-3">
-                                            <label class="form-label">Product Images (Max 3)</label>
-                                            <input type="file" name="images[]" class="form-control" multiple
-                                                accept="image/*">
-                                            <small class="text-muted">Allowed: JPG, JPEG, PNG, WEBP (Max 2MB
-                                                each)</small>
-                                        </div>
-                                        <div class="col-md-12 mb-3">
-                                            <label class="form-label">Notes</label>
-                                            <textarea name="notes" class="form-control" rows="3"></textarea>
-                                        </div>
+                                    <div class="col-md-4 mb-3">
+                                        <!-- Empty column for perfect alignment -->
                                     </div>
                                 </div>
+                            </div>
 
-                                {{-- Fitments Tab --}}
-                                <div class="tab-pane fade" id="create-fitments">
-                                    <div class="alert alert-info">
-                                        <i class="bi bi-car-front me-2"></i>
-                                        <strong>Vehicle Fitment:</strong> Specify which vehicles this part fits
-                                    </div>
-
-                                    <div id="create-fitments-container"></div>
-
-                                    <button type="button" class="btn btn-sm btn-secondary" id="createAddFitmentBtn">
-                                        <i class="bi bi-plus"></i> Add Fitment
+                            {{-- Section 4: Vehicle Fitment --}}
+                            <div class="mb-4">
+                                <h6 class="border-bottom pb-2 mb-3">
+                                    <i class="bi bi-car-front me-2"></i>Vehicle Fitment
+                                </h6>
+                                <div class="alert alert-info alert-sm">
+                                    <small><i class="bi bi-info-circle me-1"></i>Specify which vehicles this part fits
+                                        (optional, multiple allowed)</small>
+                                </div>
+                                <div id="create-fitments-container"></div>
+                                <div class="mt-3">
+                                    <button type="button" class="btn btn-outline-primary" id="createAddFitmentBtn">
+                                        <i class="bi bi-plus-circle me-1"></i> Add Fitment
                                     </button>
                                 </div>
                             </div>
+
+                            {{-- Section 5: References & Additional Info --}}
+                            <div class="mb-4">
+                                <h6 class="border-bottom pb-2 mb-3">
+                                    <i class="bi bi-link-45deg me-2"></i>References & Additional Info
+                                </h6>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                            <label class="form-label">OE Numbers</label>
+                                            <input type="text" name="oe_numbers" class="form-control"
+                                                id="create_oe_numbers" placeholder="Press Enter to add">
+                                        </div>
+                                    <div class="col-md-6 mb-3">
+                                            <label class="form-label">Cross References</label>
+                                            <input type="text" name="cross_refs" class="form-control"
+                                                id="create_cross_refs" placeholder="Press Enter to add">
+                                        </div>
+                                        <div class="col-md-12 mb-3">
+                                        <label class="form-label">Product Images</label>
+                                            <input type="file" name="images[]" class="form-control" multiple
+                                                accept="image/*">
+                                        <small class="text-muted">Allowed: JPG, JPEG, PNG, WEBP (Max 2MB each)</small>
+                                        </div>
+                                        <div class="col-md-12 mb-3">
+                                            <label class="form-label">Notes</label>
+                                        <textarea name="notes" class="form-control" rows="3" placeholder="Additional notes about this product"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
 
                         <div class="modal-footer">
@@ -275,8 +234,9 @@
 
         {{-- Fitment Row Template --}}
         <template id="createFitmentRowTemplate">
-            <div class="row mb-2 fitment-row border p-2 rounded bg-light">
+            <div class="row mb-2 fitment-row border p-2 rounded bg-light align-items-center">
                 <div class="col-md-3">
+                    <label class="form-label mb-1 small text-muted">Make</label>
                     <select name="fitments[__INDEX__][make_id]"
                         class="form-select form-select-sm select2-fitment-make">
                         <option value="">Select Make</option>
@@ -285,7 +245,8 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
+                    <label class="form-label mb-1 small text-muted">Model</label>
                     <select name="fitments[__INDEX__][model_id]"
                         class="form-select form-select-sm select2-fitment-model">
                         <option value="">Select Model</option>
@@ -295,25 +256,46 @@
                     </select>
                 </div>
                 <div class="col-md-2">
+                    <label class="form-label mb-1 small text-muted">Engine</label>
                     <select name="fitments[__INDEX__][engine_id]"
                         class="form-select form-select-sm select2-fitment-engine">
-                        <option value="">Engine (Opt)</option>
+                        <option value="">Optional</option>
                         @foreach ($engines as $engine)
                             <option value="{{ $engine->id }}">{{ $engine->code }}</option>
                         @endforeach
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <input type="number" name="fitments[__INDEX__][year_start]" class="form-control form-control-sm"
-                        placeholder="Start" min="1900" max="2100">
+                    <label class="form-label mb-1 small text-muted">Year From</label>
+                    <select name="fitments[__INDEX__][year_start]"
+                        class="form-select form-select-sm select2-fitment-year-start">
+                        <option value="">From</option>
+                        @php
+                            $currentYear = date('Y');
+                            for ($year = $currentYear + 2; $year >= 1980; $year--) {
+                                echo "<option value=\"{$year}\">{$year}</option>";
+                            }
+                        @endphp
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label mb-1 small text-muted">Year To</label>
+                    <select name="fitments[__INDEX__][year_end]"
+                        class="form-select form-select-sm select2-fitment-year-end">
+                        <option value="">To</option>
+                        @php
+                            $currentYear = date('Y');
+                            for ($year = $currentYear + 2; $year >= 1980; $year--) {
+                                echo "<option value=\"{$year}\">{$year}</option>";
+                            }
+                        @endphp
+                    </select>
                 </div>
                 <div class="col-md-1">
-                    <input type="number" name="fitments[__INDEX__][year_end]" class="form-control form-control-sm"
-                        placeholder="End" min="1900" max="2100">
-                </div>
-                <div class="col-md-1">
-                    <button type="button" class="btn btn-sm btn-danger w-100 removeFitmentBtn">
-                        <i class="bi bi-trash"></i>
+                    <label class="form-label mb-1 small text-muted">&nbsp;</label>
+                    <button type="button" class="btn btn-sm btn-outline-danger w-100 removeFitmentBtn"
+                        title="Remove this fitment">
+                        <i class="bi bi-trash3"></i>
                     </button>
                 </div>
             </div>
@@ -361,6 +343,18 @@
                             placeholder: 'Select Suppliers',
                             allowClear: true,
                             width: '100%'
+                        }).on('change', function() {
+                            var supplierId = $(this).val();
+                            if (supplierId) {
+                                // Get suppliers data
+                                var suppliers = @json($suppliers);
+                                var selectedSupplier = suppliers.find(s => s.id == supplierId);
+                                if (selectedSupplier && selectedSupplier.supplier_code) {
+                                    $('input[name="supplier_code"]').val(selectedSupplier.supplier_code);
+                                }
+                            } else {
+                                $('input[name="supplier_code"]').val('');
+                            }
                         });
 
                         $('.select2-primary-supplier').select2({
@@ -404,16 +398,84 @@
                         document.getElementById('create-fitments-container').insertAdjacentHTML('beforeend', html);
 
                         // Initialize Select2 for newly added fitment selects
-                        $(`.select2-fitment-make, .select2-fitment-model, .select2-fitment-engine`).each(
-                    function() {
-                            if (!$(this).hasClass('select2-hidden-accessible')) {
-                                $(this).select2({
-                                    dropdownParent: $('#createProductModal'),
-                                    width: '100%',
-                                    placeholder: $(this).find('option:first').text()
-                                });
-                            }
-                        });
+                        $(`.select2-fitment-make, .select2-fitment-model, .select2-fitment-engine, .select2-fitment-year-start, .select2-fitment-year-end`)
+                            .each(
+                            function() {
+                                if (!$(this).hasClass('select2-hidden-accessible')) {
+                                        const $element = $(this);
+                                        const isYearField = $element.hasClass('select2-fitment-year-start') || $element.hasClass('select2-fitment-year-end');
+                                        
+                                        // Year fields - no tagging
+                                        if (isYearField) {
+                                            $element.select2({
+                                                dropdownParent: $('#createProductModal'),
+                                                width: '100%',
+                                                placeholder: $element.find('option:first').text(),
+                                                allowClear: true
+                                            });
+                                        } 
+                                        // Make, Model, Engine - with tagging
+                                        else {
+                                            $element.select2({
+                                        dropdownParent: $('#createProductModal'),
+                                        width: '100%',
+                                                placeholder: $element.find('option:first').text(),
+                                                allowClear: true,
+                                                tags: true,
+                                                createTag: function(params) {
+                                                    const term = $.trim(params.term);
+                                                    if (term === '') return null;
+                                                    return {
+                                                        id: 'new:' + term,
+                                                        text: term + ' (Press Enter to add)',
+                                                        newTag: true
+                                                    };
+                                                }
+                                            }).on('select2:select', function(e) {
+                                                const data = e.params.data;
+                                                if (data.newTag) {
+                                                    const newName = data.text.replace(' (Press Enter to add)', '');
+                                                    const $select = $(this);
+                                                    let endpoint = '';
+                                                    
+                                                    // Determine endpoint based on field type
+                                                    if ($select.hasClass('select2-fitment-make')) {
+                                                        endpoint = '{{ route("car-makes.quick-add") }}';
+                                                    } else if ($select.hasClass('select2-fitment-model')) {
+                                                        endpoint = '{{ route("car-models.quick-add") }}';
+                                                    } else if ($select.hasClass('select2-fitment-engine')) {
+                                                        endpoint = '{{ route("car-engines.quick-add") }}';
+                                                    }
+                                                    
+                                                    // AJAX call to save
+                                                    $.ajax({
+                                                        url: endpoint,
+                                                        method: 'POST',
+                                                        data: {
+                                                            name: newName,
+                                                            _token: '{{ csrf_token() }}'
+                                                        },
+                                                        success: function(response) {
+                                                            if (response.success) {
+                                                                // Add new option
+                                                                const newOption = new Option(response.data.name, response.data.id, true, true);
+                                                                $select.append(newOption);
+                                                                $select.val(response.data.id).trigger('change');
+                                                                
+                                                                // Show success message
+                                                                toastr.success(response.data.name + ' added successfully!');
+                                                            }
+                                                        },
+                                                        error: function(xhr) {
+                                                            toastr.error('Failed to add. Please try again.');
+                                                            $select.val('').trigger('change');
+                                                        }
+                                                    });
+                                                }
+                                            });
+                                        }
+                                }
+                            });
 
                         createFitmentIndex++;
                     });
@@ -446,31 +508,8 @@
                         // Clear fitments
                         document.getElementById('create-fitments-container').innerHTML = '';
                         createFitmentIndex = 0;
-
-                        // Reset to first tab
-                        $('.nav-tabs a:first').tab('show');
                     });
 
-                    // Bin location validation
-                    const binInput = document.querySelector('input[name="bin_location"]');
-                    if (binInput) {
-                        binInput.addEventListener('blur', function() {
-                            const value = this.value.trim().toUpperCase();
-                            if (value && !/^[A-Z]-\d+$/.test(value)) {
-                                this.classList.add('is-invalid');
-                                if (!this.nextElementSibling || !this.nextElementSibling.classList.contains(
-                                        'invalid-feedback')) {
-                                    const feedback = document.createElement('div');
-                                    feedback.className = 'invalid-feedback';
-                                    feedback.textContent = 'Format should be: Letter-Number (e.g., A-16)';
-                                    this.parentNode.appendChild(feedback);
-                                }
-                            } else {
-                                this.classList.remove('is-invalid');
-                                this.value = value;
-                            }
-                        });
-                    }
                 });
             </script>
         @endpush

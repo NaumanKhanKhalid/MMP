@@ -15,6 +15,7 @@ class JobCard extends Model
         'customer_name',
         'customer_phone',
         'customer_email',
+        'assigned_technician_id',
         'vehicle_make',
         'vehicle_model',
         'vehicle_vin',
@@ -25,6 +26,7 @@ class JobCard extends Model
         'job_description',
         'notes',
         'customer_complaint',
+        'expected_completion_date',
         'status',
         'booked_at',
         'started_at',
@@ -72,6 +74,11 @@ class JobCard extends Model
         return $this->belongsTo(Customer::class);
     }
 
+    public function assignedTechnician()
+    {
+        return $this->belongsTo(User::class, 'assigned_technician_id');
+    }
+
     public function items()
     {
         return $this->hasMany(JobCardItem::class);
@@ -105,6 +112,7 @@ class JobCard extends Model
             'booked' => 'info',
             'in_progress' => 'primary',
             'completed' => 'success',
+            'delivered' => 'success',
             'cancelled' => 'danger',
             default => 'secondary'
         };
@@ -117,6 +125,7 @@ class JobCard extends Model
             'booked' => 'Booked In',
             'in_progress' => 'In Progress',
             'completed' => 'Completed',
+            'delivered' => 'Delivered',
             'cancelled' => 'Cancelled',
             default => 'Unknown'
         };
@@ -160,6 +169,13 @@ class JobCard extends Model
         $this->update([
             'status' => 'completed',
             'completed_at' => now(),
+        ]);
+    }
+
+    public function markAsDelivered()
+    {
+        $this->update([
+            'status' => 'delivered',
         ]);
     }
 
@@ -215,6 +231,11 @@ class JobCard extends Model
     public function scopeCompleted($query)
     {
         return $query->where('status', 'completed');
+    }
+
+    public function scopeDelivered($query)
+    {
+        return $query->where('status', 'delivered');
     }
 
     public function scopeForCustomer($query, $customerId)

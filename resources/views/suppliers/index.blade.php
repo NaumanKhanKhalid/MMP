@@ -1,18 +1,82 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="container-fluid py-4">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h4 class="mb-0">Suppliers</h4>
-            <button class="btn btn-primary" id="openCreateSupplierModal">
-                <i class="ri-add-line me-1"></i> Add Supplier
-            </button>
+    <div class="container-fluid">
+        <!-- Start::page-header -->
+        <div class="my-4 page-header-breadcrumb d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <div>
+                <h1 class="page-title fw-medium fs-18 mb-2">Suppliers (Creditors)</h1>
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item">
+                        <a href="javascript:void(0);">Home</a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">Suppliers</li>
+                </ol>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-primary btn-wave waves-effect waves-light" id="openCreateSupplierModal">
+                    <i class="ri-add-line me-1"></i>Add Supplier
+                </button>
+            </div>
         </div>
+        <!-- End::page-header -->
 
-        <div class="card shadow-sm">
-            <div class="card-body table-responsive">
-                <table class="table table-striped align-middle">
-                    <thead>
+        <!-- Start:: Search and Filters -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card custom-card">
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label fw-semibold">Search</label>
+                                <input type="text" class="form-control" id="searchInput"
+                                    placeholder="Search by name, code, email...">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-semibold">Status</label>
+                                <select class="form-select" id="statusFilter">
+                                    <option value="">All</option>
+                                    <option value="active">Active</option>
+                                    <option value="inactive">Inactive</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-semibold">Type</label>
+                                <select class="form-select" id="typeFilter">
+                                    <option value="">All</option>
+                                    <option value="company">Company</option>
+                                    <option value="individual">Individual</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label fw-semibold">Balance</label>
+                                <select class="form-select" id="balanceFilter">
+                                    <option value="">All</option>
+                                    <option value="overdue">Overdue</option>
+                                    <option value="positive">Positive</option>
+                                    <option value="zero">Zero</option>
+                                </select>
+                            </div>
+                            <div class="col-md-1 d-flex align-items-end">
+                                <button class="btn btn-light w-100" onclick="clearFilters()">
+                                    <i class="ri-refresh-line"></i>
+            </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- End:: Search and Filters -->
+
+        <!-- Start:: Suppliers Table -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card custom-card">
+                    <div class="card-body">
+                        <div class="table-responsive" style="max-height: 60vh; overflow-y: auto;">
+                            <table class="table table-hover">
+                                <thead class="sticky-top bg-white" style="z-index: 10;">
                         <tr>
                             <th>#</th>
                             <th>Code</th>
@@ -26,216 +90,214 @@
                             <th class="text-end">Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        @forelse($suppliers as $supplier)
-                            <tr>
-                                <td>{{ $loop->iteration + ($suppliers->currentPage() - 1) * $suppliers->perPage() }}</td>
-                                <td>
-                                    <span class="badge bg-info-transparent">{{ $supplier->supplier_code }}</span>
-                                </td>
-                                <td>{{ $supplier->name }}</td>
-                                <td>
-                                    <span
-                                        class="badge bg-{{ $supplier->supplier_type === 'company' ? 'primary' : 'secondary' }}-transparent">
-                                        {{ ucfirst($supplier->supplier_type) }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <div>
-                                        @if($supplier->email)
-                                            <span class="d-block mb-1"><i
-                                                    class="ri-mail-line me-2 align-middle fs-14 text-muted"></i>{{ $supplier->email }}</span>
-                                        @endif
-                                        @if($supplier->phone)
-                                            <span class="d-block"><i
-                                                    class="ri-phone-line me-2 align-middle fs-14 text-muted"></i>{{ $supplier->phone }}</span>
-                                        @endif
-                                        @if($supplier->contact_person)
-                                            <small class="text-muted">{{ $supplier->contact_person }}</small>
-                                        @endif
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="badge bg-warning-transparent">{{ $supplier->payment_terms }}</span>
-                                </td>
-                                <td>
-                                    @if($supplier->credit_limit > 0)
-                                        <span class="text-success">R{{ number_format($supplier->credit_limit, 2) }}</span>
-                                    @else
-                                        <span class="text-muted">No limit</span>
-                                    @endif
-                                </td>
-                                <td>
-                                    <span
-                                        class="{{ $supplier->balance < 0 ? 'text-danger' : ($supplier->balance > 0 ? 'text-success' : 'text-muted') }}">
-                                        R{{ number_format($supplier->balance, 2) }}
-                                    </span>
-                                    @if($supplier->isOverCreditLimit())
-                                        <br><small class="text-danger">Over limit!</small>
-                                    @endif
-                                </td>
-                                <td>
-                                    @if($supplier->status == 'active')
-                                        <span class="badge rounded-pill bg-success-transparent">Active</span>
-                                    @else
-                                        <span class="badge rounded-pill bg-secondary-transparent">Inactive</span>
-                                    @endif
-                                </td>
-                                <td class="text-end">
-                                    <div class="btn-list">
-                                        <!-- Toggle -->
-                                        <form method="POST" action="{{ route('suppliers.toggle.status', $supplier->id) }}"
-                                            class="d-inline">
-                                            @csrf @method('PATCH')
-                                            <button type="submit"
-                                                class="btn btn-sm {{ $supplier->status === 'active' ? 'btn-warning-light' : 'btn-success-light' }} btn-icon"
-                                                title="{{ $supplier->status === 'active' ? 'Deactivate' : 'Activate' }}">
-                                                <i class="ri-toggle-{{ $supplier->status === 'active' ? 'line' : 'fill' }}"></i>
-                                            </button>
-                                        </form>
-                                        <!-- View -->
-                                        <button class="btn btn-sm btn-primary-light btn-icon openViewSupplierModal"
-                                            data-id="{{ $supplier->id }}" title="View">
-                                            <i class="ri-eye-line"></i>
-                                        </button>
-                                        <!-- Edit -->
-                                        <button class="btn btn-sm btn-success-light btn-icon openEditSupplierModal"
-                                            data-id="{{ $supplier->id }}" title="Edit">
-                                            <i class="ri-pencil-line"></i>
-                                        </button>
-                                        <!-- Delete -->
-                                        <button class="btn btn-sm btn-danger-light btn-icon" data-bs-toggle="modal"
-                                            data-bs-target="#deleteSupplier{{ $supplier->id }}" title="Delete">
-                                            <i class="ri-delete-bin-line"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-
-                            <!-- Delete Modal -->
-                            <div class="modal fade" id="deleteSupplier{{ $supplier->id }}" tabindex="-1">
-                                <div class="modal-dialog modal-dialog-centered">
-                                    <form method="POST" action="{{ route('suppliers.destroy', $supplier->id) }}">
-                                        @csrf @method('DELETE')
-                                        <div class="modal-content border-0 shadow-lg">
-                                            <div class="modal-header bg-danger text-white">
-                                                <h5 class="modal-title">
-                                                    <i class="ri-delete-bin-line me-2"></i> Delete Supplier
-                                                </h5>
-                                                <button type="button" class="btn-close btn-close-white"
-                                                    data-bs-dismiss="modal"></button>
-                                            </div>
-                                            <div class="modal-body p-4">
-
-                                                Are you sure you want to delete the supplier
-                                                <strong>{{ $supplier->name }}</strong>?
-                                                @php
-                                                    $productCount = $supplier->products()->count();
-                                                    $grnCount = $supplier->grns()->count();
-                                                    $poCount = $supplier->purchaseOrders()->count();
-                                                @endphp
-
-                                                @if($productCount > 0 || $grnCount > 0 || $poCount > 0)
-                                                    <div class="alert alert-danger mt-3" role="alert">
-                                                        <h6 class="alert-heading"><i class="ri-error-warning-line me-2"></i>Cannot
-                                                            Delete Supplier</h6>
-                                                        <p class="mb-2">This supplier has associated records that prevent deletion:
-                                                        </p>
-                                                        <ul class="mb-0">
-                                                            @if($productCount > 0)
-                                                                <li><strong>{{ $productCount }}</strong> product(s) are linked to this
-                                                                    supplier</li>
-                                                            @endif
-                                                            @if($grnCount > 0)
-                                                                <li><strong>{{ $grnCount }}</strong> goods receipt(s) are linked to this
-                                                                    supplier</li>
-                                                            @endif
-                                                            @if($poCount > 0)
-                                                                <li><strong>{{ $poCount }}</strong> purchase order(s) are linked to this
-                                                                    supplier</li>
-                                                            @endif
-                                                        </ul>
-                                                        <hr>
-                                                        <p class="mb-0"><strong>Solution:</strong> Remove or reassign these records
-                                                            before deleting the supplier.</p>
-                                                    </div>
-                                                @else
-
-                                                @endif
-                                            </div>
-                                            <div class="modal-footer bg-light">
-                                                <button type="button" class="btn btn-light" data-bs-dismiss="modal">
-                                                    <i class="ri-close-line me-1"></i> Cancel
-                                                </button>
-                                                @if($productCount > 0 || $grnCount > 0 || $poCount > 0)
-                                                    <button type="button" class="btn btn-secondary" disabled>
-                                                        <i class="ri-delete-bin-line me-1"></i> Cannot Delete
-                                                    </button>
-                                                @else
-                                                    <button type="submit" class="btn btn-danger">
-                                                        <i class="ri-delete-bin-line me-1"></i> Delete Supplier
-                                                    </button>
-                                                @endif
+                                <tbody id="suppliersTableBody">
+                                    @include('suppliers.partials.table')
+                                </tbody>
+                            </table>
                                             </div>
                                         </div>
-                                    </form>
+                    <div class="card-footer">
+                        <div id="paginationContainer">
+                            @include('suppliers.partials.pagination')
                                 </div>
                             </div>
-
-                        @empty
-                            <tr>
-                                <td colspan="10" class="text-center text-muted">No suppliers found</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
             </div>
-            <div class="card-footer border-top-0">
-                {{ $suppliers->links() }}
             </div>
         </div>
+        <!-- End:: Suppliers Table -->
 
-        <!-- Supplier Modals -->
+        <!-- Start:: Supplier Modals -->
         <div class="modal fade" id="supplierModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-xl">
                 <div class="modal-content" id="supplierModalContent"></div>
             </div>
         </div>
 
+        <!-- Delete Modal -->
+        <div class="modal fade" id="deleteSupplierModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title">
+                            <i class="ri-delete-bin-line me-2"></i>Delete Supplier
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Are you sure you want to delete the supplier <strong id="deleteSupplierName"></strong>?</p>
+                        <p class="text-muted">This action cannot be undone.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                        <form id="deleteSupplierForm" method="POST" class="d-inline">
+                            @csrf @method('DELETE')
+                            <button type="submit" class="btn btn-danger">
+                                <i class="ri-delete-bin-line me-1"></i>Delete
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- End:: Supplier Modals -->
     </div>
 @endsection
 
+
 @push('scripts')
     <script>
-        $(document).ready(function () {
+        let currentPage = {{ $suppliers->currentPage() }};
+        let isLoading = false;
+
+        $(document).ready(function() {
+            // Initialize filters
+            initializeFilters();
+
             // Create Supplier
-            $('#openCreateSupplierModal').on('click', function () {
-                $.get("{{ route('suppliers.create-modal') }}", function (html) {
-                    $('#supplierModalContent').html(html);
-                    $('#supplierModal').modal('show');
-                });
+            $('#openCreateSupplierModal').on('click', function() {
+                loadSupplierModal('{{ route('suppliers.create-modal') }}');
             });
 
             // View Supplier
-            $(document).on('click', '.openViewSupplierModal', function () {
+            $(document).on('click', '.openViewSupplierModal', function(e) {
+                e.stopPropagation();
                 var id = $(this).data('id');
-                $.get("{{ route('suppliers.view-modal', ':id') }}".replace(':id', id), function (html) {
-                    $('#supplierModalContent').html(html);
-                    $('#supplierModal').modal('show');
-                });
+                var url = '{{ url('suppliers') }}/' + id + '/view-modal';
+                loadSupplierModal(url);
             });
 
             // Edit Supplier
-            $(document).on('click', '.openEditSupplierModal', function () {
+            $(document).on('click', '.openEditSupplierModal', function(e) {
+                e.stopPropagation();
                 var id = $(this).data('id');
-                $.get("{{ route('suppliers.edit-modal', ':id') }}".replace(':id', id), function (html) {
-                    $('#supplierModalContent').html(html);
-                    $('#supplierModal').modal('show');
-                });
+                var url = '{{ url('suppliers') }}/' + id + '/edit-modal';
+                loadSupplierModal(url);
+            });
+
+            // Delete Supplier
+            $(document).on('click', '.openDeleteSupplierModal', function(e) {
+                e.stopPropagation();
+                var id = $(this).data('id');
+                var name = $(this).data('name');
+                $('#deleteSupplierName').text(name);
+                $('#deleteSupplierForm').attr('action', '{{ url('suppliers') }}/' + id);
+                $('#deleteSupplierModal').modal('show');
+            });
+
+            // Row click to view
+            $(document).on('click', '.supplier-row', function() {
+                var id = $(this).data('id');
+                var url = '{{ url('suppliers') }}/' + id + '/view-modal';
+                loadSupplierModal(url);
             });
         });
-    </script>
 
-    <!-- Payment Modal Container -->
-    <div id="paymentModalContainer"></div>
+        function loadSupplierModal(url) {
+            console.log('Loading supplier modal from URL:', url);
+            $.get(url, function(html) {
+                    $('#supplierModalContent').html(html);
+                    $('#supplierModal').modal('show');
+            }).fail(function(xhr, status, error) {
+                console.error('Error loading supplier modal:', xhr.status, xhr.statusText);
+                console.error('Response:', xhr.responseText);
+                toastr.error('Error loading supplier details: ' + xhr.status + ' ' + xhr.statusText);
+            });
+        }
+
+        function initializeFilters() {
+            // Search input with debounce
+            let searchTimeout;
+            $('#searchInput').on('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(function() {
+                    loadSuppliers();
+                }, 500);
+            });
+
+            // Filter dropdowns
+            $('#statusFilter, #typeFilter, #balanceFilter').on('change', function() {
+                currentPage = 1;
+                loadSuppliers();
+            });
+        }
+
+        function loadSuppliers() {
+            if (isLoading) return;
+
+            console.log('Loading suppliers, currentPage:', currentPage);
+            isLoading = true;
+            showLoading();
+
+            const params = {
+                search: $('#searchInput').val(),
+                status: $('#statusFilter').val(),
+                type: $('#typeFilter').val(),
+                balance: $('#balanceFilter').val(),
+                page: currentPage
+            };
+
+            console.log('AJAX params:', params);
+
+            $.get('{{ route('suppliers.index') }}', params, function(data) {
+                console.log('AJAX response:', data);
+                $('#suppliersTableBody').html(data.table);
+                $('#paginationContainer').html(data.pagination);
+                hideLoading();
+                isLoading = false;
+            }).fail(function(xhr, status, error) {
+                console.error('AJAX error:', xhr.status, xhr.statusText);
+                console.error('Response:', xhr.responseText);
+                toastr.error('Error loading suppliers: ' + xhr.status + ' ' + xhr.statusText);
+                hideLoading();
+                isLoading = false;
+            });
+        }
+
+        function loadSuppliersPage(page) {
+            console.log('Loading page:', page);
+            currentPage = page;
+            loadSuppliers();
+        }
+
+        function showLoading() {
+            $('#suppliersTableBody').html(`
+        <tr>
+            <td colspan="10" class="text-center py-4">
+                <div class="d-flex justify-content-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </td>
+        </tr>
+    `);
+        }
+
+        function hideLoading() {
+            // Loading will be replaced by actual data
+        }
+
+        function clearFilters() {
+            $('#searchInput').val('');
+            $('#statusFilter').val('');
+            $('#typeFilter').val('');
+            $('#balanceFilter').val('');
+            currentPage = 1;
+            loadSuppliers();
+        }
+
+        function refreshSuppliers() {
+            currentPage = 1;
+            loadSuppliers();
+            toastr.success('Suppliers refreshed');
+        }
+
+        // Pagination click handler
+        $(document).on('click', '.pagination a', function(e) {
+            e.preventDefault();
+            const url = new URL($(this).attr('href'));
+            currentPage = url.searchParams.get('page') || 1;
+            loadSuppliers();
+        });
+    </script>
 @endpush
