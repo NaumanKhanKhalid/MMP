@@ -1730,7 +1730,7 @@
                 @csrf
                 <div class="modal-header bg-success-transparent">
                     <h5 class="modal-title">
-                        <i class="ri-user-add-line text-success me-2"></i>⚡ Quick Add Customer
+                        <i class="ri-user-add-line text-success me-2"></i>⚡ Quick 
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" tabindex="-1"></button>
                 </div>

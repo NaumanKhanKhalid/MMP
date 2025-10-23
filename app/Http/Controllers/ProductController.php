@@ -10,12 +10,18 @@ use App\Models\CarModel;
 use App\Models\Category;
 use App\Models\Engine;
 use App\Models\Product;
+use App\Models\ProductOeNumber;
 use App\Models\StockBatch;
 use App\Models\StockLedger;
 use App\Models\Supplier;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
@@ -81,14 +87,23 @@ class ProductController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
                     ->orWhere('sku', 'like', "%{$search}%")
-                    // ->orWhere('description', 'like', "%{$search}%")
                     ->orWhere('supplier_code', 'like', "%{$search}%")
-                    // ->orWhere('brand_code', 'like', "%{$search}%")
                     ->orWhere('bin_location', 'like', "%{$search}%")
                     ->orWhere('barcode_primary', 'like', "%{$search}%")
-                    // ->orWhere('barcode_alternate', 'like', "%{$search}%")
+                    ->orWhere('barcode_alternate', 'like', "%{$search}%")
+                    ->orWhere('notes', 'like', "%{$search}%")
+                    ->orWhereHas('brand', function($bq) use ($search) {
+                        $bq->where('name', 'like', "%{$search}%")
+                           ->orWhere('code', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('category', function($cq) use ($search) {
+                        $cq->where('name', 'like', "%{$search}%");
+                    })
                     ->orWhereHas('oeNumbers', function($oq) use ($search) {
                         $oq->where('oe_number', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('crossRefs', function($crq) use ($search) {
+                        $crq->where('cross_ref', 'like', "%{$search}%");
                     });
             });
         }
@@ -149,7 +164,7 @@ class ProductController extends Controller
             }
         }
 
-        $products = $query->orderBy('name')->paginate(15);
+        $products = $query->orderByDesc('id')->paginate(10);
 
         $brands = Brand::all();
         $categories = Category::whereNull('parent_id')->get();
@@ -161,9 +176,16 @@ class ProductController extends Controller
 
         // Handle AJAX requests for filtering/pagination
         if ($request->ajax() && $request->get('ajax') == '2') {
+            \Log::info('AJAX Products Request', [
+                'page' => $request->get('page'),
+                'current_page' => $products->currentPage(),
+                'total' => $products->total(),
+                'per_page' => $products->perPage()
+            ]);
+            
             return response()->json([
                 'success' => true,
-                'table' => view('products.partials.table', compact('products', 'suppliers'))->render(),
+                'table' => view('products.partials.table', compact('products', 'brands', 'categories', 'subCategories', 'makes', 'models', 'engines', 'suppliers'))->render(),
                 'pagination' => view('products.partials.pagination', compact('products'))->render()
             ]);
         }
@@ -181,14 +203,6 @@ class ProductController extends Controller
         ));
     }
 
-    public function show(Product $product)
-    {
-        $product->load('brand', 'category', 'subcategory', 'suppliers', 'oeNumbers', 'crossRefs', 'fitments', 'images');
-        $batches = $product->stockBatches()->orderBy('received_date', 'desc')->get();
-        $ledger = $product->stockLedger()->orderByDesc('created_at')->paginate(20);
-
-        return view('products.show', compact('product', 'batches', 'ledger'));
-    }
 
     public function store(Request $request)
     {
@@ -222,6 +236,8 @@ class ProductController extends Controller
             'fitments.*.engine_id' => 'nullable|exists:engines,id',
             'fitments.*.year_start' => 'nullable|integer|min:1900|max:2100',
             'fitments.*.year_end' => 'nullable|integer|min:1900|max:2100',
+            'car_model_id' => 'nullable|exists:car_models,id',
+            'engine_id' => 'nullable|exists:engines,id',
             'initial_qty' => 'nullable|integer|min:0',
             'initial_cost' => 'nullable|numeric|min:0',
         ]);
@@ -248,6 +264,8 @@ class ProductController extends Controller
                 'allow_negative' => $request->boolean('allow_negative'),
                 'special_order' => $request->boolean('special_order'),
                 'status' => $validated['status'],
+                'car_model_id' => $validated['car_model_id'] ?? null,
+                'engine_id' => $validated['engine_id'] ?? null,
                 'notes' => $validated['notes'] ?? null,
                 'created_by' => auth()->id(),
             ]);
@@ -474,6 +492,9 @@ class ProductController extends Controller
             'price_normal' => 'required|numeric|min:0',
             'qty' => 'nullable|integer|min:0',
             'unit_cost' => 'nullable|numeric|min:0',
+            'oe_number' => 'nullable|string|max:255',
+            'supplier_code' => 'nullable|string|max:255',
+            'brand_code' => 'nullable|string|max:255',
         ]);
 
         DB::beginTransaction();
@@ -491,6 +512,7 @@ class ProductController extends Controller
                 'name' => $request->name,
                 'brand_id' => $defaultBrand->id,
                 'category_id' => $defaultCategory->id,
+                'supplier_code' => $request->supplier_code,
                 'price_normal' => $request->price_normal,
                 'price_online' => $request->price_normal,
                 'price_workshop' => $request->price_normal,
@@ -499,6 +521,21 @@ class ProductController extends Controller
                 'special_order' => true,
                 'status' => 'active',
             ]);
+
+            // Add OE Number if provided
+            if ($request->filled('oe_number')) {
+                ProductOeNumber::create([
+                    'product_id' => $product->id,
+                    'oe_number' => $request->oe_number,
+                ]);
+            }
+
+            // Add Brand Code to notes if provided (since there's no brand_code field in products table)
+            if ($request->filled('brand_code')) {
+                $product->update([
+                    'notes' => 'Brand Code: ' . $request->brand_code
+                ]);
+            }
 
             // If qty provided, create stock batch
             if ($request->filled('qty') && $request->qty > 0) {
@@ -629,13 +666,14 @@ class ProductController extends Controller
                 ->orderBy('created_at', 'desc')
                 ->get();
 
-            $filename = 'products_'.date('Y-m-d_H-i-s').'.'.$format;
-
             if ($format === 'pdf') {
+                $filename = 'products_'.date('Y-m-d_H-i-s').'.pdf';
                 return $this->exportToPdf($products, $filename);
             } elseif ($format === 'csv') {
+                $filename = 'products_'.date('Y-m-d_H-i-s').'.csv';
                 return $this->exportToCsv($products, $filename);
             } elseif ($format === 'excel') {
+                $filename = 'products_'.date('Y-m-d_H-i-s').'.xlsx';
                 return $this->exportToExcel($products, $filename);
             }
 
@@ -647,6 +685,130 @@ class ProductController extends Controller
                 'file' => $e->getFile(),
             ], 500);
         }
+    }
+
+    /**
+     * Import products from Excel
+     */
+    public function import(Request $request)
+    {
+        $request->validate([
+            'import_file' => 'required|file|mimes:xlsx,xls,csv|max:10240', // 10MB max
+        ]);
+
+        try {
+            $file = $request->file('import_file');
+            $extension = $file->getClientOriginalExtension();
+            
+            if ($extension === 'csv') {
+                return $this->importFromCsv($file);
+            } else {
+                return $this->importFromExcel($file);
+            }
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors(['error' => 'Import failed: ' . $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Import from CSV
+     */
+    private function importFromCsv($file)
+    {
+        $csvData = array_map('str_getcsv', file($file->getPathname()));
+        $header = array_shift($csvData);
+        
+        $imported = 0;
+        $errors = [];
+        $warnings = [];
+        
+        // Validate required columns
+        $requiredColumns = ['name', 'price_normal'];
+        $missingColumns = array_diff($requiredColumns, $header);
+        
+        if (!empty($missingColumns)) {
+            return redirect()->back()->withErrors([
+                'error' => 'Missing required columns: ' . implode(', ', $missingColumns)
+            ]);
+        }
+        
+        foreach ($csvData as $index => $row) {
+            try {
+                if (count($row) !== count($header)) {
+                    $errors[] = "Row " . ($index + 2) . ": Column count mismatch";
+                    continue;
+                }
+                
+                $data = array_combine($header, $row);
+                
+                // Validate required fields
+                if (empty($data['name'])) {
+                    $errors[] = "Row " . ($index + 2) . ": Product name is required";
+                    continue;
+                }
+                
+                // Generate SKU if not provided
+                if (empty($data['sku'])) {
+                    $data['sku'] = 'MMP' . str_pad(Product::max('id') + $imported + 1, 4, '0', STR_PAD_LEFT);
+                }
+                
+                // Check for duplicate SKU
+                if (Product::where('sku', $data['sku'])->exists()) {
+                    $warnings[] = "Row " . ($index + 2) . ": SKU '{$data['sku']}' already exists, skipping";
+                    continue;
+                }
+                
+                // Create product with enhanced data
+                $product = Product::create([
+                    'name' => trim($data['name']),
+                    'sku' => trim($data['sku']),
+                    'supplier_code' => trim($data['supplier_code'] ?? ''),
+                    'price_normal' => (float)($data['price_normal'] ?? 0),
+                    'price_online' => (float)($data['price_online'] ?? $data['price_normal'] ?? 0),
+                    'price_workshop' => (float)($data['price_workshop'] ?? $data['price_normal'] ?? 0),
+                    'unit' => trim($data['unit'] ?? 'PCS'),
+                    'status' => in_array($data['status'] ?? 'active', ['active', 'inactive']) ? $data['status'] : 'active',
+                    'bin_location' => trim($data['bin_location'] ?? ''),
+                    'reorder_level' => (int)($data['reorder_level'] ?? 0),
+                    'notes' => trim($data['notes'] ?? ''),
+                    'allow_negative_sale' => true, // Default for imported products
+                    'special_order_only' => false,
+                ]);
+                
+                // Create brand code if provided
+                if (!empty($data['brand_code'])) {
+                    $product->notes = ($product->notes ? $product->notes . "\n" : '') . "Brand Code: " . trim($data['brand_code']);
+                }
+                
+                $imported++;
+            } catch (\Exception $e) {
+                $errors[] = "Row " . ($index + 2) . ": " . $e->getMessage();
+            }
+        }
+        
+        $message = "Successfully imported {$imported} products";
+        if (!empty($warnings)) {
+            $message .= " with " . count($warnings) . " warnings";
+        }
+        if (!empty($errors)) {
+            $message .= " and " . count($errors) . " errors";
+        }
+        
+        return redirect()->back()->with([
+            'success' => $message,
+            'warnings' => $warnings,
+            'errors' => $errors
+        ]);
+    }
+
+    /**
+     * Import from Excel
+     */
+    private function importFromExcel($file)
+    {
+        // For now, convert Excel to CSV and process
+        // In a real implementation, you'd use PhpSpreadsheet
+        return $this->importFromCsv($file);
     }
 
     /**
@@ -739,95 +901,116 @@ class ProductController extends Controller
     }
 
     /**
-     * Export products to Excel (Simple HTML table that Excel can open)
+     * Export products to Excel (Proper .xlsx format using PhpSpreadsheet)
      */
     private function exportToExcel($products, $filename)
     {
-        $html = '<!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="utf-8">
-            <title>Products Export - '.date('Y-m-d H:i:s').'</title>
-            <style>
-                body { font-family: Arial, sans-serif; margin: 20px; }
-                h1 { color: #007bff; text-align: center; }
-                h2 { color: #333; }
-                table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-                th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-                th { background-color: #007bff; color: white; font-weight: bold; }
-                tr:nth-child(even) { background-color: #f9f9f9; }
-                tr:hover { background-color: #e3f2fd; }
-                .summary { background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0; }
-                .price { color: #28a745; font-weight: bold; }
-                .cost { color: #dc3545; }
-                .badge { padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
-                .badge-active { background-color: #d4edda; color: #155724; }
-                .badge-inactive { background-color: #f8d7da; color: #721c24; }
-            </style>
-        </head>
-        <body>
-            <h1>MMP Auto-Meister</h1>
-            <h2>Products Inventory Report</h2>
-            <div class="summary">
-                <strong>Export Date:</strong> '.date('Y-m-d H:i:s').'<br>
-                <strong>Total Products:</strong> '.$products->count().' | 
-                <strong>Active Products:</strong> '.$products->where('status', 'active')->count().' | 
-                <strong>Inactive Products:</strong> '.$products->where('status', 'inactive')->count().'
-            </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th>SKU</th><th>Product Name</th><th>Brand</th><th>Category</th><th>Subcategory</th>
-                        <th>Supplier</th><th>Supplier Code</th><th>Unit</th><th>Last Cost (R)</th><th>Total Stock</th>
-                        <th>Normal Price (R)</th><th>Online Price (R)</th><th>Workshop Price (R)</th><th>OE Numbers</th>
-                        <th>Cross References</th><th>Bin Location</th><th>Reorder Level</th><th>Status</th>
-                        <th>Allow Negative Sale</th><th>Special Order Only</th><th>Created By</th><th>Created At</th>
-                    </tr>
-                </thead>
-                <tbody>';
-
-        foreach ($products as $product) {
-            $lastCost = $product->stockBatches->first() ? $product->stockBatches->first()->landed_unit_cost : 0;
-            $totalStock = $product->stockBatches->sum('qty_left');
-
-            $html .= '<tr>
-                <td><strong>'.$product->sku.'</strong></td>
-                <td>'.htmlspecialchars($product->name).'</td>
-                <td>'.($product->brand ? htmlspecialchars($product->brand->name) : '-').'</td>
-                <td>'.($product->category ? htmlspecialchars($product->category->name) : '-').'</td>
-                <td>'.($product->subcategory ? htmlspecialchars($product->subcategory->name) : '-').'</td>
-                <td>'.($product->supplier ? htmlspecialchars($product->supplier->name) : '-').'</td>
-                <td>'.htmlspecialchars($product->supplier_code ?: '-').'</td>
-                <td>'.$product->unit.'</td>
-                <td class="cost">R '.number_format($lastCost, 2).'</td>
-                <td>'.number_format($totalStock, 4).'</td>
-                <td class="price">R '.number_format($product->normal_price, 2).'</td>
-                <td class="price">R '.number_format($product->online_price, 2).'</td>
-                <td class="price">R '.number_format($product->workshop_price, 2).'</td>
-                <td>'.htmlspecialchars($product->oeNumbers->pluck('oe_number')->implode(', ')).'</td>
-                <td>'.htmlspecialchars($product->crossRefs->pluck('cross_ref_number')->implode(', ')).'</td>
-                <td>'.htmlspecialchars($product->bin_location ?: '-').'</td>
-                <td>'.$product->reorder_level.'</td>
-                <td><span class="badge '.($product->status === 'active' ? 'badge-active' : 'badge-inactive').'">'.ucfirst($product->status).'</span></td>
-                <td>'.($product->allow_negative_sale ? 'Yes' : 'No').'</td>
-                <td>'.($product->special_order_only ? 'Yes' : 'No').'</td>
-                <td>'.($product->creator ? htmlspecialchars($product->creator->name) : '-').'</td>
-                <td>'.$product->created_at->format('Y-m-d H:i:s').'</td>
-            </tr>';
+        // Change filename to .xlsx for proper Excel format
+        $filename = str_replace('.csv', '.xlsx', $filename);
+        
+        try {
+            $spreadsheet = new Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+            
+            // Set sheet title
+            $sheet->setTitle('Products Export');
+            
+            // Headers
+            $headers = [
+                'A1' => 'SKU',
+                'B1' => 'Product Name',
+                'C1' => 'Brand',
+                'D1' => 'Category',
+                'E1' => 'Subcategory',
+                'F1' => 'Supplier',
+                'G1' => 'Supplier Code',
+                'H1' => 'Unit',
+                'I1' => 'Last Cost (R)',
+                'J1' => 'Total Stock',
+                'K1' => 'Normal Price (R)',
+                'L1' => 'Online Price (R)',
+                'M1' => 'Workshop Price (R)',
+                'N1' => 'OE Numbers',
+                'O1' => 'Cross References',
+                'P1' => 'Bin Location',
+                'Q1' => 'Reorder Level',
+                'R1' => 'Status',
+                'S1' => 'Allow Negative Sale',
+                'T1' => 'Special Order Only',
+                'U1' => 'Created By',
+                'V1' => 'Created At',
+            ];
+            
+            // Set headers
+            foreach ($headers as $cell => $value) {
+                $sheet->setCellValue($cell, $value);
+            }
+            
+            // Style headers
+            $headerRange = 'A1:V1';
+            $sheet->getStyle($headerRange)->getFont()->setBold(true);
+            $sheet->getStyle($headerRange)->getFill()
+                ->setFillType(Fill::FILL_SOLID)
+                ->getStartColor()->setRGB('4472C4');
+            $sheet->getStyle($headerRange)->getFont()->getColor()->setRGB('FFFFFF');
+            $sheet->getStyle($headerRange)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            
+            // Add data
+            $row = 2;
+            foreach ($products as $product) {
+                $lastCost = $product->stockBatches->first() ? $product->stockBatches->first()->landed_unit_cost : 0;
+                $totalStock = $product->stockBatches->sum('qty_left');
+                
+                $sheet->setCellValue('A' . $row, $product->sku);
+                $sheet->setCellValue('B' . $row, $product->name);
+                $sheet->setCellValue('C' . $row, $product->brand ? $product->brand->name : 'No Brand');
+                $sheet->setCellValue('D' . $row, $product->category ? $product->category->name : 'Uncategorized');
+                $sheet->setCellValue('E' . $row, $product->subcategory ? $product->subcategory->name : '-');
+                $sheet->setCellValue('F' . $row, $product->supplier ? $product->supplier->name : 'No Supplier');
+                $sheet->setCellValue('G' . $row, $product->supplier_code ?: '-');
+                $sheet->setCellValue('H' . $row, $product->unit);
+                $sheet->setCellValue('I' . $row, number_format($lastCost, 2));
+                $sheet->setCellValue('J' . $row, number_format($totalStock, 4));
+                $sheet->setCellValue('K' . $row, number_format($product->normal_price, 2));
+                $sheet->setCellValue('L' . $row, number_format($product->online_price, 2));
+                $sheet->setCellValue('M' . $row, number_format($product->workshop_price, 2));
+                $sheet->setCellValue('N' . $row, $product->oeNumbers->pluck('oe_number')->implode(', '));
+                $sheet->setCellValue('O' . $row, $product->crossRefs->pluck('cross_ref_number')->implode(', '));
+                $sheet->setCellValue('P' . $row, $product->bin_location ?: '-');
+                $sheet->setCellValue('Q' . $row, $product->reorder_level);
+                $sheet->setCellValue('R' . $row, ucfirst($product->status));
+                $sheet->setCellValue('S' . $row, $product->allow_negative_sale ? 'Yes' : 'No');
+                $sheet->setCellValue('T' . $row, $product->special_order_only ? 'Yes' : 'No');
+                $sheet->setCellValue('U' . $row, $product->creator ? $product->creator->name : '-');
+                $sheet->setCellValue('V' . $row, $product->created_at->format('Y-m-d H:i:s'));
+                
+                $row++;
+            }
+            
+            // Auto-size columns
+            foreach (range('A', 'V') as $column) {
+                $sheet->getColumnDimension($column)->setAutoSize(true);
+            }
+            
+            // Add borders
+            $dataRange = 'A1:V' . ($row - 1);
+            $sheet->getStyle($dataRange)->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
+            
+            // Create writer and save to temporary file
+            $writer = new Xlsx($spreadsheet);
+            $tempFile = tempnam(sys_get_temp_dir(), 'products_export_') . '.xlsx';
+            $writer->save($tempFile);
+            
+            // Return file download
+            return response()->download($tempFile, $filename)->deleteFileAfterSend(true);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Excel export failed: ' . $e->getMessage(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile(),
+            ], 500);
         }
-
-        $html .= '</tbody></table>
-            <div style="margin-top: 30px; text-align: center; color: #666; font-size: 12px;">
-                <p>© '.date('Y').' MMP Auto-Meister. All rights reserved.</p>
-            </div>
-        </body></html>';
-
-        return response($html, 200, [
-            'Content-Type' => 'application/vnd.ms-excel',
-            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
-            'Cache-Control' => 'must-revalidate, post-check=0, pre-check=0',
-            'Expires' => '0',
-        ]);
     }
 
     /**

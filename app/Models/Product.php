@@ -7,6 +7,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\DB;
 
 class Product extends Model
 {
@@ -31,6 +32,8 @@ class Product extends Model
         'allow_negative',
         'special_order',
         'status',
+        'car_model_id',
+        'engine_id',
         'notes',
         'created_by',
     ];
@@ -91,6 +94,10 @@ class Product extends Model
     {
         return $this->belongsTo(Supplier::class);
     }
+    public function suppliers()
+    {
+        return $this->belongsTo(Supplier::class);
+    }
 
     public function creator()
     {
@@ -127,6 +134,16 @@ class Product extends Model
         return $this->hasMany(ProductImage::class);
     }
 
+    public function carModel()
+    {
+        return $this->belongsTo(CarModel::class);
+    }
+
+    public function engine()
+    {
+        return $this->belongsTo(Engine::class);
+    }
+
     // Calculate on-hand stock
     public function getOnHandAttribute()
     {
@@ -150,6 +167,63 @@ class Product extends Model
     public function isLowStock()
     {
         return $this->on_hand <= $this->reorder_level && $this->on_hand > 0;
+    }
+
+    // FIFO Costing Methods
+    public function getFifoCost()
+    {
+        $batches = $this->stockBatches()
+            ->where('qty_left', '>', 0)
+            ->orderBy('received_date', 'asc')
+            ->orderBy('id', 'asc')
+            ->get();
+
+        if ($batches->isEmpty()) {
+            return 0;
+        }
+
+        return $batches->first()->landed_unit_cost;
+    }
+
+    public function getAverageCost()
+    {
+        $totalValue = $this->stockBatches()
+            ->where('qty_left', '>', 0)
+            ->sum(DB::raw('qty_left * landed_unit_cost'));
+        
+        $totalQty = $this->stockBatches()
+            ->where('qty_left', '>', 0)
+            ->sum('qty_left');
+
+        return $totalQty > 0 ? $totalValue / $totalQty : 0;
+    }
+
+    public function getTotalCostValue()
+    {
+        return $this->stockBatches()
+            ->where('qty_left', '>', 0)
+            ->sum(DB::raw('qty_left * landed_unit_cost'));
+    }
+
+    // Profit Calculations
+    public function getProfitMargin()
+    {
+        $cost = $this->getFifoCost();
+        $sellingPrice = $this->price_normal;
+        
+        if ($cost <= 0 || $sellingPrice <= 0) {
+            return 0;
+        }
+
+        return (($sellingPrice - $cost) / $sellingPrice) * 100;
+    }
+
+    public function getProfitAmount()
+    {
+        $cost = $this->getFifoCost();
+        $sellingPrice = $this->price_normal;
+        
+        return $sellingPrice - $cost;
     }
 
     /**

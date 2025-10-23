@@ -181,10 +181,16 @@ Route::middleware(['auth', 'security'])->group(function () {
         Route::post('/products', [ProductController::class, 'store'])->name('products.store');
         Route::post('/products/quick-add', [ProductController::class, 'quickAdd'])->name('products.quickAdd');
         Route::get('/products/export', [ProductController::class, 'export'])->name('products.export');
+        Route::post('/products/import', [ProductController::class, 'import'])->name('products.import');
+    Route::get('/products/sample-import', function () {
+        return response()->download(public_path('sample_products_import.csv'), 'sample_products_import.csv');
+    })->name('products.sample-import');
         Route::get('/products/test-pdf', [ProductController::class, 'testPdf'])->name('products.testPdf');
         
         // These routes with {product} parameter must come AFTER specific routes
-        Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
+        Route::get('/products/{product}', function($id) {
+            return redirect()->route('products.index');
+        })->name('products.show'); // Redirect old product URLs to products index
         Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update'); // ✅ Changed to PUT
         Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
         Route::patch('/products/{product}/toggle-status', [ProductController::class, 'toggleStatus'])->name('products.toggleStatus');
@@ -435,6 +441,22 @@ Route::get('/quotes/{id}/edit-modal', [QuoteController::class, 'editModal'])->na
     Route::prefix('reports')->group(function () {
         Route::get('/', [App\Http\Controllers\ReportController::class, 'index'])->name('reports.index');
         Route::get('/sales', [App\Http\Controllers\ReportController::class, 'sales'])->name('reports.sales');
+        Route::get('/sales-by-category', [App\Http\Controllers\ReportController::class, 'salesByCategory'])->name('reports.sales-by-category');
+        Route::get('/timed-sales', [App\Http\Controllers\ReportController::class, 'timedSales'])->name('reports.timed-sales');
+        Route::get('/discount-matrix', [App\Http\Controllers\ReportController::class, 'discountMatrix'])->name('reports.discount-matrix');
+        Route::get('/replenishment', [App\Http\Controllers\ReportController::class, 'replenishment'])->name('reports.replenishment');
+        Route::get('/new-items', [App\Http\Controllers\ReportController::class, 'newItems'])->name('reports.new-items');
+        Route::get('/profit-loss', [App\Http\Controllers\ReportController::class, 'profitLoss'])->name('reports.profit-loss');
+        Route::get('/tax-report', [App\Http\Controllers\ReportController::class, 'taxReport'])->name('reports.tax-report');
+        Route::get('/expenses', [App\Http\Controllers\ReportController::class, 'expenses'])->name('reports.expenses');
+        Route::get('/customer-sales', [App\Http\Controllers\ReportController::class, 'customerSales'])->name('reports.customer-sales');
+        Route::get('/loyalty', [App\Http\Controllers\ReportController::class, 'loyalty'])->name('reports.loyalty');
+        Route::get('/supplier-buying', [App\Http\Controllers\ReportController::class, 'supplierBuying'])->name('reports.supplier-buying');
+        Route::get('/items-sales', [App\Http\Controllers\ReportController::class, 'itemsSales'])->name('reports.items-sales');
+        Route::get('/transactions', [App\Http\Controllers\ReportController::class, 'transactions'])->name('reports.transactions');
+        Route::get('/employee-performance', [App\Http\Controllers\ReportController::class, 'employeePerformance'])->name('reports.employee-performance');
+        Route::get('/day-end-detailed', [App\Http\Controllers\ReportController::class, 'dayEndDetailed'])->name('reports.day-end-detailed');
+        Route::get('/lost-sales', [App\Http\Controllers\ReportController::class, 'lostSales'])->name('reports.lost-sales');
         Route::get('/debtors-ageing', [App\Http\Controllers\ReportController::class, 'debtorsAgeing'])->name('reports.debtors-ageing');
         Route::get('/creditors-ageing', [App\Http\Controllers\ReportController::class, 'creditorsAgeing'])->name('reports.creditors-ageing');
         Route::get('/negative-stock', [App\Http\Controllers\ReportController::class, 'negativeStock'])->name('reports.negative-stock');

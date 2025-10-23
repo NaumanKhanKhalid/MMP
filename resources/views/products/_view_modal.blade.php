@@ -1,5 +1,5 @@
 {{-- resources/views/products/_view_modal.blade.php --}}
-<div class="modal fade" id="viewProductModal-{{ $product->id }}" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="viewProductModal-{{ $product->id }}" tabindex="-1" aria-hidden="true" style="display: none !important; position: fixed !important; z-index: 1055 !important;">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
@@ -177,7 +177,8 @@
                     </div>
                 @endif
 
-                {{-- Section 5: References & Additional Info --}}
+
+                {{-- Section 6: References & Additional Info --}}
                 <div class="mb-4">
                     <h6 class="border-bottom pb-2 mb-3">
                         <i class="bi bi-link-45deg me-2"></i>References & Additional Info

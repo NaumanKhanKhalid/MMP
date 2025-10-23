@@ -40,7 +40,19 @@ class CategoryController extends Controller
     public function storeParent(CategoryRequest $request)
     {
         $data = $this->prepareData($request);
-        Category::create($data);
+        $category = Category::create($data);
+
+        // Handle AJAX requests (from product creation modal)
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Category created successfully.',
+                'category' => [
+                    'id' => $category->id,
+                    'name' => $category->name,
+                ]
+            ]);
+        }
 
         // Check if it's a main category or sub-category
         if ($request->parent_id) {

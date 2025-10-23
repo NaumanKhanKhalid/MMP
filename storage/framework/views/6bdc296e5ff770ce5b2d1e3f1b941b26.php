@@ -1,20 +1,33 @@
 <?php $__empty_1 = true; $__currentLoopData = $products; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $p): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
     <tr class="clickable-row" onclick="openViewModal('<?php echo e($p->id); ?>')" style="cursor: pointer;">
-        <td><?php echo e($loop->iteration + ($products->currentPage() - 1) * $products->perPage()); ?></td>
+        <td>
+            <div class="d-flex align-items-center">
+                <i class="ri-arrow-down-s-line expand-icon" id="expand-icon-<?php echo e($p->id); ?>" onclick="event.stopPropagation(); toggleBatches('<?php echo e($p->id); ?>')" style="cursor: pointer;"></i>
+            </div>
+        </td>
 
         
         <td>
             <div class="d-flex">
-                <span class="avatar avatar-md avatar-square bg-primary-transparent p-1">
+                <span class="avatar avatar-md avatar-square bg-primary-transparent p-1" style="cursor: pointer;" onclick="event.stopPropagation(); openImageModal('<?php echo e($p->id); ?>', '<?php echo e($p->primary_image_url); ?>', '<?php echo e($p->name); ?>', <?php echo e($p->images ? $p->images->pluck('url')->toJson() : '[]'); ?>)">
                     <img src="<?php echo e($p->primary_image_url); ?>" class="w-100 h-100" alt="<?php echo e($p->name); ?>">
                 </span>
                 <div class="ms-2">
                     <p class="fw-semibold mb-0 d-flex align-items-center">
-                        <a href="<?php echo e(route('products.show', $p->id)); ?>"><?php echo e($p->name); ?></a>
+                        <span class="text-primary"><?php echo e($p->name); ?></span>
                     </p>
                     <p class="fs-12 text-muted mb-0">SKU: <?php echo e($p->sku); ?></p>
                 </div>
             </div>
+        </td>
+
+        
+        <td>
+            <?php if($p->brand && $p->brand->code): ?>
+                <span class="badge bg-success-transparent"><?php echo e($p->brand->code); ?></span>
+            <?php else: ?>
+                <span class="text-muted">-</span>
+            <?php endif; ?>
         </td>
 
         
@@ -86,6 +99,46 @@
 
         
         <td>
+            <?php
+                $fifoCost = $p->getFifoCost();
+            ?>
+            <?php if($fifoCost > 0): ?>
+                <span class="text-success">R <?php echo e(number_format($fifoCost, 2)); ?></span>
+            <?php else: ?>
+                <span class="text-muted">R 0.00</span>
+            <?php endif; ?>
+        </td>
+
+        
+        <td>
+            <?php
+                $profitMargin = $p->getProfitMargin();
+            ?>
+            <?php if($profitMargin > 0): ?>
+                <span class="badge bg-success-transparent"><?php echo e(number_format($profitMargin, 1)); ?>%</span>
+            <?php elseif($profitMargin < 0): ?>
+                <span class="badge bg-danger-transparent"><?php echo e(number_format($profitMargin, 1)); ?>%</span>
+            <?php else: ?>
+                <span class="text-muted">0%</span>
+            <?php endif; ?>
+        </td>
+
+        
+        <td>
+            <?php
+                $profitAmount = $p->getProfitAmount();
+            ?>
+            <?php if($profitAmount > 0): ?>
+                <span class="text-success">R <?php echo e(number_format($profitAmount, 2)); ?></span>
+            <?php elseif($profitAmount < 0): ?>
+                <span class="text-danger">R <?php echo e(number_format($profitAmount, 2)); ?></span>
+            <?php else: ?>
+                <span class="text-muted">R 0.00</span>
+            <?php endif; ?>
+        </td>
+
+        
+        <td>
             <?php if($p->oeNumbers && $p->oeNumbers->count() > 0): ?>
                 <div class="d-flex flex-wrap gap-1">
                     <?php $__currentLoopData = $p->oeNumbers->take(2); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $oe): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
@@ -141,35 +194,79 @@
         
         <td class="text-end">
             <div class="btn-list">
-                <!-- Toggle Status -->
-                <form method="POST" action="<?php echo e(route('products.toggleStatus', $p->id)); ?>" class="d-inline">
-                    <?php echo csrf_field(); ?> <?php echo method_field('PATCH'); ?>
-                    <button type="submit" class="btn btn-sm <?php echo e($p->status === 'active' ? 'btn-warning-light' : 'btn-success-light'); ?> btn-icon"
-                        title="<?php echo e($p->status === 'active' ? 'Deactivate' : 'Activate'); ?>">
-                        <i class="ri-toggle-<?php echo e($p->status === 'active' ? 'line' : 'fill'); ?>"></i>
-                    </button>
-                </form>
                 <!-- View -->
                 <button class="btn btn-sm btn-primary-light btn-icon" data-bs-toggle="modal"
-                    data-bs-target="#viewProductModal-<?php echo e($p->id); ?>" title="View">
+                    data-bs-target="#viewProductModal-<?php echo e($p->id); ?>" onclick="event.stopPropagation();" title="View Details">
                     <i class="ri-eye-line"></i>
                 </button>
                 <!-- Edit -->
                 <button class="btn btn-sm btn-success-light btn-icon" data-bs-toggle="modal"
-                    data-bs-target="#editProductModal-<?php echo e($p->id); ?>" title="Edit">
+                    data-bs-target="#editProductModal-<?php echo e($p->id); ?>" onclick="event.stopPropagation();" title="Edit Product">
                     <i class="ri-pencil-line"></i>
                 </button>
                 <!-- Print Barcode -->
                 <button class="btn btn-sm btn-info-light btn-icon" 
-                    onclick="printSingleBarcode(<?php echo e($p->id); ?>, '<?php echo e($p->name); ?>', '<?php echo e($p->sku); ?>', '<?php echo e($p->barcode_primary); ?>')" 
+                    onclick="event.stopPropagation(); printSingleBarcode(<?php echo e($p->id); ?>, '<?php echo e($p->name); ?>', '<?php echo e($p->sku); ?>', '<?php echo e($p->barcode_primary); ?>')" 
                     title="Print Barcode">
                     <i class="ri-printer-line"></i>
                 </button>
                 <!-- Delete -->
                 <button class="btn btn-sm btn-danger-light btn-icon" data-bs-toggle="modal"
-                    data-bs-target="#deleteProduct<?php echo e($p->id); ?>" title="Delete">
+                    data-bs-target="#deleteProduct<?php echo e($p->id); ?>" onclick="event.stopPropagation();" title="Delete Product">
                     <i class="ri-delete-bin-line"></i>
                 </button>
+            </div>
+        </td>
+    </tr>
+    
+    
+    <tr id="batches-row-<?php echo e($p->id); ?>" class="batches-row" style="display: none;">
+        <td colspan="16">
+            <div class="p-3 bg-light">
+                <h6 class="mb-3">
+                    <i class="ri-boxes-line me-2"></i>FIFO Stock Batches
+                </h6>
+                <?php if($p->stockBatches && $p->stockBatches->count() > 0): ?>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Received Date</th>
+                                    <th>Batch ID</th>
+                                    <th>Qty Available</th>
+                                    <th>Unit Cost</th>
+                                    <th>Batch Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php $__currentLoopData = $p->stockBatches->sortByDesc('received_date'); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $batch): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <tr>
+                                        <td><?php echo e($batch->received_date ? $batch->received_date->format('d/m/Y') : '-'); ?></td>
+                                        <td>
+                                            <span class="badge bg-primary-transparent"><?php echo e($batch->id); ?></span>
+                                        </td>
+                                        <td class="text-end">
+                                            <?php if($batch->qty_left > 0): ?>
+                                                <span class="badge bg-success-transparent"><?php echo e(number_format($batch->qty_left, 0)); ?></span>
+                                            <?php elseif($batch->qty_left == 0): ?>
+                                                <span class="badge bg-warning-transparent">0</span>
+                                            <?php else: ?>
+                                                <span class="badge bg-danger-transparent"><?php echo e(number_format($batch->qty_left, 0)); ?></span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td class="text-end">R <?php echo e(number_format($batch->landed_unit_cost, 2)); ?></td>
+                                        <td class="text-end">R <?php echo e(number_format($batch->qty_left * $batch->landed_unit_cost, 2)); ?></td>
+                                    </tr>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                            </tbody>
+                        </table>
+                    </div>
+                <?php else: ?>
+                    <div class="text-center text-muted py-3">
+                        <i class="ri-inbox-line fs-1 d-block mb-2"></i>
+                        No batches found for this product.
+                    </div>
+                <?php endif; ?>
             </div>
         </td>
     </tr>

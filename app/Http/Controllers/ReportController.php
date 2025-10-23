@@ -350,6 +350,248 @@ class ReportController extends Controller
         return view('reports.stock-movement', compact('movements', 'startDate', 'endDate', 'totalIn', 'totalOut', 'netMovement', 'products'));
     }
 
+    /**
+     * Sales by Category Report
+     */
+    public function salesByCategory(Request $request)
+    {
+        $startDate = $request->get('start_date', now()->startOfMonth()->format('Y-m-d'));
+        $endDate = $request->get('end_date', now()->format('Y-m-d'));
+
+        $salesByCategory = DB::table('invoices')
+            ->join('invoice_items', 'invoices.id', '=', 'invoice_items.invoice_id')
+            ->join('products', 'invoice_items.product_id', '=', 'products.id')
+            ->join('categories', 'products.category_id', '=', 'categories.id')
+            ->whereIn('invoices.payment_status', ['posted', 'paid'])
+            ->whereBetween('invoices.created_at', [$startDate, $endDate])
+            ->select(
+                'categories.name as category_name',
+                DB::raw('COUNT(DISTINCT invoices.id) as invoice_count'),
+                DB::raw('SUM(invoice_items.qty) as total_qty'),
+                DB::raw('SUM(invoice_items.line_total) as total_sales'),
+                DB::raw('SUM(invoice_items.line_cost) as total_cost'),
+                DB::raw('SUM(invoice_items.line_total - invoice_items.line_cost) as total_profit'),
+                DB::raw('AVG((invoice_items.line_total - invoice_items.line_cost) / invoice_items.line_total * 100) as avg_margin')
+            )
+            ->groupBy('categories.id', 'categories.name')
+            ->orderBy('total_sales', 'desc')
+            ->get();
+
+        $totalSales = $salesByCategory->sum('total_sales');
+        $totalProfit = $salesByCategory->sum('total_profit');
+        $overallMargin = $totalSales > 0 ? ($totalProfit / $totalSales) * 100 : 0;
+
+        if ($request->get('export') === 'pdf') {
+            $pdf = PDF::loadView('reports.sales-by-category-pdf', compact('salesByCategory', 'startDate', 'endDate', 'totalSales', 'totalProfit', 'overallMargin'));
+            return $pdf->download('sales-by-category-' . date('Y-m-d') . '.pdf');
+        }
+
+        if ($request->get('export') === 'csv') {
+            return $this->exportSalesByCategoryCSV($salesByCategory, $startDate, $endDate);
+        }
+
+        return view('reports.sales-by-category', compact('salesByCategory', 'startDate', 'endDate', 'totalSales', 'totalProfit', 'overallMargin'));
+    }
+
+    /**
+     * Timed Sales Report
+     */
+    public function timedSales(Request $request)
+    {
+        $startDate = $request->get('start_date', now()->startOfMonth()->format('Y-m-d'));
+        $endDate = $request->get('end_date', now()->format('Y-m-d'));
+        $interval = $request->get('interval', 'hour'); // hour, day, week, month
+
+        $query = Invoice::whereIn('payment_status', ['posted', 'paid'])
+            ->whereBetween('created_at', [$startDate, $endDate]);
+
+        switch ($interval) {
+            case 'hour':
+                $salesData = $query->select(
+                    DB::raw('DATE(created_at) as date'),
+                    DB::raw('HOUR(created_at) as time_period'),
+                    DB::raw('COUNT(*) as invoice_count'),
+                    DB::raw('SUM(grand_total) as total_sales'),
+                    DB::raw('SUM(total_profit) as total_profit')
+                )->groupBy('date', 'time_period')->orderBy('date')->orderBy('time_period')->get();
+                break;
+            case 'day':
+                $salesData = $query->select(
+                    DB::raw('DATE(created_at) as date'),
+                    DB::raw('COUNT(*) as invoice_count'),
+                    DB::raw('SUM(grand_total) as total_sales'),
+                    DB::raw('SUM(total_profit) as total_profit')
+                )->groupBy('date')->orderBy('date')->get();
+                break;
+            case 'week':
+                $salesData = $query->select(
+                    DB::raw('YEAR(created_at) as year'),
+                    DB::raw('WEEK(created_at) as week'),
+                    DB::raw('COUNT(*) as invoice_count'),
+                    DB::raw('SUM(grand_total) as total_sales'),
+                    DB::raw('SUM(total_profit) as total_profit')
+                )->groupBy('year', 'week')->orderBy('year')->orderBy('week')->get();
+                break;
+            case 'month':
+                $salesData = $query->select(
+                    DB::raw('YEAR(created_at) as year'),
+                    DB::raw('MONTH(created_at) as month'),
+                    DB::raw('COUNT(*) as invoice_count'),
+                    DB::raw('SUM(grand_total) as total_sales'),
+                    DB::raw('SUM(total_profit) as total_profit')
+                )->groupBy('year', 'month')->orderBy('year')->orderBy('month')->get();
+                break;
+        }
+
+        $totalSales = $salesData->sum('total_sales');
+        $totalProfit = $salesData->sum('total_profit');
+        $totalInvoices = $salesData->sum('invoice_count');
+
+        if ($request->get('export') === 'pdf') {
+            $pdf = PDF::loadView('reports.timed-sales-pdf', compact('salesData', 'startDate', 'endDate', 'interval', 'totalSales', 'totalProfit', 'totalInvoices'));
+            return $pdf->download('timed-sales-' . date('Y-m-d') . '.pdf');
+        }
+
+        if ($request->get('export') === 'csv') {
+            return $this->exportTimedSalesCSV($salesData, $startDate, $endDate, $interval);
+        }
+
+        return view('reports.timed-sales', compact('salesData', 'startDate', 'endDate', 'interval', 'totalSales', 'totalProfit', 'totalInvoices'));
+    }
+
+    /**
+     * Discount Matrix Report
+     */
+    public function discountMatrix(Request $request)
+    {
+        $startDate = $request->get('start_date', now()->startOfMonth()->format('Y-m-d'));
+        $endDate = $request->get('end_date', now()->format('Y-m-d'));
+
+        $discountMatrix = DB::table('invoices')
+            ->join('invoice_items', 'invoices.id', '=', 'invoice_items.invoice_id')
+            ->whereIn('invoices.payment_status', ['posted', 'paid'])
+            ->whereBetween('invoices.created_at', [$startDate, $endDate])
+            ->select(
+                DB::raw('CASE 
+                    WHEN invoice_items.discount_percentage = 0 THEN "0%"
+                    WHEN invoice_items.discount_percentage <= 5 THEN "1-5%"
+                    WHEN invoice_items.discount_percentage <= 10 THEN "6-10%"
+                    WHEN invoice_items.discount_percentage <= 15 THEN "11-15%"
+                    WHEN invoice_items.discount_percentage <= 20 THEN "16-20%"
+                    ELSE "20%+"
+                END as discount_range'),
+                DB::raw('COUNT(*) as item_count'),
+                DB::raw('SUM(invoice_items.qty) as total_qty'),
+                DB::raw('SUM(invoice_items.line_total) as total_sales'),
+                DB::raw('SUM(invoice_items.line_cost) as total_cost'),
+                DB::raw('SUM(invoice_items.line_total - invoice_items.line_cost) as total_profit'),
+                DB::raw('AVG(invoice_items.discount_percentage) as avg_discount')
+            )
+            ->groupBy('discount_range')
+            ->orderBy('avg_discount')
+            ->get();
+
+        $totalSales = $discountMatrix->sum('total_sales');
+        $totalProfit = $discountMatrix->sum('total_profit');
+        $totalItems = $discountMatrix->sum('item_count');
+
+        if ($request->get('export') === 'pdf') {
+            $pdf = PDF::loadView('reports.discount-matrix-pdf', compact('discountMatrix', 'startDate', 'endDate', 'totalSales', 'totalProfit', 'totalItems'));
+            return $pdf->download('discount-matrix-' . date('Y-m-d') . '.pdf');
+        }
+
+        if ($request->get('export') === 'csv') {
+            return $this->exportDiscountMatrixCSV($discountMatrix, $startDate, $endDate);
+        }
+
+        return view('reports.discount-matrix', compact('discountMatrix', 'startDate', 'endDate', 'totalSales', 'totalProfit', 'totalItems'));
+    }
+
+    /**
+     * Replenishment Report
+     */
+    public function replenishment(Request $request)
+    {
+        $categoryId = $request->get('category_id');
+        $supplierId = $request->get('supplier_id');
+
+        $query = Product::with(['category', 'supplier', 'stockBatches'])
+            ->where('status', 'active');
+
+        if ($categoryId) {
+            $query->where('category_id', $categoryId);
+        }
+
+        if ($supplierId) {
+            $query->where('supplier_id', $supplierId);
+        }
+
+        $products = $query->get();
+
+        // Calculate replenishment data
+        foreach ($products as $product) {
+            $totalStock = $product->stockBatches->sum('qty_left');
+            $product->total_stock = $totalStock;
+            $product->needs_replenishment = $totalStock <= $product->reorder_level;
+            $product->stock_status = $totalStock <= 0 ? 'Out of Stock' : 
+                                   ($totalStock <= $product->reorder_level ? 'Low Stock' : 'In Stock');
+        }
+
+        $lowStockProducts = $products->where('needs_replenishment', true);
+        $outOfStockProducts = $products->where('total_stock', '<=', 0);
+
+        $categories = \App\Models\Category::orderBy('name')->get();
+        $suppliers = \App\Models\Supplier::orderBy('name')->get();
+
+        if ($request->get('export') === 'pdf') {
+            $pdf = PDF::loadView('reports.replenishment-pdf', compact('products', 'lowStockProducts', 'outOfStockProducts'));
+            return $pdf->download('replenishment-' . date('Y-m-d') . '.pdf');
+        }
+
+        if ($request->get('export') === 'csv') {
+            return $this->exportReplenishmentCSV($products, $lowStockProducts, $outOfStockProducts);
+        }
+
+        return view('reports.replenishment', compact('products', 'lowStockProducts', 'outOfStockProducts', 'categories', 'suppliers'));
+    }
+
+    /**
+     * New Items Report
+     */
+    public function newItems(Request $request)
+    {
+        $startDate = $request->get('start_date', now()->subDays(30)->format('Y-m-d'));
+        $endDate = $request->get('end_date', now()->format('Y-m-d'));
+        $categoryId = $request->get('category_id');
+
+        $query = Product::with(['category', 'brand', 'supplier', 'creator'])
+            ->whereBetween('created_at', [$startDate, $endDate]);
+
+        if ($categoryId) {
+            $query->where('category_id', $categoryId);
+        }
+
+        $newProducts = $query->orderBy('created_at', 'desc')->get();
+
+        // Group by creation date
+        $productsByDate = $newProducts->groupBy(function ($product) {
+            return $product->created_at->format('Y-m-d');
+        });
+
+        $categories = \App\Models\Category::orderBy('name')->get();
+
+        if ($request->get('export') === 'pdf') {
+            $pdf = PDF::loadView('reports.new-items-pdf', compact('newProducts', 'productsByDate', 'startDate', 'endDate'));
+            return $pdf->download('new-items-' . date('Y-m-d') . '.pdf');
+        }
+
+        if ($request->get('export') === 'csv') {
+            return $this->exportNewItemsCSV($newProducts, $startDate, $endDate);
+        }
+
+        return view('reports.new-items', compact('newProducts', 'productsByDate', 'startDate', 'endDate', 'categories'));
+    }
+
     // Helper methods
     private function getAverageCost(Product $product)
     {

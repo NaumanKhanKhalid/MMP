@@ -61,7 +61,20 @@ class BrandController extends Controller
             $data['logo'] = 'public/storage/' . $path;
         }
 
-        Brand::create($data);
+        $brand = Brand::create($data);
+
+        // Handle AJAX requests (from product creation modal)
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Brand created successfully.',
+                'brand' => [
+                    'id' => $brand->id,
+                    'name' => $brand->name,
+                    'code' => $brand->code,
+                ]
+            ]);
+        }
 
         return redirect()->route('brands.index')->with('success', 'Brand created successfully.');
     }

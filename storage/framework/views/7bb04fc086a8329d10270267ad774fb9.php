@@ -41,30 +41,39 @@
                                         </div>
                                         <div class="col-md-4 mb-3">
                                             <label class="form-label">Brand <span class="text-danger">*</span></label>
-                                            <select name="brand_id" class="form-select select2-create-brand" required>
-                                                <option value="">Select Brand</option>
-                                                <?php $__currentLoopData = $brands; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $brand): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                                    <option value="<?php echo e($brand->id); ?>"><?php echo e($brand->name); ?></option>
-                                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                                            </select>
+                                            <div class="input-group">
+                                                <select name="brand_id" class="form-select select2-create-brand" required>
+                                                    <option value="">Select Brand</option>
+                                                    <?php $__currentLoopData = $brands; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $brand): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                                        <option value="<?php echo e($brand->id); ?>"><?php echo e($brand->name); ?></option>
+                                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                                </select>
+                                                
+                                            </div>
                                         </div>
                                         <div class="col-md-4 mb-3">
                                         <label class="form-label">Category <span class="text-danger">*</span></label>
-                                        <select name="category_id" class="form-select select2-create-category" required>
+                                        <div class="input-group">
+                                            <select name="category_id" class="form-select select2-create-category" required>
                                                 <option value="">Select Category</option>
                                                 <?php $__currentLoopData = $categories; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $cat): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                                     <option value="<?php echo e($cat->id); ?>"><?php echo e($cat->name); ?></option>
                                                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                             </select>
+                                            
+                                        </div>
                                         </div>
                                         <div class="col-md-4 mb-3">
                                             <label class="form-label">Subcategory</label>
-                                        <select name="subcategory_id" class="form-select select2-create-subcategory">
-                                                <option value="">Select Subcategory</option>
-                                                <?php $__currentLoopData = $subCategories; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $sub): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                                    <option value="<?php echo e($sub->id); ?>"><?php echo e($sub->name); ?></option>
-                                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                                            </select>
+                                            <div class="input-group">
+                                                <select name="subcategory_id" class="form-select select2-create-subcategory">
+                                                    <option value="">Select Subcategory</option>
+                                                    <?php $__currentLoopData = $subCategories; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $sub): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                                        <option value="<?php echo e($sub->id); ?>"><?php echo e($sub->name); ?></option>
+                                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                                </select>
+                                                
+                                            </div>
                                         </div>
 
                                     <div class="col-md-6 mb-3">
@@ -178,6 +187,29 @@
                                 <h6 class="border-bottom pb-2 mb-3">
                                     <i class="bi bi-car-front me-2"></i>Vehicle Fitment
                                 </h6>
+                                
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Vehicle Model</label>
+                                        <select name="car_model_id" class="form-select select2-create-model">
+                                            <option value="">Select Model</option>
+                                            <?php $__currentLoopData = $models; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $model): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                                <option value="<?php echo e($model->id); ?>"><?php echo e($model->name); ?></option>
+                                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Engine</label>
+                                        <select name="engine_id" class="form-select select2-create-engine">
+                                            <option value="">Select Engine</option>
+                                            <?php $__currentLoopData = $engines; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $engine): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                                <option value="<?php echo e($engine->id); ?>"><?php echo e($engine->code); ?> - <?php echo e($engine->name); ?></option>
+                                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                        </select>
+                                    </div>
+                                </div>
+                                
                                 <div class="alert alert-info alert-sm">
                                     <small><i class="bi bi-info-circle me-1"></i>Specify which vehicles this part fits
                                         (optional, multiple allowed)</small>
@@ -513,4 +545,29 @@
                 });
             </script>
         <?php $__env->stopPush(); ?>
+
+        
+        <div class="modal fade" id="createBrandModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <?php echo $__env->make('brands.partials.create_brand_modal', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="createCategoryModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <?php echo $__env->make('categories.partials.create_category_modal', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="createSubcategoryModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <?php echo $__env->make('categories.partials.create_subcategory_modal', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+                </div>
+            </div>
+        </div>
 <?php /**PATH C:\xampp\htdocs\MMP\resources\views/products/_create_modal.blade.php ENDPATH**/ ?>

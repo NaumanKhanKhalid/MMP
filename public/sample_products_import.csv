@@ -1,0 +1,11 @@
+name,sku,supplier_code,brand_code,price_normal,price_online,price_workshop,unit,status,category,bin_location,reorder_level,notes
+"Brake Pads Front Set",MMP0001,SUP001,BRAND001,450.00,400.00,500.00,PCS,active,"Brake Parts","A-01-01",5,"High quality brake pads"
+"Oil Filter 1234",MMP0002,SUP001,BRAND002,85.00,75.00,95.00,PCS,active,"Engine Parts","A-01-02",10,"Standard oil filter"
+"Air Filter Clean",MMP0003,SUP002,BRAND001,120.00,110.00,130.00,PCS,active,"Engine Parts","A-02-01",8,"Performance air filter"
+"Spark Plugs Set",MMP0004,SUP001,BRAND003,180.00,160.00,200.00,SET,active,"Engine Parts","A-02-02",6,"Iridium spark plugs"
+"Brake Fluid DOT4",MMP0005,SUP003,BRAND002,95.00,85.00,105.00,PCS,active,"Brake Parts","B-01-01",12,"High temperature brake fluid"
+"Engine Oil 5W30",MMP0006,SUP002,BRAND001,320.00,300.00,350.00,PCS,active,"Engine Parts","B-01-02",15,"Synthetic engine oil"
+"Timing Belt Kit",MMP0007,SUP001,BRAND003,850.00,800.00,900.00,SET,active,"Engine Parts","B-02-01",3,"Complete timing belt kit"
+"Water Pump",MMP0008,SUP002,BRAND001,450.00,420.00,480.00,PCS,active,"Engine Parts","B-02-02",4,"OEM water pump"
+"Clutch Kit",MMP0009,SUP001,BRAND002,1200.00,1100.00,1300.00,SET,active,"Transmission","C-01-01",2,"Heavy duty clutch kit"
+"Transmission Fluid",MMP0010,SUP003,BRAND001,180.00,160.00,200.00,PCS,active,"Transmission","C-01-02",8,"Automatic transmission fluid"

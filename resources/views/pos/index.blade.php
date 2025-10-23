@@ -48,6 +48,28 @@
                     <div id="searchResults" class="search-results-dropdown mt-2" style="display: none;">
                             <!-- Results will appear here -->
                     </div>
+                    
+                    <!-- Quick Add Product (when no results found) -->
+                    <div id="quickAddSection" class="mt-3" style="display: none;">
+                        <div class="alert alert-info">
+                            <h6><i class="ri-add-line me-2"></i>Product Not Found?</h6>
+                            <p class="mb-2">Add this product quickly to your cart:</p>
+                            <div class="row g-2">
+                                <div class="col-md-6">
+                                    <input type="text" class="form-control form-control-sm" id="quickAddName" placeholder="Product Name" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="number" class="form-control form-control-sm" id="quickAddPrice" placeholder="Price" step="0.01" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="number" class="form-control form-control-sm" id="quickAddQty" placeholder="Qty" step="0.001" value="1" required>
+                                </div>
+                            </div>
+                            <button class="btn btn-sm btn-success mt-2" onclick="addQuickProduct()">
+                                <i class="ri-add-line me-1"></i>Add to Cart
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -96,11 +118,23 @@
                         <!-- Customer details will be shown here -->
                     </div>
 
-                    <div class="form-check form-switch mt-2">
-                            <input class="form-check-input" type="checkbox" id="vatEnabled" onchange="toggleVAT()">
-                            <label class="form-check-label" for="vatEnabled">
-                            <small>Enable VAT (15%)</small>
-                            </label>
+                    <div class="row g-2 mt-2">
+                        <div class="col-md-6">
+                            <label class="form-label small">Price Tier</label>
+                            <select class="form-select form-select-sm" id="priceTier" onchange="updatePriceTier()">
+                                <option value="normal">Normal Price</option>
+                                <option value="online">Online Price</option>
+                                <option value="workshop">Workshop Price</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check form-switch mt-3">
+                                <input class="form-check-input" type="checkbox" id="vatEnabled" onchange="toggleVAT()">
+                                <label class="form-check-label" for="vatEnabled">
+                                    <small>Enable VAT (15%)</small>
+                                </label>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -813,8 +847,15 @@ function searchProducts(query) {
 
     if (filtered.length === 0) {
         $('#searchResults').html('<div class="p-3 text-center text-muted">No products found</div>').show();
+        
+        // Show Quick Add section
+        $('#quickAddSection').show();
+        $('#quickAddName').val(query); // Pre-fill with search term
         return;
     }
+    
+    // Hide Quick Add section when products are found
+    $('#quickAddSection').hide();
     
     let html = '';
     filtered.slice(0, 10).forEach(product => {
@@ -935,7 +976,27 @@ function updateCartDisplay() {
         return;
     }
 
-    let html = '<div class="table-responsive"><table class="table table-hover align-middle mb-0">';
+    // Check for negative stock warnings
+    let hasNegativeStock = false;
+    cart.forEach(item => {
+        if (item.available !== undefined && item.quantity > item.available) {
+            hasNegativeStock = true;
+        }
+    });
+
+    let html = '';
+    
+    // Add negative stock warning if needed
+    if (hasNegativeStock) {
+        html += `
+            <div class="alert alert-warning alert-sm mb-2">
+                <i class="ri-alert-line me-1"></i>
+                <strong>Negative Stock Warning:</strong> Some items will go into negative stock.
+            </div>
+        `;
+    }
+    
+    html += '<div class="table-responsive"><table class="table table-hover align-middle mb-0">';
             html += `
         <thead class="table-light sticky-top">
             <tr>
@@ -965,6 +1026,12 @@ function updateCartDisplay() {
                 </td>
                 <td>
                     <div class="fw-bold">${item.name}</div>
+                    ${item.available !== undefined && item.quantity > item.available ? 
+                        '<span class="badge bg-danger-transparent badge-sm">Will go negative</span>' : 
+                        item.available !== undefined && item.available <= 0 ? 
+                        '<span class="badge bg-warning-transparent badge-sm">Out of stock</span>' : 
+                        ''
+                    }
                 </td>
                 <td><small class="text-muted">${item.sku}</small></td>
                 <td class="text-end">R ${item.price.toFixed(2)}</td>
@@ -1381,6 +1448,79 @@ function addNewCustomer() {
         console.error('Error:', error);
         toastr.error('Error adding customer');
     });
+}
+
+// Quick Add Product functionality
+function addQuickProduct() {
+    const name = $('#quickAddName').val().trim();
+    const price = parseFloat($('#quickAddPrice').val());
+    const qty = parseFloat($('#quickAddQty').val());
+    
+    if (!name || !price || !qty) {
+        toastr.error('Please fill in all fields');
+        return;
+    }
+    
+    if (price <= 0 || qty <= 0) {
+        toastr.error('Price and quantity must be greater than 0');
+        return;
+    }
+    
+    // Create temporary product object
+    const tempProduct = {
+        id: 'temp_' + Date.now(),
+        name: name,
+        sku: 'TEMP-' + Date.now(),
+        barcode_primary: 'TEMP-' + Date.now(),
+        price_normal: price,
+        price_online: price,
+        price_workshop: price,
+        on_hand: 0,
+        reserved: 0,
+        available: 0,
+        image: null,
+        category_id: null,
+        category_name: 'Quick Add',
+        brand_name: 'Quick Add',
+        isQuickAdd: true
+    };
+    
+    // Add to cart
+    addToCart(tempProduct, qty);
+    
+    // Clear quick add fields
+    $('#quickAddName').val('');
+    $('#quickAddPrice').val('');
+    $('#quickAddQty').val('1');
+    
+    // Hide quick add section
+    $('#quickAddSection').hide();
+    
+    toastr.success('Product added to cart!');
+}
+
+// Update price tier for all cart items
+function updatePriceTier() {
+    const priceTier = $('#priceTier').val();
+    
+    cart.forEach(item => {
+        if (!item.isQuickAdd) {
+            switch(priceTier) {
+                case 'normal':
+                    item.price = item.price_normal;
+                    break;
+                case 'online':
+                    item.price = item.price_online;
+                    break;
+                case 'workshop':
+                    item.price = item.price_workshop;
+                    break;
+            }
+        }
+    });
+    
+    updateCartDisplay();
+    updateCartTotals();
 }
 
 // Update payment fields based on customer type and payment method

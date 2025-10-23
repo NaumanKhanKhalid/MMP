@@ -29,6 +29,26 @@
                         <small class="text-muted">If provided, creates initial stock batch with zero cost.</small>
                     </div>
 
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="quick_oe_number" class="form-label">OE Number</label>
+                                <input type="text" class="form-control" id="quick_oe_number" name="oe_number" placeholder="Original Equipment Number">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="quick_supplier_code" class="form-label">Supplier Code</label>
+                                <input type="text" class="form-control" id="quick_supplier_code" name="supplier_code" placeholder="Supplier's product code">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="quick_brand_code" class="form-label">Brand Code</label>
+                        <input type="text" class="form-control" id="quick_brand_code" name="brand_code" placeholder="Brand's internal code">
+                    </div>
+
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>

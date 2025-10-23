@@ -1,20 +1,33 @@
 @forelse ($products as $p)
     <tr class="clickable-row" onclick="openViewModal('{{ $p->id }}')" style="cursor: pointer;">
-        <td>{{ $loop->iteration + ($products->currentPage() - 1) * $products->perPage() }}</td>
+        <td>
+            <div class="d-flex align-items-center">
+                <i class="ri-arrow-down-s-line expand-icon" id="expand-icon-{{ $p->id }}" onclick="event.stopPropagation(); toggleBatches('{{ $p->id }}')" style="cursor: pointer;"></i>
+            </div>
+        </td>
 
         {{-- Product Name --}}
         <td>
             <div class="d-flex">
-                <span class="avatar avatar-md avatar-square bg-primary-transparent p-1">
+                <span class="avatar avatar-md avatar-square bg-primary-transparent p-1" style="cursor: pointer;" onclick="event.stopPropagation(); openImageModal('{{ $p->id }}', '{{ $p->primary_image_url }}', '{{ $p->name }}', {{ $p->images ? $p->images->pluck('url')->toJson() : '[]' }})">
                     <img src="{{ $p->primary_image_url }}" class="w-100 h-100" alt="{{ $p->name }}">
                 </span>
                 <div class="ms-2">
                     <p class="fw-semibold mb-0 d-flex align-items-center">
-                        <a href="{{ route('products.show', $p->id) }}">{{ $p->name }}</a>
+                        <span class="text-primary">{{ $p->name }}</span>
                     </p>
                     <p class="fs-12 text-muted mb-0">SKU: {{ $p->sku }}</p>
                 </div>
             </div>
+        </td>
+
+        {{-- Brand Code --}}
+        <td>
+            @if ($p->brand && $p->brand->code)
+                <span class="badge bg-success-transparent">{{ $p->brand->code }}</span>
+            @else
+                <span class="text-muted">-</span>
+            @endif
         </td>
 
         {{-- Supplier Code --}}
@@ -82,6 +95,46 @@
         {{-- Workshop Price --}}
         <td>R {{ number_format($p->price_workshop, 2) }}</td>
 
+        {{-- FIFO Cost --}}
+        <td>
+            @php
+                $fifoCost = $p->getFifoCost();
+            @endphp
+            @if ($fifoCost > 0)
+                <span class="text-success">R {{ number_format($fifoCost, 2) }}</span>
+            @else
+                <span class="text-muted">R 0.00</span>
+            @endif
+        </td>
+
+        {{-- Profit % --}}
+        <td>
+            @php
+                $profitMargin = $p->getProfitMargin();
+            @endphp
+            @if ($profitMargin > 0)
+                <span class="badge bg-success-transparent">{{ number_format($profitMargin, 1) }}%</span>
+            @elseif ($profitMargin < 0)
+                <span class="badge bg-danger-transparent">{{ number_format($profitMargin, 1) }}%</span>
+            @else
+                <span class="text-muted">0%</span>
+            @endif
+        </td>
+
+        {{-- Profit R --}}
+        <td>
+            @php
+                $profitAmount = $p->getProfitAmount();
+            @endphp
+            @if ($profitAmount > 0)
+                <span class="text-success">R {{ number_format($profitAmount, 2) }}</span>
+            @elseif ($profitAmount < 0)
+                <span class="text-danger">R {{ number_format($profitAmount, 2) }}</span>
+            @else
+                <span class="text-muted">R 0.00</span>
+            @endif
+        </td>
+
         {{-- OE Number --}}
         <td>
             @if ($p->oeNumbers && $p->oeNumbers->count() > 0)
@@ -135,35 +188,79 @@
         
         <td class="text-end">
             <div class="btn-list">
-                <!-- Toggle Status -->
-                <form method="POST" action="{{ route('products.toggleStatus', $p->id) }}" class="d-inline">
-                    @csrf @method('PATCH')
-                    <button type="submit" class="btn btn-sm {{ $p->status === 'active' ? 'btn-warning-light' : 'btn-success-light' }} btn-icon"
-                        title="{{ $p->status === 'active' ? 'Deactivate' : 'Activate' }}">
-                        <i class="ri-toggle-{{ $p->status === 'active' ? 'line' : 'fill' }}"></i>
-                    </button>
-                </form>
                 <!-- View -->
                 <button class="btn btn-sm btn-primary-light btn-icon" data-bs-toggle="modal"
-                    data-bs-target="#viewProductModal-{{ $p->id }}" title="View">
+                    data-bs-target="#viewProductModal-{{ $p->id }}" onclick="event.stopPropagation();" title="View Details">
                     <i class="ri-eye-line"></i>
                 </button>
                 <!-- Edit -->
                 <button class="btn btn-sm btn-success-light btn-icon" data-bs-toggle="modal"
-                    data-bs-target="#editProductModal-{{ $p->id }}" title="Edit">
+                    data-bs-target="#editProductModal-{{ $p->id }}" onclick="event.stopPropagation();" title="Edit Product">
                     <i class="ri-pencil-line"></i>
                 </button>
                 <!-- Print Barcode -->
                 <button class="btn btn-sm btn-info-light btn-icon" 
-                    onclick="printSingleBarcode({{ $p->id}}, '{{ $p->name }}', '{{ $p->sku }}', '{{ $p->barcode_primary }}')" 
+                    onclick="event.stopPropagation(); printSingleBarcode({{ $p->id}}, '{{ $p->name }}', '{{ $p->sku }}', '{{ $p->barcode_primary }}')" 
                     title="Print Barcode">
                     <i class="ri-printer-line"></i>
                 </button>
                 <!-- Delete -->
                 <button class="btn btn-sm btn-danger-light btn-icon" data-bs-toggle="modal"
-                    data-bs-target="#deleteProduct{{ $p->id }}" title="Delete">
+                    data-bs-target="#deleteProduct{{ $p->id }}" onclick="event.stopPropagation();" title="Delete Product">
                     <i class="ri-delete-bin-line"></i>
                 </button>
+            </div>
+        </td>
+    </tr>
+    
+    {{-- Expandable Batches Row --}}
+    <tr id="batches-row-{{ $p->id }}" class="batches-row" style="display: none;">
+        <td colspan="16">
+            <div class="p-3 bg-light">
+                <h6 class="mb-3">
+                    <i class="ri-boxes-line me-2"></i>FIFO Stock Batches
+                </h6>
+                @if ($p->stockBatches && $p->stockBatches->count() > 0)
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Received Date</th>
+                                    <th>Batch ID</th>
+                                    <th>Qty Available</th>
+                                    <th>Unit Cost</th>
+                                    <th>Batch Value</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($p->stockBatches->sortByDesc('received_date') as $batch)
+                                    <tr>
+                                        <td>{{ $batch->received_date ? $batch->received_date->format('d/m/Y') : '-' }}</td>
+                                        <td>
+                                            <span class="badge bg-primary-transparent">{{ $batch->id }}</span>
+                                        </td>
+                                        <td class="text-end">
+                                            @if ($batch->qty_left > 0)
+                                                <span class="badge bg-success-transparent">{{ number_format($batch->qty_left, 0) }}</span>
+                                            @elseif ($batch->qty_left == 0)
+                                                <span class="badge bg-warning-transparent">0</span>
+                                            @else
+                                                <span class="badge bg-danger-transparent">{{ number_format($batch->qty_left, 0) }}</span>
+                                            @endif
+                                        </td>
+                                        <td class="text-end">R {{ number_format($batch->landed_unit_cost, 2) }}</td>
+                                        <td class="text-end">R {{ number_format($batch->qty_left * $batch->landed_unit_cost, 2) }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @else
+                    <div class="text-center text-muted py-3">
+                        <i class="ri-inbox-line fs-1 d-block mb-2"></i>
+                        No batches found for this product.
+                    </div>
+                @endif
             </div>
         </td>
     </tr>

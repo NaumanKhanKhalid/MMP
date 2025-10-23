@@ -1,5 +1,5 @@
 
-<div class="modal fade" id="viewProductModal-<?php echo e($product->id); ?>" tabindex="-1" aria-hidden="true">
+<div class="modal fade" id="viewProductModal-<?php echo e($product->id); ?>" tabindex="-1" aria-hidden="true" style="display: none !important; position: fixed !important; z-index: 1055 !important;">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
@@ -178,6 +178,7 @@
                         </div>
                     </div>
                 <?php endif; ?>
+
 
                 
                 <div class="mb-4">

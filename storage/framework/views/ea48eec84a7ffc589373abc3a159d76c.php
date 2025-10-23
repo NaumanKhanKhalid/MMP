@@ -6,7 +6,7 @@
 </div>
 
 <form id="mainCategoryCreateForm" enctype="multipart/form-data">
-    @csrf
+    <?php echo csrf_field(); ?>
     
     <div class="modal-body p-4">
         <div class="alert alert-info alert-sm mb-3">
@@ -62,7 +62,7 @@ $(document).ready(function() {
         submitBtn.html('<i class="ri-loader-4-line me-1"></i> Creating...').prop('disabled', true);
         
         $.ajax({
-            url: '{{ route("categories.store") }}',
+            url: '<?php echo e(route("categories.store")); ?>',
             type: 'POST',
             data: formData,
             processData: false,
@@ -106,3 +106,4 @@ $(document).ready(function() {
 });
 </script>
 
+<?php /**PATH C:\xampp\htdocs\MMP\resources\views/categories/partials/create_category_modal.blade.php ENDPATH**/ ?>

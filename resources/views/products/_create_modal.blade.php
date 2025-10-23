@@ -41,30 +41,45 @@
                                         </div>
                                         <div class="col-md-4 mb-3">
                                             <label class="form-label">Brand <span class="text-danger">*</span></label>
-                                            <select name="brand_id" class="form-select select2-create-brand" required>
-                                                <option value="">Select Brand</option>
-                                                @foreach ($brands as $brand)
-                                                    <option value="{{ $brand->id }}">{{ $brand->name }}</option>
-                                                @endforeach
-                                            </select>
+                                            <div class="input-group">
+                                                <select name="brand_id" class="form-select select2-create-brand" required>
+                                                    <option value="">Select Brand</option>
+                                                    @foreach ($brands as $brand)
+                                                        <option value="{{ $brand->id }}">{{ $brand->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                                {{-- <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#createBrandModal">
+                                                    <i class="ri-add-line"></i>
+                                                </button> --}}
+                                            </div>
                                         </div>
                                         <div class="col-md-4 mb-3">
                                         <label class="form-label">Category <span class="text-danger">*</span></label>
-                                        <select name="category_id" class="form-select select2-create-category" required>
+                                        <div class="input-group">
+                                            <select name="category_id" class="form-select select2-create-category" required>
                                                 <option value="">Select Category</option>
                                                 @foreach ($categories as $cat)
                                                     <option value="{{ $cat->id }}">{{ $cat->name }}</option>
                                                 @endforeach
                                             </select>
+                                            {{-- <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#createCategoryModal">
+                                                <i class="ri-add-line"></i>
+                                            </button> --}}
+                                        </div>
                                         </div>
                                         <div class="col-md-4 mb-3">
                                             <label class="form-label">Subcategory</label>
-                                        <select name="subcategory_id" class="form-select select2-create-subcategory">
-                                                <option value="">Select Subcategory</option>
-                                                @foreach ($subCategories as $sub)
-                                                    <option value="{{ $sub->id }}">{{ $sub->name }}</option>
-                                                @endforeach
-                                            </select>
+                                            <div class="input-group">
+                                                <select name="subcategory_id" class="form-select select2-create-subcategory">
+                                                    <option value="">Select Subcategory</option>
+                                                    @foreach ($subCategories as $sub)
+                                                        <option value="{{ $sub->id }}">{{ $sub->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                                {{-- <button type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#createSubcategoryModal">
+                                                    <i class="ri-add-line"></i>
+                                                </button> --}}
+                                            </div>
                                         </div>
 
                                     <div class="col-md-6 mb-3">
@@ -178,6 +193,29 @@
                                 <h6 class="border-bottom pb-2 mb-3">
                                     <i class="bi bi-car-front me-2"></i>Vehicle Fitment
                                 </h6>
+                                
+                                {{-- Model Selection --}}
+                                <div class="row mb-3">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Vehicle Model</label>
+                                        <select name="car_model_id" class="form-select select2-create-model">
+                                            <option value="">Select Model</option>
+                                            @foreach ($models as $model)
+                                                <option value="{{ $model->id }}">{{ $model->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Engine</label>
+                                        <select name="engine_id" class="form-select select2-create-engine">
+                                            <option value="">Select Engine</option>
+                                            @foreach ($engines as $engine)
+                                                <option value="{{ $engine->id }}">{{ $engine->code }} - {{ $engine->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                                
                                 <div class="alert alert-info alert-sm">
                                     <small><i class="bi bi-info-circle me-1"></i>Specify which vehicles this part fits
                                         (optional, multiple allowed)</small>
@@ -513,3 +551,28 @@
                 });
             </script>
         @endpush
+
+        {{-- Include Create Modals --}}
+        <div class="modal fade" id="createBrandModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    @include('brands.partials.create_brand_modal')
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="createCategoryModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    @include('categories.partials.create_category_modal')
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="createSubcategoryModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    @include('categories.partials.create_subcategory_modal')
+                </div>
+            </div>
+        </div>

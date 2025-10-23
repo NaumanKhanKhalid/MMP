@@ -231,7 +231,7 @@
                                             </div>
                                             <div class="d-flex align-items-center justify-content-between">
                                                 <span class="badge bg-success-transparent text-success">Category</span>
-                                                <a href="javascript:void(0);" class="btn btn-sm btn-success-light">
+                                                <a href="{{ route('reports.sales-by-category') }}" class="btn btn-sm btn-success-light">
                                                     <i class="ri-arrow-right-line"></i>
                                                 </a>
                                             </div>
@@ -254,7 +254,7 @@
                                             </div>
                                             <div class="d-flex align-items-center justify-content-between">
                                                 <span class="badge bg-info-transparent text-info">Time</span>
-                                                <a href="javascript:void(0);" class="btn btn-sm btn-info-light">
+                                                <a href="{{ route('reports.timed-sales') }}" class="btn btn-sm btn-info-light">
                                                     <i class="ri-arrow-right-line"></i>
                                                 </a>
                                             </div>
@@ -277,7 +277,7 @@
                             </div>
                                             <div class="d-flex align-items-center justify-content-between">
                                                 <span class="badge bg-warning-transparent text-warning">Discount</span>
-                                                <a href="javascript:void(0);" class="btn btn-sm btn-warning-light">
+                                                <a href="{{ route('reports.discount-matrix') }}" class="btn btn-sm btn-warning-light">
                                                     <i class="ri-arrow-right-line"></i>
                                                 </a>
                                             </div>
@@ -352,7 +352,7 @@
                                             </div>
                                             <div class="d-flex align-items-center justify-content-between">
                                                 <span class="badge bg-info-transparent text-info">Replenish</span>
-                                                <a href="javascript:void(0);" class="btn btn-sm btn-info-light">
+                                                <a href="{{ route('reports.replenishment') }}" class="btn btn-sm btn-info-light">
                                                     <i class="ri-arrow-right-line"></i>
                                                 </a>
                                             </div>
@@ -398,7 +398,7 @@
                             </div>
                                             <div class="d-flex align-items-center justify-content-between">
                                                 <span class="badge bg-warning-transparent text-warning">New</span>
-                                                <a href="javascript:void(0);" class="btn btn-sm btn-warning-light">
+                                                <a href="{{ route('reports.new-items') }}" class="btn btn-sm btn-warning-light">
                                                     <i class="ri-arrow-right-line"></i>
                                                 </a>
                                             </div>

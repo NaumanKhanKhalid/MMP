@@ -15,19 +15,214 @@
         .clickable-row:hover {
             background-color: #f8f9fa !important;
         }
+
+        .expand-icon {
+            transition: all 0.2s ease;
+            cursor: pointer;
+            color: #6c757d;
+            font-size: 18px;
+            padding: 8px;
+            border-radius: 4px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 32px;
+            min-height: 32px;
+        }
+
+        .expand-icon:hover {
+            background-color: #f8f9fa;
+            color: #495057;
+            transform: scale(1.1);
+        }
+
+        .batches-row {
+            background-color: #f8f9fa;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .batches-row td {
+            border-top: none !important;
+        }
+
+        /* Image Slider Styles */
+        .image-slider-container {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .main-image-container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .thumbnail-container {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .thumbnail-container:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .thumbnail-container.active img {
+            border-width: 3px !important;
+        }
+
+        .thumbnail-gallery {
+            margin-top: 15px;
+        }
     </style>
 
     <script>
-        function openViewModal(productId) {
+        function toggleBatches(productId) {
             // Check if the click came from a button or form
             if (event.target.closest('button') || event.target.closest('form')) {
-                return; // Don't open modal if clicking on buttons/forms
+                return; // Don't toggle if clicking on buttons/forms
             }
 
+            const batchesRow = document.getElementById('batches-row-' + productId);
+            const expandIcon = document.getElementById('expand-icon-' + productId);
+            
+            if (batchesRow.style.display === 'none') {
+                // Show batches
+                batchesRow.style.display = '';
+                expandIcon.classList.remove('ri-arrow-down-s-line');
+                expandIcon.classList.add('ri-arrow-up-s-line');
+            } else {
+                // Hide batches
+                batchesRow.style.display = 'none';
+                expandIcon.classList.remove('ri-arrow-up-s-line');
+                expandIcon.classList.add('ri-arrow-down-s-line');
+            }
+        }
+
+        function openViewModal(productId) {
             // Open the view modal
             const modal = new bootstrap.Modal(document.getElementById('viewProductModal-' + productId));
             modal.show();
         }
+
+        // Image Modal Functions
+        let currentProductImages = [];
+        let currentImageIndex = 0;
+
+        function openImageModal(productId, imageUrl, productName, allImages = []) {
+            // Use all images if provided, otherwise use single image
+            currentProductImages = allImages.length > 0 ? allImages : [imageUrl];
+            currentImageIndex = 0;
+            
+            document.getElementById('modalImage').src = currentProductImages[currentImageIndex];
+            document.getElementById('imageModalTitle').innerHTML = '<i class="ri-image-line me-2"></i>' + productName;
+            document.getElementById('imageModalDescription').textContent = 'Product: ' + productName;
+            
+            // Hide navigation if only one image
+            if (currentProductImages.length <= 1) {
+                document.getElementById('prevImageBtn').style.display = 'none';
+                document.getElementById('nextImageBtn').style.display = 'none';
+                document.getElementById('imageCounter').style.display = 'none';
+            } else {
+                document.getElementById('prevImageBtn').style.display = 'block';
+                document.getElementById('nextImageBtn').style.display = 'block';
+                document.getElementById('imageCounter').style.display = 'block';
+                document.getElementById('currentImageNumber').textContent = currentImageIndex + 1;
+                document.getElementById('totalImages').textContent = currentProductImages.length;
+            }
+            
+            const modal = new bootstrap.Modal(document.getElementById('imageModal'));
+            modal.show();
+        }
+
+        function changeImage(direction) {
+            if (currentProductImages.length <= 1) return;
+            
+            currentImageIndex += direction;
+            
+            // Loop around
+            if (currentImageIndex < 0) {
+                currentImageIndex = currentProductImages.length - 1;
+            } else if (currentImageIndex >= currentProductImages.length) {
+                currentImageIndex = 0;
+            }
+            
+            document.getElementById('modalImage').src = currentProductImages[currentImageIndex];
+            document.getElementById('currentImageNumber').textContent = currentImageIndex + 1;
+        }
+
+        // Image Slider Functions for View Modal
+        function changeMainImage(productId, direction) {
+            const mainImage = document.getElementById('mainImage-' + productId);
+            const currentNumber = document.getElementById('currentImageNumber-' + productId);
+            const thumbnails = document.querySelectorAll('#viewProductModal-' + productId + ' .thumbnail-container');
+            
+            // Get current image index
+            let currentIndex = parseInt(currentNumber.textContent) - 1;
+            
+            // Calculate new index
+            currentIndex += direction;
+            
+            // Get total images count
+            const totalImages = thumbnails.length;
+            
+            // Loop around
+            if (currentIndex < 0) {
+                currentIndex = totalImages - 1;
+            } else if (currentIndex >= totalImages) {
+                currentIndex = 0;
+            }
+            
+            // Update main image
+            const newImageSrc = thumbnails[currentIndex].querySelector('img').src;
+            mainImage.src = newImageSrc;
+            
+            // Update counter
+            currentNumber.textContent = currentIndex + 1;
+            
+            // Update thumbnail selection
+            thumbnails.forEach((thumb, index) => {
+                const img = thumb.querySelector('img');
+                if (index === currentIndex) {
+                    thumb.classList.add('active');
+                    img.classList.remove('border-secondary');
+                    img.classList.add('border-primary');
+                } else {
+                    thumb.classList.remove('active');
+                    img.classList.remove('border-primary');
+                    img.classList.add('border-secondary');
+                }
+            });
+        }
+
+        function selectMainImage(productId, imageIndex) {
+            const mainImage = document.getElementById('mainImage-' + productId);
+            const currentNumber = document.getElementById('currentImageNumber-' + productId);
+            const thumbnails = document.querySelectorAll('#viewProductModal-' + productId + ' .thumbnail-container');
+            
+            // Update main image
+            const newImageSrc = thumbnails[imageIndex].querySelector('img').src;
+            mainImage.src = newImageSrc;
+            
+            // Update counter
+            currentNumber.textContent = imageIndex + 1;
+            
+            // Update thumbnail selection
+            thumbnails.forEach((thumb, index) => {
+                const img = thumb.querySelector('img');
+                if (index === imageIndex) {
+                    thumb.classList.add('active');
+                    img.classList.remove('border-secondary');
+                    img.classList.add('border-primary');
+                } else {
+                    thumb.classList.remove('active');
+                    img.classList.remove('border-primary');
+                    img.classList.add('border-secondary');
+                }
+            });
+        }
+
 
         function printProducts() {
             try {
@@ -224,7 +419,7 @@
                 <table>
                     <thead>
                         <tr>
-                            <th style="width: 3%;">#</th>
+                            <th style="width: 3%;"></th>
                             <th style="width: 8%;">SKU</th>
                             <th style="width: 15%;">Product Name</th>
                             <th style="width: 6%;">Brand</th>
@@ -341,6 +536,13 @@
                 filterProducts();
             });
 
+            // Prevent form submission and use AJAX instead
+            $('#filterForm').on('submit', function(e) {
+                e.preventDefault();
+                currentPage = 1; // Reset to first page when filtering
+                filterProducts();
+            });
+
             // Clear filters button
             $('#clearFilters').on('click', function() {
                 $('#filterForm')[0].reset();
@@ -351,40 +553,164 @@
             let currentPage = <?php echo e($products->currentPage()); ?>;
             let isLoading = false;
 
-            // Pagination click handler (delegated)
-            $(document).on('click', '#paginationContainer .pagination a', function(e) {
+            // Keep URL clean - don't load parameters from URL
+            // $(document).ready(function() {
+            //     const urlParams = new URLSearchParams(window.location.search);
+            //     urlParams.forEach((value, key) => {
+            //         const input = $(`[name="${key}"]`);
+            //         if (input.length && value) {
+            //             input.val(value);
+            //         }
+            //     });
+            //     
+            //     // Set current page from URL
+            //     const pageParam = urlParams.get('page');
+            //     if (pageParam) {
+            //         currentPage = parseInt(pageParam);
+            //     }
+            // });
+
+            // Load products with specific page
+            function loadProductsPage(page) {
+                console.log('=== loadProductsPage called ===');
+                console.log('Requested page:', page);
+                console.log('Current page before:', currentPage);
+                console.log('Is loading:', isLoading);
+                
+                if (isLoading) {
+                    console.log('Already loading, skipping loadProductsPage');
+                    return;
+                }
+                
+                // Ensure page is a valid number
+                page = parseInt(page);
+                if (isNaN(page) || page < 1) {
+                    console.error('Invalid page number:', page);
+                    return;
+                }
+                
+                // Update current page
+                currentPage = page;
+                console.log('Current page updated to:', currentPage);
+                
+                // Call filterProducts directly
+                console.log('Calling filterProducts...');
+                filterProducts();
+            }
+            
+            // Debug function to test pagination
+            window.testPagination = function() {
+                console.log('Testing pagination...');
+                console.log('Current page:', currentPage);
+                loadProductsPage(2);
+            };
+            
+            // Add debug button
+
+            // Single pagination click handler
+            $(document).on('click', '.pagination .page-link', function(e) {
                 e.preventDefault();
-                const url = $(this).attr('href');
-                if (url) {
-                    const urlParams = new URLSearchParams(url.split('?')[1]);
-                    currentPage = urlParams.get('page') || 1;
-                    filterProducts();
+                e.stopPropagation();
+                
+                console.log('=== PAGINATION CLICKED ===');
+                console.log('Clicked element:', $(this));
+                console.log('Current page before click:', currentPage);
+                
+                // Try multiple ways to get the page number
+                let page = null;
+                
+                // Method 1: Check onclick attribute
+                const onclick = $(this).attr('onclick');
+                console.log('onclick attribute:', onclick);
+                if (onclick) {
+                    const match = onclick.match(/loadProductsPage\((\d+)\)/);
+                    if (match) {
+                        page = parseInt(match[1]);
+                        console.log('Found page from onclick:', page);
+                    }
+                }
+                
+                // Method 2: Check data-page attribute
+                if (!page) {
+                    page = $(this).data('page');
+                    console.log('Found page from data-page:', page);
+                }
+                
+                // Method 3: Check text content for page numbers
+                if (!page) {
+                    const text = $(this).text().trim();
+                    console.log('Text content:', text);
+                    if (/^\d+$/.test(text)) {
+                        page = parseInt(text);
+                        console.log('Found page from text:', page);
+                    }
+                }
+                
+                // Method 4: Handle Previous/Next buttons
+                if (!page) {
+                    const text = $(this).text().trim().toLowerCase();
+                    console.log('Text for prev/next:', text);
+                    if (text.includes('previous')) {
+                        page = Math.max(1, currentPage - 1);
+                        console.log('Previous button, page:', page);
+                    } else if (text.includes('next')) {
+                        page = currentPage + 1;
+                        console.log('Next button, page:', page);
+                    }
+                }
+                
+                console.log('Final extracted page:', page);
+                
+                if (page && page > 0) {
+                    console.log('Calling loadProductsPage with page:', page);
+                    loadProductsPage(page);
+                } else {
+                    console.error('Could not determine page number from:', $(this));
+                    console.error('onclick:', onclick);
+                    console.error('data-page:', $(this).data('page'));
+                    console.error('text:', $(this).text().trim());
                 }
             });
 
             // Filter function
             function filterProducts() {
-                if (isLoading) return;
+                if (isLoading) {
+                    console.log('Already loading, skipping...');
+                    return;
+                }
+                
+                console.log('=== Starting filterProducts ===');
+                console.log('Current page:', currentPage);
+                console.log('Is loading:', isLoading);
                 
                 isLoading = true;
                 const params = $('#filterForm').serializeArray();
                 params.push({ name: 'page', value: currentPage });
                 params.push({ name: 'ajax', value: '2' });
 
-                $('#productsTableBody').html('<tr><td colspan="12" class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><div class="mt-2">Loading products...</div></td></tr>');
+                console.log('Filter params:', params);
+                console.log('Current page being sent:', currentPage);
+                console.log('Page parameter in params:', params.find(p => p.name === 'page'));
+
+                $('#productsTableBody').html('<tr><td colspan="16" class="text-center py-4"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div><div class="mt-2">Loading products...</div></td></tr>');
 
                 $.ajax({
                     url: '<?php echo e(route('products.index')); ?>',
                     type: 'GET',
                     data: $.param(params),
                     success: function(response) {
+                        console.log('AJAX response:', response);
                         if (response.success) {
                             $('#productsTableBody').html(response.table);
                             $('#paginationContainer').html(response.pagination);
                             
-                            // Update URL without page reload
-                            const newUrl = `<?php echo e(route('products.index')); ?>?${$('#filterForm').serialize()}&page=${currentPage}`;
-                            window.history.pushState({}, '', newUrl);
+                            // Keep URL clean - don't update URL parameters
+                            // const filterParams = $('#filterForm').serialize();
+                            // const newUrl = `<?php echo e(route('products.index')); ?>?${filterParams}&page=${currentPage}`;
+                            // window.history.pushState({}, '', newUrl);
+                        } else {
+                            console.error('AJAX response error:', response);
+                            toastr.error('Failed to load products: ' + (response.message || 'Unknown error'));
                         }
                         isLoading = false;
                     },
@@ -489,8 +815,8 @@
                         
                         <div class="col-md-1">
                             <div class="d-grid gap-1">
-                                <button type="button" class="btn btn-outline-info" id="clearFilters">
-                                    Reset </button>
+                                <button class="btn btn-light w-100" id="clearFilters">
+                                    <i class="ri-refresh-line"></i> </button>
                         </div>
                         </div>
                     </div>
@@ -533,7 +859,15 @@
                                 <li><a class="dropdown-item" href="<?php echo e(route('products.export', ['format' => 'excel'])); ?>">
                                         <i class="ri-file-excel-line me-2 text-success"></i>Export as Excel
                                     </a></li>
-
+                                <li>
+                                    <hr class="dropdown-divider">
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="#" data-bs-toggle="modal"
+                                        data-bs-target="#importProductsModal">
+                                        <i class="ri-upload-line me-2 text-warning"></i>Import from Excel
+                                    </a>
+                                </li>
                                 <li>
                                     <a class="dropdown-item" href="#" data-bs-toggle="modal"
                                         data-bs-target="#printBarcodeModal">
@@ -544,28 +878,32 @@
                         </div>
                     </div>
                 </div>
-                <div class="table-responsive position-relative">
-                <table class="table table-striped align-middle table-hover">
-                    <thead class="table-light">
+                <div class="table-responsive" style="max-height: 60vh; overflow-y: auto;">
+                    <table class="table table-striped align-middle table-hover">
+                        <thead class="sticky-top bg-white" style="z-index: 10;">
                         <tr>
-                            <th>#</th>
+                            <th></th>
                             <th>Product Name</th>
+                            <th>Brand Code</th>
                             <th>Supplier Code</th>
                             <th>Last Cost</th>
                             <th>Total Stock</th>
                             <th>Normal Price</th>
                             <th>Online Price</th>
                             <th>Workshop Price</th>
+                            <th>FIFO Cost</th>
+                            <th>Profit %</th>
+                            <th>Profit R</th>
                             <th>OE Number</th>
                             <th>Cross Ref</th>
                             <th>Status</th>
                             <th class="text-end">Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="productsTableBody">
-                        <?php echo $__env->make('products.partials.table', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
-                    </tbody>
-                </table>
+                        <tbody id="productsTableBody">
+                            <?php echo $__env->make('products.partials.table', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+                        </tbody>
+                    </table>
                 </div>
             </div>
             <div class="card-footer">
@@ -577,6 +915,42 @@
         <?php echo $__env->make('products._create_modal', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
         <?php echo $__env->make('products._quick_add_modal', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
         <?php echo $__env->make('products._print_barcode_modal', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+    </div>
+
+    <!-- Image Modal -->
+    <div class="modal fade" id="imageModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="imageModalTitle">
+                        <i class="ri-image-line me-2"></i>Product Image
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <div class="position-relative">
+                        <img id="modalImage" src="" class="img-fluid rounded" alt="Product Image" style="max-height: 500px;">
+                        
+                        <!-- Navigation arrows for multiple images -->
+                        <button class="btn btn-outline-primary position-absolute top-50 start-0 translate-middle-y ms-3" id="prevImageBtn" onclick="changeImage(-1)" style="display: none;">
+                            <i class="ri-arrow-left-line"></i>
+                        </button>
+                        <button class="btn btn-outline-primary position-absolute top-50 end-0 translate-middle-y me-3" id="nextImageBtn" onclick="changeImage(1)" style="display: none;">
+                            <i class="ri-arrow-right-line"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Image counter -->
+                    <div class="mt-2" id="imageCounter" style="display: none;">
+                        <span class="badge bg-primary-transparent" id="currentImageNumber">1</span> / <span id="totalImages">1</span>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <p class="text-muted mb-0" id="imageModalDescription"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 <?php $__env->stopSection(); ?>
 
@@ -1025,5 +1399,61 @@
         }
     </script>
 <?php $__env->stopPush(); ?>
+
+
+<div class="modal fade" id="importProductsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="ri-upload-line me-2"></i>Import Products from Excel
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="<?php echo e(route('products.import')); ?>" enctype="multipart/form-data">
+                <?php echo csrf_field(); ?>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="import_file" class="form-label">Select Excel/CSV File</label>
+                        <input type="file" class="form-control" id="import_file" name="import_file" 
+                               accept=".xlsx,.xls,.csv" required>
+                        <small class="text-muted">Supported formats: Excel (.xlsx, .xls) and CSV (.csv)</small>
+                    </div>
+                    
+                           <div class="alert alert-info">
+                               <h6><i class="ri-information-line me-2"></i>Import Format</h6>
+                               <p class="mb-2">Your Excel/CSV file should have these columns:</p>
+                               <ul class="mb-2">
+                                   <li><strong>name</strong> - Product Name (required)</li>
+                                   <li><strong>sku</strong> - Product SKU (auto-generated if empty)</li>
+                                   <li><strong>supplier_code</strong> - Supplier Code</li>
+                                   <li><strong>brand_code</strong> - Brand Code</li>
+                                   <li><strong>price_normal</strong> - Normal Price (required)</li>
+                                   <li><strong>price_online</strong> - Online Price</li>
+                                   <li><strong>price_workshop</strong> - Workshop Price</li>
+                                   <li><strong>unit</strong> - Unit (default: PCS)</li>
+                                   <li><strong>status</strong> - Status (default: active)</li>
+                                   <li><strong>bin_location</strong> - Bin Location</li>
+                                   <li><strong>reorder_level</strong> - Reorder Level</li>
+                                   <li><strong>notes</strong> - Notes</li>
+                               </ul>
+                               <div class="d-flex justify-content-between align-items-center">
+                                   <small class="text-muted">Download sample file to see the exact format</small>
+                                   <a href="<?php echo e(route('products.sample-import')); ?>" class="btn btn-sm btn-outline-primary">
+                                       <i class="ri-download-line me-1"></i>Download Sample
+                                   </a>
+                               </div>
+                           </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="ri-upload-line me-1"></i>Import Products
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 
 <?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\MMP\resources\views/products/index.blade.php ENDPATH**/ ?>
