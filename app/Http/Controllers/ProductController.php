@@ -236,8 +236,8 @@ class ProductController extends Controller
             'fitments.*.engine_id' => 'nullable|exists:engines,id',
             'fitments.*.year_start' => 'nullable|integer|min:1900|max:2100',
             'fitments.*.year_end' => 'nullable|integer|min:1900|max:2100',
-            'car_model_id' => 'nullable|exists:car_models,id',
-            'engine_id' => 'nullable|exists:engines,id',
+            // 'car_model_id' => 'nullable|exists:car_models,id',
+            // 'engine_id' => 'nullable|exists:engines,id',
             'initial_qty' => 'nullable|integer|min:0',
             'initial_cost' => 'nullable|numeric|min:0',
         ]);
@@ -264,8 +264,8 @@ class ProductController extends Controller
                 'allow_negative' => $request->boolean('allow_negative'),
                 'special_order' => $request->boolean('special_order'),
                 'status' => $validated['status'],
-                'car_model_id' => $validated['car_model_id'] ?? null,
-                'engine_id' => $validated['engine_id'] ?? null,
+                // 'car_model_id' => $validated['car_model_id'] ?? null,
+                // 'engine_id' => $validated['engine_id'] ?? null,
                 'notes' => $validated['notes'] ?? null,
                 'created_by' => auth()->id(),
             ]);

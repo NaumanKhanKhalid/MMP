@@ -9,3 +9,4 @@ name,sku,supplier_code,brand_code,price_normal,price_online,price_workshop,unit,
 "Water Pump",MMP0008,SUP002,BRAND001,450.00,420.00,480.00,PCS,active,"Engine Parts","B-02-02",4,"OEM water pump"
 "Clutch Kit",MMP0009,SUP001,BRAND002,1200.00,1100.00,1300.00,SET,active,"Transmission","C-01-01",2,"Heavy duty clutch kit"
 "Transmission Fluid",MMP0010,SUP003,BRAND001,180.00,160.00,200.00,PCS,active,"Transmission","C-01-02",8,"Automatic transmission fluid"
+

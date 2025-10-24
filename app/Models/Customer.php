@@ -66,19 +66,45 @@ class Customer extends Model
 
     public static function generateCustomerCode()
     {
-        // Get max number from existing customer codes using regex in SQL
-        $maxCode = self::whereNotNull('customer_code')
-            ->where('customer_code', 'REGEXP', '^CUST-[0-9]+$')
-            ->orderByRaw('CAST(SUBSTRING(customer_code, 6) AS UNSIGNED) DESC')
-            ->value('customer_code');
+        $maxRetries = 5;
+        $attempt = 0;
         
-        $nextNumber = 1;
-        
-        if ($maxCode && preg_match('/CUST-(\d+)/', $maxCode, $matches)) {
-            $nextNumber = (int) $matches[1] + 1;
+        while ($attempt < $maxRetries) {
+            try {
+                // Use database transaction to ensure atomicity
+                return \DB::transaction(function () {
+                    // Get the current max number atomically
+                    $maxNumber = \DB::table('customers')
+                        ->whereNotNull('customer_code')
+                        ->where('customer_code', 'REGEXP', '^CUST-[0-9]+$')
+                        ->selectRaw('MAX(CAST(SUBSTRING(customer_code, 6) AS UNSIGNED)) as max_num')
+                        ->value('max_num');
+                    
+                    $nextNumber = ($maxNumber ?? 0) + 1;
+                    $customerCode = 'CUST-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+                    
+                    // Double-check that this code doesn't exist (extra safety)
+                    $exists = \DB::table('customers')
+                        ->where('customer_code', $customerCode)
+                        ->exists();
+                    
+                    if ($exists) {
+                        throw new \Exception('Customer code already exists, retrying...');
+                    }
+                    
+                    return $customerCode;
+                });
+            } catch (\Exception $e) {
+                $attempt++;
+                if ($attempt >= $maxRetries) {
+                    throw new \Exception('Failed to generate unique customer code after ' . $maxRetries . ' attempts');
+                }
+                // Small random delay to reduce collision probability
+                usleep(rand(10000, 50000)); // 10-50ms
+            }
         }
         
-        return 'CUST-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT); // CUST-0001, CUST-0002...
+        throw new \Exception('Failed to generate customer code');
     }
 
     // Relationships

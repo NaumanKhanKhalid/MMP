@@ -1545,7 +1545,7 @@
                         'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': '{{ csrf_token() }}'
                     },
-                    body: JSON.stringify(customerData)
+                    body: JSON.stringify({...customerData, quick_add: '1'})
                 })
                 .then(response => response.json())
                 .then(data => {

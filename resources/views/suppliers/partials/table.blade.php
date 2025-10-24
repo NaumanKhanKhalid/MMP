@@ -2,9 +2,6 @@
     <tr class="supplier-row" data-id="{{ $supplier->id }}" style="cursor: pointer;">
         <td>{{ $loop->iteration + ($suppliers->currentPage() - 1) * $suppliers->perPage() }}</td>
         <td>
-            <span class="badge bg-info-transparent">{{ $supplier->supplier_code }}</span>
-        </td>
-        <td>
             <div class="d-flex align-items-center">
                 <div class="avatar avatar-sm bg-primary-transparent rounded-circle me-2">
                     <i class="ri-truck-line text-primary"></i>
@@ -63,7 +60,7 @@
                                                 <span class="badge rounded-pill bg-secondary-transparent">Inactive</span>
                                             @endif
                                         </td>
-        <td class="text-end">
+        <td class="text-end" onclick="event.stopPropagation();">
             <div class="btn-list">
                 <!-- Toggle Status -->
                 <form method="POST" action="{{ route('suppliers.toggle.status', $supplier->id) }}" class="d-inline">

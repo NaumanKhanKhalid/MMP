@@ -189,26 +189,6 @@
                                 </h6>
                                 
                                 
-                                <div class="row mb-3">
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">Vehicle Model</label>
-                                        <select name="car_model_id" class="form-select select2-create-model">
-                                            <option value="">Select Model</option>
-                                            <?php $__currentLoopData = $models; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $model): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                                <option value="<?php echo e($model->id); ?>"><?php echo e($model->name); ?></option>
-                                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                                        </select>
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">Engine</label>
-                                        <select name="engine_id" class="form-select select2-create-engine">
-                                            <option value="">Select Engine</option>
-                                            <?php $__currentLoopData = $engines; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $engine): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                                <option value="<?php echo e($engine->id); ?>"><?php echo e($engine->code); ?> - <?php echo e($engine->name); ?></option>
-                                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                                        </select>
-                                    </div>
-                                </div>
                                 
                                 <div class="alert alert-info alert-sm">
                                     <small><i class="bi bi-info-circle me-1"></i>Specify which vehicles this part fits

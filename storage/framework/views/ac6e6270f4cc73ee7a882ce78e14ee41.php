@@ -1,6 +1,4 @@
-@extends('layouts.app')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
     <div class="container-fluid">
         <!-- Start::page-header -->
         <div class="my-4 page-header-breadcrumb d-flex align-items-center justify-content-between flex-wrap gap-2">
@@ -90,14 +88,14 @@
                         </tr>
                     </thead>
                                 <tbody id="suppliersTableBody">
-                                    @include('suppliers.partials.table')
+                                    <?php echo $__env->make('suppliers.partials.table', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
                                 </tbody>
                             </table>
                                             </div>
                                         </div>
                     <div class="card-footer">
                         <div id="paginationContainer">
-                            @include('suppliers.partials.pagination')
+                            <?php echo $__env->make('suppliers.partials.pagination', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
                                 </div>
                             </div>
             </div>
@@ -129,7 +127,7 @@
                     <div class="modal-footer">
                         <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
                         <form id="deleteSupplierForm" method="POST" class="d-inline">
-                            @csrf @method('DELETE')
+                            <?php echo csrf_field(); ?> <?php echo method_field('DELETE'); ?>
                             <button type="submit" class="btn btn-danger">
                                 <i class="ri-delete-bin-line me-1"></i>Delete
                             </button>
@@ -140,12 +138,12 @@
         </div>
         <!-- End:: Supplier Modals -->
     </div>
-@endsection
+<?php $__env->stopSection(); ?>
 
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
     <script>
-        let currentPage = {{ $suppliers->currentPage() }};
+        let currentPage = <?php echo e($suppliers->currentPage()); ?>;
         let isLoading = false;
 
         $(document).ready(function() {
@@ -154,14 +152,14 @@
 
             // Create Supplier
             $('#openCreateSupplierModal').on('click', function() {
-                loadSupplierModal('{{ route('suppliers.create-modal') }}');
+                loadSupplierModal('<?php echo e(route('suppliers.create-modal')); ?>');
             });
 
             // View Supplier
             $(document).on('click', '.openViewSupplierModal', function(e) {
                 e.stopPropagation();
                 var id = $(this).data('id');
-                var url = '{{ url('suppliers') }}/' + id + '/view-modal';
+                var url = '<?php echo e(url('suppliers')); ?>/' + id + '/view-modal';
                 loadSupplierModal(url);
             });
 
@@ -169,7 +167,7 @@
             $(document).on('click', '.openEditSupplierModal', function(e) {
                 e.stopPropagation();
                 var id = $(this).data('id');
-                var url = '{{ url('suppliers') }}/' + id + '/edit-modal';
+                var url = '<?php echo e(url('suppliers')); ?>/' + id + '/edit-modal';
                 loadSupplierModal(url);
             });
 
@@ -179,14 +177,14 @@
                 var id = $(this).data('id');
                 var name = $(this).data('name');
                 $('#deleteSupplierName').text(name);
-                $('#deleteSupplierForm').attr('action', '{{ url('suppliers') }}/' + id);
+                $('#deleteSupplierForm').attr('action', '<?php echo e(url('suppliers')); ?>/' + id);
                 $('#deleteSupplierModal').modal('show');
             });
 
             // Row click to view
             $(document).on('click', '.supplier-row', function() {
                 var id = $(this).data('id');
-                var url = '{{ url('suppliers') }}/' + id + '/view-modal';
+                var url = '<?php echo e(url('suppliers')); ?>/' + id + '/view-modal';
                 loadSupplierModal(url);
             });
         });
@@ -237,7 +235,7 @@
 
             console.log('AJAX params:', params);
 
-            $.get('{{ route('suppliers.index') }}', params, function(data) {
+            $.get('<?php echo e(route('suppliers.index')); ?>', params, function(data) {
                 console.log('AJAX response:', data);
                 $('#suppliersTableBody').html(data.table);
                 $('#paginationContainer').html(data.pagination);
@@ -299,4 +297,6 @@
             loadSuppliers();
         });
     </script>
-@endpush
+<?php $__env->stopPush(); ?>
+
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\MMP\resources\views/suppliers/index.blade.php ENDPATH**/ ?>

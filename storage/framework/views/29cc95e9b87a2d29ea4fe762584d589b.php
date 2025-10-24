@@ -10,19 +10,21 @@
     <div class="bg-light p-3 rounded mb-3">
         <div class="row align-items-center">
             <div class="col-md-8">
-                        <h4 class="mb-1">{{ $supplier->name }}</h4>
+                        <h4 class="mb-1"><?php echo e($supplier->name); ?></h4>
                 <div class="d-flex align-items-center gap-2">
-                            <span class="badge bg-{{ $supplier->supplier_type === 'company' ? 'success' : 'secondary' }}">
-                                {{ ucfirst($supplier->supplier_type) }}
+                            <span class="badge bg-<?php echo e($supplier->supplier_type === 'company' ? 'success' : 'secondary'); ?>">
+                                <?php echo e(ucfirst($supplier->supplier_type)); ?>
+
                             </span>
-                            <span class="badge bg-{{ $supplier->status === 'active' ? 'success' : 'secondary' }}">
-                                {{ ucfirst($supplier->status) }}
+                            <span class="badge bg-<?php echo e($supplier->status === 'active' ? 'success' : 'secondary'); ?>">
+                                <?php echo e(ucfirst($supplier->status)); ?>
+
                             </span>
                 </div>
             </div>
             <div class="col-md-4 text-end">
                 <small class="text-muted">Supplier Since</small><br>
-                <strong>{{ $supplier->created_at->format('d M Y') }}</strong>
+                <strong><?php echo e($supplier->created_at->format('d M Y')); ?></strong>
             </div>
         </div>
     </div>
@@ -35,59 +37,61 @@
             <table class="table table-sm table-borderless">
                 <tr>
                     <td width="40%" class="fw-bold text-muted">Name:</td>
-                    <td>{{ $supplier->name }}</td>
+                    <td><?php echo e($supplier->name); ?></td>
                 </tr>
                 <tr>
                     <td class="fw-bold text-muted">Type:</td>
                     <td>
-                        <span class="badge bg-{{ $supplier->supplier_type === 'company' ? 'success' : 'secondary' }}">
-                            {{ ucfirst($supplier->supplier_type) }}
+                        <span class="badge bg-<?php echo e($supplier->supplier_type === 'company' ? 'success' : 'secondary'); ?>">
+                            <?php echo e(ucfirst($supplier->supplier_type)); ?>
+
                         </span>
                     </td>
                 </tr>
                 <tr>
                     <td class="fw-bold text-muted">Status:</td>
                     <td>
-                        <span class="badge bg-{{ $supplier->status === 'active' ? 'success' : 'secondary' }}">
-                            {{ ucfirst($supplier->status) }}
+                        <span class="badge bg-<?php echo e($supplier->status === 'active' ? 'success' : 'secondary'); ?>">
+                            <?php echo e(ucfirst($supplier->status)); ?>
+
                         </span>
                     </td>
                 </tr>
-                @if($supplier->contact_person)
+                <?php if($supplier->contact_person): ?>
                 <tr>
                     <td class="fw-bold text-muted">Contact Person:</td>
-                    <td>{{ $supplier->contact_person }}</td>
+                    <td><?php echo e($supplier->contact_person); ?></td>
                 </tr>
-                @endif
-                @if($supplier->tax_number)
+                <?php endif; ?>
+                <?php if($supplier->tax_number): ?>
                 <tr>
                     <td class="fw-bold text-muted">Tax Number:</td>
-                    <td>{{ $supplier->tax_number }}</td>
+                    <td><?php echo e($supplier->tax_number); ?></td>
                 </tr>
-                @endif
+                <?php endif; ?>
             </table>
 
             <h6 class="text-primary border-bottom pb-2 mb-3 mt-4"><i class="ri-phone-line me-2"></i> Contact Details</h6>
             
             <table class="table table-sm table-borderless">
-                        @if($supplier->email)
+                        <?php if($supplier->email): ?>
                 <tr>
                     <td width="40%" class="fw-bold text-muted">Email:</td>
-                    <td><i class="ri-mail-line me-2"></i>{{ $supplier->email }}</td>
+                    <td><i class="ri-mail-line me-2"></i><?php echo e($supplier->email); ?></td>
                 </tr>
-                        @endif
-                        @if($supplier->phone)
+                        <?php endif; ?>
+                        <?php if($supplier->phone): ?>
                 <tr>
                     <td class="fw-bold text-muted">Phone:</td>
-                    <td><i class="ri-phone-line me-2"></i>{{ $supplier->phone }}</td>
+                    <td><i class="ri-phone-line me-2"></i><?php echo e($supplier->phone); ?></td>
                 </tr>
-                        @endif
-                        @if($supplier->address)
+                        <?php endif; ?>
+                        <?php if($supplier->address): ?>
                 <tr>
                     <td class="fw-bold text-muted">Address:</td>
-                    <td><i class="ri-map-pin-line me-2"></i>{{ $supplier->address }}</td>
+                    <td><i class="ri-map-pin-line me-2"></i><?php echo e($supplier->address); ?></td>
                 </tr>
-                        @endif
+                        <?php endif; ?>
             </table>
         </div>
 
@@ -98,30 +102,30 @@
             <table class="table table-sm table-borderless">
                 <tr>
                     <td width="40%" class="fw-bold text-muted">Payment Terms:</td>
-                    <td><span class="badge bg-warning">{{ $supplier->payment_terms }}</span></td>
+                    <td><span class="badge bg-warning"><?php echo e($supplier->payment_terms); ?></span></td>
                 </tr>
                 <tr>
                     <td class="fw-bold text-muted">Lead Time:</td>
                     <td>
-                        @if($supplier->lead_time)
-                            <span class="text-primary fw-bold">{{ $supplier->lead_time }} days</span>
-                        @else
+                        <?php if($supplier->lead_time): ?>
+                            <span class="text-primary fw-bold"><?php echo e($supplier->lead_time); ?> days</span>
+                        <?php else: ?>
                             <span class="text-muted">Not specified</span>
-                        @endif
+                        <?php endif; ?>
                     </td>
                 </tr>
-                @if($supplier->bank_details)
+                <?php if($supplier->bank_details): ?>
                 <tr>
                     <td class="fw-bold text-muted">Bank Details:</td>
-                    <td>{{ $supplier->bank_details }}</td>
+                    <td><?php echo e($supplier->bank_details); ?></td>
                 </tr>
-                @endif
-                @if($supplier->notes)
+                <?php endif; ?>
+                <?php if($supplier->notes): ?>
                 <tr>
                     <td class="fw-bold text-muted">Notes:</td>
-                    <td>{{ $supplier->notes }}</td>
+                    <td><?php echo e($supplier->notes); ?></td>
                 </tr>
-                @endif
+                <?php endif; ?>
             </table>
 
             <h6 class="text-primary border-bottom pb-2 mb-3 mt-4"><i class="ri-money-dollar-circle-line me-2"></i> Financial Summary</h6>
@@ -130,40 +134,41 @@
                 <tr>
                     <td width="40%" class="fw-bold text-muted">Credit Limit:</td>
                     <td>
-                        @if($supplier->credit_limit > 0)
-                            <span class="text-success fw-bold">R{{ number_format($supplier->credit_limit, 2) }}</span>
-                        @else
+                        <?php if($supplier->credit_limit > 0): ?>
+                            <span class="text-success fw-bold">R<?php echo e(number_format($supplier->credit_limit, 2)); ?></span>
+                        <?php else: ?>
                             <span class="text-muted">No limit set</span>
-                        @endif
+                        <?php endif; ?>
                     </td>
                 </tr>
                 <tr>
                     <td class="fw-bold text-muted">Current Balance:</td>
                     <td>
-                        <span class="fw-bold {{ $supplier->balance < 0 ? 'text-danger' : ($supplier->balance > 0 ? 'text-success' : 'text-muted') }}">
-                            R{{ number_format($supplier->balance, 2) }}
+                        <span class="fw-bold <?php echo e($supplier->balance < 0 ? 'text-danger' : ($supplier->balance > 0 ? 'text-success' : 'text-muted')); ?>">
+                            R<?php echo e(number_format($supplier->balance, 2)); ?>
+
                         </span>
-                        @if($supplier->isOverCreditLimit())
+                        <?php if($supplier->isOverCreditLimit()): ?>
                             <br><small class="text-danger"><i class="ri-alert-line me-1"></i>Over credit limit!</small>
-                        @endif
+                        <?php endif; ?>
                     </td>
                 </tr>
                 <tr>
                     <td class="fw-bold text-muted">Available Credit:</td>
-                    <td><span class="text-info fw-bold">R{{ number_format($supplier->available_credit, 2) }}</span></td>
+                    <td><span class="text-info fw-bold">R<?php echo e(number_format($supplier->available_credit, 2)); ?></span></td>
                 </tr>
                 <tr>
                     <td class="fw-bold text-muted">Credit Status:</td>
                     <td>
-                        @if($supplier->hasCreditLimit())
-                            @if($supplier->isOverCreditLimit())
+                        <?php if($supplier->hasCreditLimit()): ?>
+                            <?php if($supplier->isOverCreditLimit()): ?>
                                 <span class="badge bg-danger">Over Limit</span>
-                            @else
+                            <?php else: ?>
                                 <span class="badge bg-success">Within Limit</span>
-                            @endif
-                        @else
+                            <?php endif; ?>
+                        <?php else: ?>
                             <span class="badge bg-secondary">No Credit Limit</span>
-                        @endif
+                        <?php endif; ?>
                                 </td>
                             </tr>
                     </table>
@@ -176,7 +181,8 @@
     <button type="button" class="btn btn-light" data-bs-dismiss="modal">
         <i class="ri-close-line me-1"></i> Close
     </button>
-    <button type="button" class="btn btn-warning openEditSupplierModal" data-id="{{ $supplier->id }}">
+    <button type="button" class="btn btn-warning openEditSupplierModal" data-id="<?php echo e($supplier->id); ?>">
         <i class="ri-pencil-line me-1"></i> Edit Supplier
     </button>
 </div>
+<?php /**PATH C:\xampp\htdocs\MMP\resources\views/suppliers/partials/view_modal.blade.php ENDPATH**/ ?>

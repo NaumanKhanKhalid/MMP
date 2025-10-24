@@ -1,6 +1,4 @@
-@extends('layouts.app')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
 <div class="container-fluid px-3 py-3" style="background: #f5f7fa; min-height: 100vh;">
     <!-- POS Header -->
     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -9,8 +7,9 @@
                 <i class="ri-shopping-bag-3-line me-2 text-primary"></i>Point of Sale
             </h4>
             <p class="text-muted mb-0">
-                <i class="ri-time-line me-1"></i>{{ now()->format('d M Y, h:i A') }} | 
-                <i class="ri-user-line me-1"></i>{{ auth()->user()->name }}
+                <i class="ri-time-line me-1"></i><?php echo e(now()->format('d M Y, h:i A')); ?> | 
+                <i class="ri-user-line me-1"></i><?php echo e(auth()->user()->name); ?>
+
             </p>
         </div>
         <div class="d-flex gap-2">
@@ -371,9 +370,9 @@
     </div>
 </div>
 
-@endsection
+<?php $__env->stopSection(); ?>
 
-@push('styles')
+<?php $__env->startPush('styles'); ?>
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <style>
 .search-results-dropdown {
@@ -504,9 +503,9 @@
         font-size: 24px;
 }
 </style>
-@endpush
+<?php $__env->stopPush(); ?>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
 <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
@@ -559,7 +558,7 @@ $(document).ready(function() {
 
 // Load products
 function loadProducts() {
-    fetch('{{ route('pos.products') }}')
+    fetch('<?php echo e(route('pos.products')); ?>')
         .then(response => response.json())
         .then(data => {
             products = data;
@@ -573,7 +572,7 @@ function loadProducts() {
 
 // Load customers
 function loadCustomers() {
-    fetch('{{ route('pos.customers') }}')
+    fetch('<?php echo e(route('pos.customers')); ?>')
         .then(response => response.json())
         .then(data => {
             customers = data.map(customer => ({
@@ -591,7 +590,7 @@ function loadCustomers() {
 
 // Load categories
 function loadCategories() {
-    fetch('{{ route('pos.categories') }}')
+    fetch('<?php echo e(route('pos.categories')); ?>')
         .then(response => response.json())
         .then(data => {
             categories = data;
@@ -604,7 +603,7 @@ function loadCategories() {
 
 // Load vehicle makes
 function loadVehicleMakes() {
-    fetch('{{ route('car-makes.index') }}', {
+    fetch('<?php echo e(route('car-makes.index')); ?>', {
         headers: {
             'Accept': 'application/json',
             'X-Requested-With': 'XMLHttpRequest'
@@ -622,7 +621,7 @@ function loadVehicleMakes() {
 
 // Load vehicle models
 function loadVehicleModels() {
-    fetch('{{ route('car-models.index') }}', {
+    fetch('<?php echo e(route('car-models.index')); ?>', {
         headers: {
             'Accept': 'application/json',
             'X-Requested-With': 'XMLHttpRequest'
@@ -640,7 +639,7 @@ function loadVehicleModels() {
 
 // Load vehicle engines
 function loadVehicleEngines() {
-    fetch('{{ route('engines.index') }}', {
+    fetch('<?php echo e(route('engines.index')); ?>', {
         headers: {
             'Accept': 'application/json',
             'X-Requested-With': 'XMLHttpRequest'
@@ -755,16 +754,16 @@ function initVehicleSelect2() {
 
                 // Determine endpoint based on field type
                 if ($select.hasClass('select2-vehicle-make')) {
-                    endpoint = '{{ route('car-makes.quick-add') }}';
+                    endpoint = '<?php echo e(route('car-makes.quick-add')); ?>';
                 } else if ($select.hasClass('select2-vehicle-model')) {
-                    endpoint = '{{ route('car-models.quick-add') }}';
+                    endpoint = '<?php echo e(route('car-models.quick-add')); ?>';
                     // Get selected make ID
                     const selectedMake = $('#vehicleMake').val();
                     if (selectedMake && !selectedMake.startsWith('new:')) {
                         makeId = selectedMake;
                     }
                 } else if ($select.hasClass('select2-vehicle-engine')) {
-                    endpoint = '{{ route('car-engines.quick-add') }}';
+                    endpoint = '<?php echo e(route('car-engines.quick-add')); ?>';
                 }
 
                 // AJAX call to save
@@ -774,7 +773,7 @@ function initVehicleSelect2() {
                     data: {
                         name: newName,
                         make_id: makeId,
-                        _token: '{{ csrf_token() }}'
+                        _token: '<?php echo e(csrf_token()); ?>'
                     },
                     success: function(response) {
                         if (response.success) {
@@ -1021,7 +1020,7 @@ function updateCartDisplay() {
                 <th style="width: 100px;" class="text-center">Qty</th>
                 <th style="width: 80px;" class="text-end">
                     Discount
-                    <i class="ri-information-line text-warning ms-1" data-bs-toggle="tooltip" title="Max {{ auth()->user()->max_discount_allowed ?? 10 }}% per line"></i>
+                    <i class="ri-information-line text-warning ms-1" data-bs-toggle="tooltip" title="Max <?php echo e(auth()->user()->max_discount_allowed ?? 10); ?>% per line"></i>
                 </th>
                 <th style="width: 100px;" class="text-end">Total</th>
                 <th style="width: 60px;" class="text-center">Action</th>
@@ -1366,7 +1365,7 @@ $(document).on('input', '.item-discount', function() {
         }
         
         // Validate discount limit
-        const maxDiscountAllowed = {{ (auth()->user()->max_discount_allowed ?? 10) }};
+        const maxDiscountAllowed = <?php echo e((auth()->user()->max_discount_allowed ?? 10)); ?>;
         const lineTotal = item.price * item.quantity;
         const maxDiscountAmount = (lineTotal * maxDiscountAllowed) / 100;
         
@@ -1422,12 +1421,12 @@ function addNewCustomer() {
     }
     
     // Create customer via AJAX
-    fetch('{{ route('customers.store') }}', {
+    fetch('<?php echo e(route('customers.store')); ?>', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>'
         },
         body: JSON.stringify({
             name: name,
@@ -1491,12 +1490,12 @@ function addQuickProduct() {
     toastr.info('Creating product...');
     
     // Save product to database first
-    fetch('{{ route('products.quickAdd') }}', {
+    fetch('<?php echo e(route('products.quickAdd')); ?>', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'X-Requested-With': 'XMLHttpRequest',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>'
         },
         body: JSON.stringify({
             name: name,
@@ -1688,11 +1687,11 @@ function processSaleDirect(paymentMethod, amountPaid, paymentReference) {
         vehicle_reg: $('#vehicleReg').val(),
         vehicle_vin: $('#vehicleVin').val(),
         vehicle_mileage: $('#vehicleMileage').val(),
-        _token: '{{ csrf_token() }}'
+        _token: '<?php echo e(csrf_token()); ?>'
     };
     
     // Process sale
-    fetch('{{ route('pos.process-sale') }}', {
+    fetch('<?php echo e(route('pos.process-sale')); ?>', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -1790,4 +1789,6 @@ function confirmPayment() {
     processSaleDirect(paymentMethod, amountPaid, paymentReference);
 }
 </script>
-@endpush
+<?php $__env->stopPush(); ?>
+
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\MMP\resources\views/pos/index.blade.php ENDPATH**/ ?>

@@ -187,7 +187,7 @@
         </td>
         
         <td class="text-end">
-            <div class="btn-list">
+            <div class="btn-list d-flex">
                 <!-- View -->
                 <button class="btn btn-sm btn-primary-light btn-icon" data-bs-toggle="modal"
                     data-bs-target="#viewProductModal-{{ $p->id }}" onclick="event.stopPropagation();" title="View Details">

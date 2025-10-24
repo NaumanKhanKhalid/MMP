@@ -66,13 +66,14 @@ class CustomerController extends Controller
     public function store(Request $request)
     {
         // Check if this is a quick add request (from quote modal)
-        $isQuickAdd = $request->ajax() || $request->expectsJson();
+        // Use a flag to distinguish between quick add and full form (both use AJAX)
+        $isQuickAdd = $request->has('quick_add') && $request->quick_add == '1';
 
         if ($isQuickAdd) {
             // Simplified validation for quick add
             $data = $request->validate([
                 'name' => 'required|string|max:255',
-                'email' => 'required|email|max:255|unique:customers,email',
+                'email' => 'nullable|email|max:255|unique:customers,email',
                 'phone' => 'nullable|string|max:20',
                 'address' => 'nullable|string|max:500',
                 'price_tier' => 'nullable|in:normal,online,workshop',
@@ -114,30 +115,8 @@ class CustomerController extends Controller
         }
 
         try {
-            // Retry logic for race conditions on customer_code generation
-            $maxRetries = 3;
-            $attempt = 0;
-            $customer = null;
-
-            while ($attempt < $maxRetries && ! $customer) {
-                try {
-                    $customer = Customer::create($data);
-                    break; // Success!
-                } catch (\Illuminate\Database\QueryException $e) {
-                    // Check if it's a duplicate customer_code error
-                    if ($e->getCode() == 23000 && str_contains($e->getMessage(), 'customer_code_unique')) {
-                        $attempt++;
-                        if ($attempt >= $maxRetries) {
-                            throw $e; // Give up after max retries
-                        }
-                        // Force regenerate customer_code by unsetting it
-                        unset($data['customer_code']);
-                        usleep(100000); // Wait 100ms before retry
-                    } else {
-                        throw $e; // Different error, rethrow
-                    }
-                }
-            }
+            // Customer code will be auto-generated in the model if not provided
+            $customer = Customer::create($data);
 
             // Handle vehicles if provided
             if ($request->has('vehicles') && is_array($request->vehicles)) {
@@ -166,14 +145,15 @@ class CustomerController extends Controller
                 }
             }
 
-            // Return JSON for AJAX requests
-            if ($isQuickAdd) {
+            // Return JSON for AJAX requests (both quick add and full form)
+            if ($request->ajax() || $request->expectsJson()) {
                 return response()->json([
                     'success' => true,
                     'message' => 'Customer created successfully!',
                     'customer' => [
                         'id' => $customer->id,
                         'name' => $customer->name,
+                        'customer_code' => $customer->customer_code,
                         'email' => $customer->email,
                         'phone' => $customer->phone,
                         'address' => $customer->address,
@@ -184,7 +164,7 @@ class CustomerController extends Controller
 
             return redirect()->route('customers.index')->with('success', 'Customer created successfully!');
         } catch (\Exception $e) {
-            if ($isQuickAdd) {
+            if ($request->ajax() || $request->expectsJson()) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Failed to create customer: '.$e->getMessage(),

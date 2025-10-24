@@ -1,13 +1,12 @@
-<div class="modal-header bg-warning text-dark">
+<div class="modal-header">
     <h5 class="modal-title">
-        <i class="ri-pencil-line me-2"></i> Edit Supplier
+        <i class="ri-truck-add-line me-2"></i> Add New Supplier
     </h5>
-    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
 </div>
 
-<form action="{{ route('suppliers.update', $supplier) }}" method="POST" id="supplierEditForm">
-    @csrf
-    @method('PUT')
+<form action="<?php echo e(route('suppliers.store')); ?>" method="POST" id="supplierCreateForm">
+    <?php echo csrf_field(); ?>
     
     <div class="modal-body p-4" style="max-height: 70vh; overflow-y: auto;">
         <div class="row">
@@ -18,33 +17,33 @@
                 <div class="row">
                     <div class="col-md-12 mb-3">
                         <label class="form-label fw-bold">Supplier Name <span class="text-danger">*</span></label>
-                        <input type="text" name="name" class="form-control" value="{{ $supplier->name }}" required>
+                        <input type="text" name="name" class="form-control" required>
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="form-label fw-bold">Supplier Type <span class="text-danger">*</span></label>
                         <select name="supplier_type" class="form-control" required>
-                            <option value="company" {{ $supplier->supplier_type === 'company' ? 'selected' : '' }}>Company</option>
-                            <option value="individual" {{ $supplier->supplier_type === 'individual' ? 'selected' : '' }}>Individual</option>
+                            <option value="company">Company</option>
+                            <option value="individual">Individual</option>
                         </select>
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="form-label fw-bold">Status <span class="text-danger">*</span></label>
                         <select name="status" class="form-control" required>
-                            <option value="active" {{ $supplier->status === 'active' ? 'selected' : '' }}>Active</option>
-                            <option value="inactive" {{ $supplier->status === 'inactive' ? 'selected' : '' }}>Inactive</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
                         </select>
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="form-label fw-bold">Contact Person</label>
-                        <input type="text" name="contact_person" class="form-control" value="{{ $supplier->contact_person }}">
+                        <input type="text" name="contact_person" class="form-control">
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="form-label fw-bold">Tax Number</label>
-                        <input type="text" name="tax_number" class="form-control" value="{{ $supplier->tax_number }}">
+                        <input type="text" name="tax_number" class="form-control">
                     </div>
                     <div class="col-12 mb-3">
                         <label class="form-label fw-bold">Address</label>
-                        <textarea name="address" class="form-control" rows="2">{{ $supplier->address }}</textarea>
+                        <textarea name="address" class="form-control" rows="2"></textarea>
                     </div>
                 </div>
 
@@ -53,11 +52,11 @@
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         <label class="form-label fw-bold">Email</label>
-                        <input type="email" name="email" class="form-control" value="{{ $supplier->email }}">
+                        <input type="email" name="email" class="form-control">
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="form-label fw-bold">Phone</label>
-                        <input type="text" name="phone" class="form-control" value="{{ $supplier->phone }}">
+                        <input type="text" name="phone" class="form-control">
                     </div>
                 </div>
             </div>
@@ -70,24 +69,24 @@
                     <div class="col-md-6 mb-3">
                         <label class="form-label fw-bold">Payment Terms <span class="text-danger">*</span></label>
                         <select name="payment_terms" class="form-control" required>
-                            <option value="COD" {{ $supplier->payment_terms === 'COD' ? 'selected' : '' }}>COD</option>
-                            <option value="7 days" {{ $supplier->payment_terms === '7 days' ? 'selected' : '' }}>7 days</option>
-                            <option value="14 days" {{ $supplier->payment_terms === '14 days' ? 'selected' : '' }}>14 days</option>
-                            <option value="30 days" {{ $supplier->payment_terms === '30 days' ? 'selected' : '' }}>30 days</option>
-                            <option value="60 days" {{ $supplier->payment_terms === '60 days' ? 'selected' : '' }}>60 days</option>
+                            <option value="COD">COD</option>
+                            <option value="7 days">7 days</option>
+                            <option value="14 days">14 days</option>
+                            <option value="30 days" selected>30 days</option>
+                            <option value="60 days">60 days</option>
                         </select>
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="form-label fw-bold">Lead Time (Days)</label>
-                        <input type="number" name="lead_time" class="form-control" min="0" max="365" value="{{ $supplier->lead_time }}">
+                        <input type="number" name="lead_time" class="form-control" min="0" max="365" value="0">
                     </div>
                     <div class="col-12 mb-3">
                         <label class="form-label fw-bold">Bank Details</label>
-                        <textarea name="bank_details" class="form-control" rows="2" placeholder="Bank name, account number, etc.">{{ $supplier->bank_details }}</textarea>
+                        <textarea name="bank_details" class="form-control" rows="2" placeholder="Bank name, account number, etc."></textarea>
                     </div>
                     <div class="col-12 mb-3">
                         <label class="form-label fw-bold">Notes</label>
-                        <textarea name="notes" class="form-control" rows="2" placeholder="Additional notes about this supplier">{{ $supplier->notes }}</textarea>
+                        <textarea name="notes" class="form-control" rows="2" placeholder="Additional notes about this supplier"></textarea>
                     </div>
                 </div>
 
@@ -98,16 +97,16 @@
                         <label class="form-label fw-bold">Credit Limit</label>
                         <div class="input-group">
                             <span class="input-group-text">R</span>
-                            <input type="number" name="credit_limit" class="form-control" step="0.01" min="0" value="{{ $supplier->credit_limit }}">
+                            <input type="number" name="credit_limit" class="form-control" step="0.01" min="0" value="0">
                         </div>
                     </div>
                     <div class="col-md-6 mb-3">
-                        <label class="form-label fw-bold">Current Balance</label>
+                        <label class="form-label fw-bold">Initial Balance</label>
                         <div class="input-group">
                             <span class="input-group-text">R</span>
-                            <input type="number" name="balance" class="form-control" step="0.01" value="{{ $supplier->balance }}" readonly>
+                            <input type="number" name="balance" class="form-control" step="0.01" value="0">
                         </div>
-                        <small class="text-muted">Balance is calculated from transactions</small>
+                        <small class="text-muted">Starting balance for this supplier</small>
                     </div>
                 </div>
             </div>
@@ -118,34 +117,34 @@
         <button type="button" class="btn btn-light" data-bs-dismiss="modal">
             <i class="ri-close-line me-1"></i> Cancel
         </button>
-        <button type="submit" class="btn btn-warning">
-            <i class="ri-save-line me-1"></i> Update Supplier
+        <button type="submit" class="btn btn-success">
+            <i class="ri-add-line me-1"></i> Add Supplier
         </button>
     </div>
 </form>
 
 <script>
 $(document).ready(function() {
-    $('#supplierEditForm').on('submit', function(e) {
+    $('#supplierCreateForm').on('submit', function(e) {
         e.preventDefault();
         
         var formData = $(this).serialize();
         var submitBtn = $(this).find('button[type="submit"]');
         var originalText = submitBtn.html();
         
-        submitBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Updating...');
+        submitBtn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Adding...');
         
         $.ajax({
             url: $(this).attr('action'),
             method: 'POST',
             data: formData,
             success: function(response) {
-                toastr.success('Supplier updated successfully!');
+                toastr.success('Supplier created successfully!');
                 $('#supplierModal').modal('hide');
                 location.reload();
             },
             error: function(xhr) {
-                var errorMsg = 'Failed to update supplier';
+                var errorMsg = 'Failed to create supplier';
                 if (xhr.responseJSON && xhr.responseJSON.message) {
                     errorMsg = xhr.responseJSON.message;
                 }
@@ -156,3 +155,4 @@ $(document).ready(function() {
     });
 });
 </script>
+<?php /**PATH C:\xampp\htdocs\MMP\resources\views/suppliers/partials/create_modal.blade.php ENDPATH**/ ?>

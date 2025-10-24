@@ -194,7 +194,7 @@
                                     <i class="bi bi-car-front me-2"></i>Vehicle Fitment
                                 </h6>
                                 
-                                {{-- Model Selection --}}
+                                {{-- Model Selection
                                 <div class="row mb-3">
                                     <div class="col-md-6 mb-3">
                                         <label class="form-label">Vehicle Model</label>
@@ -214,7 +214,7 @@
                                             @endforeach
                                         </select>
                                     </div>
-                                </div>
+                                </div> --}}
                                 
                                 <div class="alert alert-info alert-sm">
                                     <small><i class="bi bi-info-circle me-1"></i>Specify which vehicles this part fits

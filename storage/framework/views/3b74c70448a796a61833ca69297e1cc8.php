@@ -606,6 +606,11 @@
             };
             
             // Add debug button
+            // $(document).ready(function() {
+            //     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            //         $('body').append('<div style="position: fixed; top: 10px; right: 10px; z-index: 9999; background: #007bff; color: white; padding: 10px; border-radius: 5px;"><button onclick="testPagination()" style="background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; margin-right: 5px;">Test Page 2</button><button onclick="loadProductsPage(3)" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">Test Page 3</button></div>');
+            //     }
+            // });
 
             // Single pagination click handler
             $(document).on('click', '.pagination .page-link', function(e) {
@@ -878,9 +883,9 @@
                         </div>
                     </div>
                 </div>
-                <div class="table-responsive" style="max-height: 60vh; overflow-y: auto;">
+                <div class="table-responsive">
                     <table class="table table-striped align-middle table-hover">
-                        <thead class="sticky-top bg-white" style="z-index: 10;">
+                        <thead>
                         <tr>
                             <th></th>
                             <th>Product Name</th>

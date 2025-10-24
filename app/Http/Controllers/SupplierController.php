@@ -17,7 +17,6 @@ class SupplierController extends Controller
             $search = request('search');
             $query->where(function($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('supplier_code', 'like', "%{$search}%")
                   ->orWhere('email', 'like', "%{$search}%")
                   ->orWhere('phone', 'like', "%{$search}%");
             });
@@ -92,7 +91,6 @@ class SupplierController extends Controller
         try {
             $validated = $request->validate([
                 'name' => 'required|string|max:255',
-                'supplier_code' => 'nullable|string|max:255|unique:suppliers,supplier_code,' . $supplier->id,
                 'email' => 'nullable|email|max:255',
                 'phone' => 'nullable|string|max:20',
                 'address' => 'nullable|string|max:500',
@@ -188,7 +186,6 @@ class SupplierController extends Controller
     {
         $supplier = Supplier::findOrFail($id);
         return response()->json([
-            'supplier_code' => $supplier->supplier_code,
             'name' => $supplier->name,
             'email' => $supplier->email,
             'phone' => $supplier->phone,

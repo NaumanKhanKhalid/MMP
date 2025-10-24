@@ -15,13 +15,9 @@
                 <h6 class="text-primary border-bottom pb-2 mb-3"><i class="ri-building-line me-2"></i> Basic Information</h6>
                 
                 <div class="row">
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-12 mb-3">
                         <label class="form-label fw-bold">Supplier Name <span class="text-danger">*</span></label>
                         <input type="text" name="name" class="form-control" required>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label fw-bold">Supplier Code</label>
-                        <input type="text" name="supplier_code" class="form-control" placeholder="Auto-generated">
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="form-label fw-bold">Supplier Type <span class="text-danger">*</span></label>

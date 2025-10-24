@@ -13,11 +13,8 @@ class SupplierRequest extends FormRequest
 
     public function rules(): array
     {
-        $supplierId = $this->route('supplier') ? $this->route('supplier')->id : null;
-        
         return [
             'name' => 'required|string|max:255',
-            'supplier_code' => 'nullable|string|max:255|unique:suppliers,supplier_code,' . $supplierId,
             'email' => 'nullable|email|max:255',
             'phone' => 'nullable|string|max:20',
             'address' => 'nullable|string|max:500',

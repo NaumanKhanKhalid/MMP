@@ -360,7 +360,7 @@
         $('#addCustomerForm').on('submit', function(e) {
             e.preventDefault();
 
-            const formData = $(this).serialize();
+            const formData = $(this).serialize() + '&quick_add=1';
             const submitBtn = $(this).find('button[type="submit"]');
             const originalText = submitBtn.html();
 

@@ -1,6 +1,4 @@
-@extends('layouts.app')
-
-@push('styles')
+<?php $__env->startPush('styles'); ?>
 <style>
     .clickable-row {
         transition: background-color 0.2s ease;
@@ -34,7 +32,7 @@
             const formData = $('#filterForm').serialize();
 
             $.ajax({
-                url: '{{ route('goods-receipts.index') }}',
+                url: '<?php echo e(route('goods-receipts.index')); ?>',
                 type: 'GET',
                 data: formData,
                 beforeSend: function() {
@@ -97,7 +95,7 @@
 
     // Open view modal
     function openViewModal(grnId) {
-        const url = '{{ route("goods-receipts.view-modal", ":id") }}'.replace(':id', grnId);
+        const url = '<?php echo e(route("goods-receipts.view-modal", ":id")); ?>'.replace(':id', grnId);
         
         // Create view modal if it doesn't exist
         if (!$('#viewGrnModal').length) {
@@ -126,6 +124,7 @@
     $(document).on('click', '.post-grn-btn', function(e) {
         e.preventDefault();
         e.stopPropagation();
+       alert();
         const grnId = $(this).data('grn-id');
         const $btn = $(this);
         
@@ -133,13 +132,13 @@
         //     return;
         // }
 
-        const url = '{{ route("goods-receipts.post", ":id") }}'.replace(':id', grnId);
+        const url = '<?php echo e(route("goods-receipts.post", ":id")); ?>'.replace(':id', grnId);
 
         $.ajax({
             url: url,
             method: 'POST',
             data: {
-                _token: '{{ csrf_token() }}'
+                _token: '<?php echo e(csrf_token()); ?>'
             },
             beforeSend: function() {
                 $btn.prop('disabled', true).html('<i class="ri-loader-4-line ri-spin"></i>');
@@ -166,9 +165,9 @@
         });
     });
 </script>
-@endpush
+<?php $__env->stopPush(); ?>
 
-@section('content')
+<?php $__env->startSection('content'); ?>
     <div class="container-fluid py-4">
     <!-- Header Section -->
         <div class="d-flex justify-content-between align-items-center mb-3">
@@ -187,42 +186,43 @@
     <!-- Filters Section -->
     <div class="card shadow-sm mb-3">
         <div class="card-body">
-            <form id="filterForm" method="GET" action="{{ route('goods-receipts.index') }}">
+            <form id="filterForm" method="GET" action="<?php echo e(route('goods-receipts.index')); ?>">
                 <div class="row g-2">
                     <div class="col-md-3">
                         <input type="text" name="search" class="form-control"
-                            placeholder="Search by GRN number, PO number..." value="{{ request('search') }}">
+                            placeholder="Search by GRN number, PO number..." value="<?php echo e(request('search')); ?>">
                     </div>
                     <div class="col-md-2">
                         <select name="supplier_id" class="form-select">
                             <option value="">All Suppliers</option>
-                            @foreach($suppliers as $supplier)
-                                <option value="{{ $supplier->id }}"
-                                    {{ request('supplier_id') == $supplier->id ? 'selected' : '' }}>
-                                    {{ $supplier->name }}
+                            <?php $__currentLoopData = $suppliers; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $supplier): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <option value="<?php echo e($supplier->id); ?>"
+                                    <?php echo e(request('supplier_id') == $supplier->id ? 'selected' : ''); ?>>
+                                    <?php echo e($supplier->name); ?>
+
                                 </option>
-                            @endforeach
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </select>
                     </div>
                     <div class="col-md-2">
                         <select name="status" class="form-select">
                             <option value="">All Status</option>
-                            <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                            <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Completed</option>
-                            <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                            <option value="pending" <?php echo e(request('status') == 'pending' ? 'selected' : ''); ?>>Pending</option>
+                            <option value="completed" <?php echo e(request('status') == 'completed' ? 'selected' : ''); ?>>Completed</option>
+                            <option value="cancelled" <?php echo e(request('status') == 'cancelled' ? 'selected' : ''); ?>>Cancelled</option>
                         </select>
                     </div>
                     <div class="col-md-2">
                         <input type="date" name="date_from" class="form-control"
-                            placeholder="Date From" value="{{ request('date_from') }}">
+                            placeholder="Date From" value="<?php echo e(request('date_from')); ?>">
                     </div>
                     <div class="col-md-2">
                         <input type="date" name="date_to" class="form-control"
-                            placeholder="Date To" value="{{ request('date_to') }}">
+                            placeholder="Date To" value="<?php echo e(request('date_to')); ?>">
                     </div>
                     <div class="col-md-1">
                         <div class="d-grid gap-1">
-                            <button type="button" class="btn btn-outline-info" onclick="window.location.href='{{ route('goods-receipts.index') }}'">
+                            <button type="button" class="btn btn-outline-info" onclick="window.location.href='<?php echo e(route('goods-receipts.index')); ?>'">
                                 Reset
             </button>
         </div>
@@ -238,7 +238,7 @@
             <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-3">
                 <div class="card-title">
                     Goods Receipts<span
-                        class="badge bg-light text-default rounded ms-1 fs-12 align-middle">{{ $grns->total() }}</span>
+                        class="badge bg-light text-default rounded ms-1 fs-12 align-middle"><?php echo e($grns->total()); ?></span>
                 </div>
                 <div class="d-flex flex-wrap gap-2">
                     <!-- Print & Export Dropdown -->
@@ -252,13 +252,13 @@
                                 <i class="ri-printer-line me-2 text-secondary"></i>Print
                             </a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{{ route('goods-receipts.export', ['format' => 'pdf']) }}">
+                            <li><a class="dropdown-item" href="<?php echo e(route('goods-receipts.export', ['format' => 'pdf'])); ?>">
                                 <i class="ri-file-pdf-line me-2 text-danger"></i>Export as PDF
                             </a></li>
-                            <li><a class="dropdown-item" href="{{ route('goods-receipts.export', ['format' => 'csv']) }}">
+                            <li><a class="dropdown-item" href="<?php echo e(route('goods-receipts.export', ['format' => 'csv'])); ?>">
                                 <i class="ri-file-text-line me-2 text-info"></i>Export as CSV
                             </a></li>
-                            <li><a class="dropdown-item" href="{{ route('goods-receipts.export', ['format' => 'excel']) }}">
+                            <li><a class="dropdown-item" href="<?php echo e(route('goods-receipts.export', ['format' => 'excel'])); ?>">
                                 <i class="ri-file-excel-line me-2 text-success"></i>Export as Excel
                             </a></li>
                         </ul>
@@ -281,80 +281,82 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse ($grns as $grn)
-                            <tr class="clickable-row" data-grn-id="{{ $grn->id }}">
-                                <td>{{ $loop->iteration + ($grns->currentPage() - 1) * $grns->perPage() }}</td>
+                        <?php $__empty_1 = true; $__currentLoopData = $grns; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $grn): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                            <tr class="clickable-row" data-grn-id="<?php echo e($grn->id); ?>">
+                                <td><?php echo e($loop->iteration + ($grns->currentPage() - 1) * $grns->perPage()); ?></td>
                                 <td>
-                                    <div class="fw-semibold">{{ $grn->grn_number }}</div>
+                                    <div class="fw-semibold"><?php echo e($grn->grn_number); ?></div>
                                 </td>
                                 <td>
-                                    <div class="fw-semibold">{{ $grn->supplier->name ?? 'N/A' }}</div>
-                                    <small class="text-muted">{{ $grn->supplier->email ?? '' }}</small>
+                                    <div class="fw-semibold"><?php echo e($grn->supplier->name ?? 'N/A'); ?></div>
+                                    <small class="text-muted"><?php echo e($grn->supplier->email ?? ''); ?></small>
                                 </td>
                                 <td>
-                                    @if($grn->purchaseOrder)
+                                    <?php if($grn->purchaseOrder): ?>
                                         <a href="javascript:void(0);" class="text-decoration-underline text-primary view-po-btn" 
-                                           data-po-id="{{ $grn->purchaseOrder->id }}" 
-                                           onclick="event.stopPropagation(); openPOModal({{ $grn->purchaseOrder->id }});">
-                                            {{ $grn->purchaseOrder->po_number }}
+                                           data-po-id="<?php echo e($grn->purchaseOrder->id); ?>" 
+                                           onclick="event.stopPropagation(); openPOModal(<?php echo e($grn->purchaseOrder->id); ?>);">
+                                            <?php echo e($grn->purchaseOrder->po_number); ?>
+
                                         </a>
-                                    @else
+                                    <?php else: ?>
                                         <span class="text-muted">-</span>
-                                    @endif
+                                    <?php endif; ?>
                                 </td>
-                                <td>{{ $grn->received_date->format('d M Y') }}</td>
+                                <td><?php echo e($grn->received_date->format('d M Y')); ?></td>
                                 <td>
-                                    <span class="badge bg-info-transparent rounded-pill">{{ $grn->items->count() }} items</span>
-                                </td>
-                                <td>
-                                    <span class="fw-semibold">R {{ number_format($grn->total_amount ?? 0, 2) }}</span>
+                                    <span class="badge bg-info-transparent rounded-pill"><?php echo e($grn->items->count()); ?> items</span>
                                 </td>
                                 <td>
-                                    @if($grn->status === 'pending')
+                                    <span class="fw-semibold">R <?php echo e(number_format($grn->total_amount ?? 0, 2)); ?></span>
+                                </td>
+                                <td>
+                                    <?php if($grn->status === 'pending'): ?>
                                         <span class="badge rounded-pill bg-warning-transparent">Pending</span>
-                                    @elseif($grn->status === 'completed')
+                                    <?php elseif($grn->status === 'completed'): ?>
                                         <span class="badge rounded-pill bg-success-transparent">Completed</span>
-                                    @elseif($grn->status === 'cancelled')
+                                    <?php elseif($grn->status === 'cancelled'): ?>
                                         <span class="badge rounded-pill bg-danger-transparent">Cancelled</span>
-                                    @else
-                                        <span class="badge rounded-pill bg-secondary-transparent">{{ ucfirst($grn->status) }}</span>
-                                    @endif
+                                    <?php else: ?>
+                                        <span class="badge rounded-pill bg-secondary-transparent"><?php echo e(ucfirst($grn->status)); ?></span>
+                                    <?php endif; ?>
                                 </td>
                                 <td class="text-end">
                                     <div class="btn-list">
                                         <!-- View -->
                                         <button class="btn btn-sm btn-info-light btn-icon view-grn-btn" 
-                                                data-grn-id="{{ $grn->id }}" title="View Details"
-                                                onclick="openViewModal({{ $grn->id }});">
+                                                data-grn-id="<?php echo e($grn->id); ?>" title="View Details"
+                                                onclick="openViewModal(<?php echo e($grn->id); ?>);">
                                         <i class="ri-eye-line"></i>
                                     </button>
                                         <!-- Print -->
                                         <button type="button" class="btn btn-sm btn-primary-light btn-icon" 
                                                 title="Print GRN"
-                                                onclick="printGRN({{ $grn->id }});">
+                                                onclick="printGRN(<?php echo e($grn->id); ?>);">
                                             <i class="ri-printer-line"></i>
                                         </button>
-                                        @if($grn->status === 'pending')
+                                        <?php if($grn->status === 'pending'): ?>
                                             <!-- Post GRN -->
                                             <button class="btn btn-sm btn-success-light btn-icon post-grn-btn" 
-                                                    data-grn-id="{{ $grn->id }}" title="Post GRN">
+                                                    data-grn-id="<?php echo e($grn->id); ?>" title="Post GRN">
                                                 <i class="ri-check-line"></i>
                                             </button>
-                                        @endif
+                                        <?php endif; ?>
                                     </div>
                                 </td>
                             </tr>
-                        @empty
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                             <tr>
                                 <td colspan="9" class="text-center text-muted">No GRNs found</td>
                             </tr>
-                        @endforelse
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
             </div>
             <div class="card-footer">
-            {{ $grns->appends(request()->query())->links() }}
+            <?php echo e($grns->appends(request()->query())->links()); ?>
+
             </div>
         </div>
 
@@ -367,7 +369,7 @@
             </div>
         </div>
 
-        @include('goods_receipts._create_modal')
+        <?php echo $__env->make('goods_receipts._create_modal', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
     </div>
 
     <script>
@@ -378,7 +380,7 @@ function printGRNs() {
 
 // Print GRN (same page using iframe)
 function printGRN(grnId) {
-    const printUrl = '{{ route("goods-receipts.print", ":id") }}'.replace(':id', grnId);
+    const printUrl = '<?php echo e(route("goods-receipts.print", ":id")); ?>'.replace(':id', grnId);
     
     // Create hidden iframe for printing
     const iframe = document.createElement('iframe');
@@ -399,7 +401,7 @@ function printGRN(grnId) {
 // Old print function (removed)
 function printGRNOld(grnId) {
     $.ajax({
-        url: '{{ route("goods-receipts.view-modal", ":id") }}'.replace(':id', grnId),
+        url: '<?php echo e(route("goods-receipts.view-modal", ":id")); ?>'.replace(':id', grnId),
         method: 'GET',
         success: function(response) {
             // Extract GRN data from the modal HTML
@@ -672,7 +674,7 @@ function printGRNOld(grnId) {
 
 // View PO Modal
 function openPOModal(poId) {
-    const url = '{{ route("purchase-orders.view-modal", ":id") }}'.replace(':id', poId);
+    const url = '<?php echo e(route("purchase-orders.view-modal", ":id")); ?>'.replace(':id', poId);
     
     $.ajax({
         url: url,
@@ -696,4 +698,6 @@ function openPOModal(poId) {
     });
 }
     </script>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\MMP\resources\views/goods_receipts/index.blade.php ENDPATH**/ ?>
