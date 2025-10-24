@@ -60,7 +60,7 @@
                                                 <span class="badge rounded-pill bg-secondary-transparent">Inactive</span>
                                             @endif
                                         </td>
-        <td class="text-end" onclick="event.stopPropagation();">
+        <td class="text-end">
             <div class="btn-list">
                 <!-- Toggle Status -->
                 <form method="POST" action="{{ route('suppliers.toggle.status', $supplier->id) }}" class="d-inline">

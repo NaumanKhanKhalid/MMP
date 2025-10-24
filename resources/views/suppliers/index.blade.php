@@ -184,10 +184,13 @@
             });
 
             // Row click to view
-            $(document).on('click', '.supplier-row', function() {
-                var id = $(this).data('id');
-                var url = '{{ url('suppliers') }}/' + id + '/view-modal';
-                loadSupplierModal(url);
+            $(document).on('click', '.supplier-row', function(e) {
+                // Only open modal if not clicking on a button or link
+                if (!$(e.target).closest('button, a, form').length) {
+                    var id = $(this).data('id');
+                    var url = '{{ url('suppliers') }}/' + id + '/view-modal';
+                    loadSupplierModal(url);
+                }
             });
         });
 
