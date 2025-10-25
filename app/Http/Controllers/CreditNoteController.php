@@ -87,8 +87,8 @@ class CreditNoteController extends Controller
                 'reason_for_return' => $validated['reason_for_return'],
                 'refund_method' => $validated['refund_method'],
                 'handling_fee' => $validated['handling_fee'] ?? 0,
-                'customer_type' => $invoice->customer->customer_type ?? 'cash',
-                'apply_to_account' => ($invoice->customer->customer_type ?? 'cash') === 'account',
+                'customer_type' => $invoice->customer->terms ?? 'cash',
+                'apply_to_account' => ($invoice->customer->terms ?? 'cash') === 'credit',
                 'vat_enabled' => $invoice->vat_enabled,
                 'vat_rate' => $invoice->vat_rate,
                 'vat_inclusive' => $invoice->vat_inclusive,
@@ -176,7 +176,7 @@ class CreditNoteController extends Controller
             ]);
 
             // Auto-post credit note if account customer and apply_to_account is true
-            if ($creditNote->customer_type === 'account' && $creditNote->apply_to_account) {
+            if ($creditNote->customer_type === 'credit' && $creditNote->apply_to_account) {
                 // Update customer balance
                 $customer = Customer::findOrFail($creditNote->customer_id);
                 $oldBalance = $customer->balance;
@@ -245,7 +245,7 @@ class CreditNoteController extends Controller
             }
 
             // Update customer balance if account customer
-            if ($creditNote->customer_type === 'account' && $creditNote->apply_to_account) {
+            if ($creditNote->customer_type === 'credit' && $creditNote->apply_to_account) {
                 $customer = $creditNote->customer;
                 $customer->decrement('balance', $creditNote->grand_total);
 
@@ -326,7 +326,7 @@ class CreditNoteController extends Controller
                     'name' => $invoice->customer_name,
                     'email' => $invoice->customer_email,
                     'phone' => $invoice->customer_phone,
-                    'type' => $invoice->customer->customer_type ?? 'cash',
+                    'type' => $invoice->customer->terms ?? 'cash',
                 ],
                 'vehicle' => [
                     'make' => $invoice->vehicle_make,
@@ -393,7 +393,7 @@ class CreditNoteController extends Controller
             }
 
             // Reverse customer balance if account customer
-            if ($creditNote->customer_type === 'account' && $creditNote->apply_to_account) {
+            if ($creditNote->customer_type === 'credit' && $creditNote->apply_to_account) {
                 $customer = $creditNote->customer;
                 $customer->increment('balance', $creditNote->grand_total);
 

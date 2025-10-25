@@ -369,7 +369,7 @@
                         <option value="cash">Cash</option>
                         <option value="card">Card</option>
                         <option value="eft">EFT</option>
-                        <option value="on_account" id="invoiceOnAccountOption" style="display: none;">On Account</option>
+                        <option value="credit" id="invoiceOnAccountOption" style="display: none;">Credit</option>
                     </select>
                 </div>
 

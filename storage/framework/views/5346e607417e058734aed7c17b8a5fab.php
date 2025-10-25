@@ -1,6 +1,4 @@
-@extends('layouts.app')
-
-@push('styles')
+<?php $__env->startPush('styles'); ?>
     <style>
         .clickable-row {
             transition: background-color 0.2s ease;
@@ -35,7 +33,7 @@
             }
 
             // Open the view modal
-            $.get("{{ route('invoices.view-modal', ':id') }}".replace(':id', invoiceId), function(html) {
+            $.get("<?php echo e(route('invoices.view-modal', ':id')); ?>".replace(':id', invoiceId), function(html) {
                 $('#invoiceModalContent').html(html);
                 $('#invoiceModal').modal('show');
             });
@@ -44,12 +42,12 @@
         function printInvoices() {
             try {
                 // Get invoice data for summary
-                const totalInvoices = {{ $invoices->total() }};
-                const draftInvoices = {{ $invoices->where('payment_status', 'draft')->count() }};
-                const paidInvoices = {{ $invoices->where('payment_status', 'paid')->count() }};
-                const unpaidInvoices = {{ $invoices->where('payment_status', 'unpaid')->count() }};
-                const partiallyPaidInvoices = {{ $invoices->where('payment_status', 'partially_paid')->count() }};
-                const partialInvoices = {{ $invoices->where('payment_status', 'partial')->count() }};
+                const totalInvoices = <?php echo e($invoices->total()); ?>;
+                const draftInvoices = <?php echo e($invoices->where('payment_status', 'draft')->count()); ?>;
+                const paidInvoices = <?php echo e($invoices->where('payment_status', 'paid')->count()); ?>;
+                const unpaidInvoices = <?php echo e($invoices->where('payment_status', 'unpaid')->count()); ?>;
+                const partiallyPaidInvoices = <?php echo e($invoices->where('payment_status', 'partially_paid')->count()); ?>;
+                const partialInvoices = <?php echo e($invoices->where('payment_status', 'partial')->count()); ?>;
 
                 // Create new window for printing
                 const printWindow = window.open('', '_blank', 'width=1200,height=800');
@@ -202,30 +200,31 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($invoices as $index => $invoice)
+                        <?php $__currentLoopData = $invoices; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $invoice): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                             <tr>
-                                <td class="text-center">{{ $index + 1 }}</td>
-                                <td><strong>{{ $invoice->invoice_number }}</strong></td>
-                                <td>{{ $invoice->customer->name ?? ($invoice->customer_name ?? 'Cash Sale') }}</td>
+                                <td class="text-center"><?php echo e($index + 1); ?></td>
+                                <td><strong><?php echo e($invoice->invoice_number); ?></strong></td>
+                                <td><?php echo e($invoice->customer->name ?? ($invoice->customer_name ?? 'Cash Sale')); ?></td>
                                 <td>
-                                    @if($invoice->vehicle_make)
-                                        {{ $invoice->vehicle_make }} {{ $invoice->vehicle_model }}
-                                        @if($invoice->vehicle_reg)
-                                            <br><small>({{ $invoice->vehicle_reg }})</small>
-                                        @endif
-                                    @else
+                                    <?php if($invoice->vehicle_make): ?>
+                                        <?php echo e($invoice->vehicle_make); ?> <?php echo e($invoice->vehicle_model); ?>
+
+                                        <?php if($invoice->vehicle_reg): ?>
+                                            <br><small>(<?php echo e($invoice->vehicle_reg); ?>)</small>
+                                        <?php endif; ?>
+                                    <?php else: ?>
                                         -
-                                    @endif
+                                    <?php endif; ?>
                                 </td>
-                                <td class="text-center">{{ $invoice->items->count() ?? 0 }}</td>
-                                <td class="text-end">R {{ number_format($invoice->grand_total ?? 0, 2) }}</td>
+                                <td class="text-center"><?php echo e($invoice->items->count() ?? 0); ?></td>
+                                <td class="text-end">R <?php echo e(number_format($invoice->grand_total ?? 0, 2)); ?></td>
                                 <td class="text-center">
-                                    <span class="badge badge-{{ $invoice->payment_status }}">{{ ucfirst($invoice->payment_status) }}</span>
+                                    <span class="badge badge-<?php echo e($invoice->payment_status); ?>"><?php echo e(ucfirst($invoice->payment_status)); ?></span>
                                 </td>
-                                <td class="text-end">R {{ number_format($invoice->amount_paid ?? 0, 2) }}</td>
-                                <td class="text-center">{{ $invoice->created_at->format('d/m/Y') }}</td>
+                                <td class="text-end">R <?php echo e(number_format($invoice->amount_paid ?? 0, 2)); ?></td>
+                                <td class="text-center"><?php echo e($invoice->created_at->format('d/m/Y')); ?></td>
                             </tr>
-                        @endforeach
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </tbody>
                 </table>
                 
@@ -275,7 +274,7 @@
             // Clear filters button
             $('#clearFilters').on('click', function() {
                 $('#filterForm')[0].reset();
-                window.location.href = '{{ route('invoices.index') }}';
+                window.location.href = '<?php echo e(route('invoices.index')); ?>';
             });
 
             // Filter function
@@ -283,7 +282,7 @@
                 const formData = $('#filterForm').serialize();
 
                 $.ajax({
-                    url: '{{ route('invoices.index') }}',
+                    url: '<?php echo e(route('invoices.index')); ?>',
                     type: 'GET',
                     data: formData,
                     beforeSend: function() {
@@ -341,50 +340,45 @@
             initializeRowClickHandlers();
         });
     </script>
-@endpush
+<?php $__env->stopPush(); ?>
 
-@section('content')
+<?php $__env->startSection('content'); ?>
     <div class="container-fluid py-4">
         <div class="d-flex justify-content-between align-items-center mb-3">
             <div class="d-flex align-items-center">
                 <h4 class="mb-0 me-3">Invoices</h4>
                 </div>
-            {{-- <div class="d-flex gap-2 flex-wrap">
-                <!-- New Invoice Button -->
-                <button type="button" class="btn btn-primary-light btn-wave me-2 waves-effect waves-light" id="openCreateInvoiceModal"
-                    title="Create New Invoice">
-                    <i class="ri-file-add-line me-1"></i>New Invoice
-                    </button>
-            </div> --}}
+            
     </div>
 
-        {{-- Filters --}}
+        
         <div class="card shadow-sm mb-3">
                 <div class="card-body">
-                <form id="filterForm" method="GET" action="{{ route('invoices.index') }}">
+                <form id="filterForm" method="GET" action="<?php echo e(route('invoices.index')); ?>">
                     <div class="row g-2">
                         <div class="col-md-4">
                             <input type="text" name="search" id="searchInput" class="form-control"
-                                placeholder="Search by invoice number, customer..." value="{{ request('search') }}">
+                                placeholder="Search by invoice number, customer..." value="<?php echo e(request('search')); ?>">
                         </div>
                         <div class="col-md-3">
                             <select name="status" id="statusFilter" class="form-select">
                                 <option value="">All Status</option>
-                                <option value="draft" {{ request('status') == 'draft' ? 'selected' : '' }}>Draft</option>
-                                <option value="posted" {{ request('status') == 'posted' ? 'selected' : '' }}>Posted</option>
-                                <option value="paid" {{ request('status') == 'paid' ? 'selected' : '' }}>Paid</option>
-                                <option value="partial" {{ request('status') == 'partial' ? 'selected' : '' }}>Partial</option>
-                                <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                                <option value="draft" <?php echo e(request('status') == 'draft' ? 'selected' : ''); ?>>Draft</option>
+                                <option value="posted" <?php echo e(request('status') == 'posted' ? 'selected' : ''); ?>>Posted</option>
+                                <option value="paid" <?php echo e(request('status') == 'paid' ? 'selected' : ''); ?>>Paid</option>
+                                <option value="partial" <?php echo e(request('status') == 'partial' ? 'selected' : ''); ?>>Partial</option>
+                                <option value="cancelled" <?php echo e(request('status') == 'cancelled' ? 'selected' : ''); ?>>Cancelled</option>
                             </select>
                         </div>
                         <div class="col-md-3">
                             <select name="customer" id="customerFilter" class="form-select">
                                 <option value="">All Customers</option>
-                                @foreach($customers as $customer)
-                                    <option value="{{ $customer->id }}" {{ request('customer') == $customer->id ? 'selected' : '' }}>
-                                        {{ $customer->name }}
+                                <?php $__currentLoopData = $customers; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $customer): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo e($customer->id); ?>" <?php echo e(request('customer') == $customer->id ? 'selected' : ''); ?>>
+                                        <?php echo e($customer->name); ?>
+
                                     </option>
-                                @endforeach
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </select>
                         </div>
                         <div class="col-md-1">
@@ -398,13 +392,13 @@
         </div>
     </div>
 
-        {{-- Invoices Table --}}
+        
         <div class="card shadow-sm">
                 <div class="card-body">
                 <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-3">
                     <div class="card-title">
                         Invoices<span
-                            class="badge bg-light text-default rounded ms-1 fs-12 align-middle">{{ $invoices->total() }}</span>
+                            class="badge bg-light text-default rounded ms-1 fs-12 align-middle"><?php echo e($invoices->total()); ?></span>
                     </div>
                     <div class="d-flex flex-wrap gap-2">
                         <!-- Print & Export Dropdown -->
@@ -420,13 +414,13 @@
                                 <li>
                                     <hr class="dropdown-divider">
                                 </li>
-                                <li><a class="dropdown-item" href="{{ route('invoices.export', ['format' => 'pdf']) }}">
+                                <li><a class="dropdown-item" href="<?php echo e(route('invoices.export', ['format' => 'pdf'])); ?>">
                                         <i class="ri-file-pdf-line me-2 text-danger"></i>Export as PDF
                                     </a></li>
-                                <li><a class="dropdown-item" href="{{ route('invoices.export', ['format' => 'csv']) }}">
+                                <li><a class="dropdown-item" href="<?php echo e(route('invoices.export', ['format' => 'csv'])); ?>">
                                         <i class="ri-file-text-line me-2 text-info"></i>Export as CSV
                                     </a></li>
-                                <li><a class="dropdown-item" href="{{ route('invoices.export', ['format' => 'excel']) }}">
+                                <li><a class="dropdown-item" href="<?php echo e(route('invoices.export', ['format' => 'excel'])); ?>">
                                         <i class="ri-file-excel-line me-2 text-success"></i>Export as Excel
                                     </a></li>
                             </ul>
@@ -450,11 +444,11 @@
                                 </tr>
                             </thead>
                             <tbody>
-                            @forelse ($invoices as $invoice)
-                                <tr class="clickable-row" data-invoice-id="{{ $invoice->id }}" style="cursor: pointer;">
-                                    <td>{{ $loop->iteration + ($invoices->currentPage() - 1) * $invoices->perPage() }}</td>
+                            <?php $__empty_1 = true; $__currentLoopData = $invoices; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $invoice): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                                <tr class="clickable-row" data-invoice-id="<?php echo e($invoice->id); ?>" style="cursor: pointer;">
+                                    <td><?php echo e($loop->iteration + ($invoices->currentPage() - 1) * $invoices->perPage()); ?></td>
 
-                                    {{-- Invoice Details --}}
+                                    
                                     <td>
                                         <div class="d-flex">
                                             <span class="avatar avatar-md avatar-square bg-primary-transparent p-2">
@@ -462,110 +456,112 @@
                                             </span>
                                             <div class="ms-2">
                                                 <p class="fw-semibold mb-0 d-flex align-items-center">
-                                                    {{ $invoice->invoice_number }}
+                                                    <?php echo e($invoice->invoice_number); ?>
+
                                                 </p>
                                                 <p class="fs-12 text-muted mb-0">Created:
-                                                    {{ $invoice->created_at->format('d M Y') }}</p>
-                                        @if($invoice->quote_id)
-                                                    <p class="fs-12 text-muted mb-0">From Quote: {{ $invoice->quote->quote_number ?? '#'.$invoice->quote_id }}</p>
-                                                @endif
+                                                    <?php echo e($invoice->created_at->format('d M Y')); ?></p>
+                                        <?php if($invoice->quote_id): ?>
+                                                    <p class="fs-12 text-muted mb-0">From Quote: <?php echo e($invoice->quote->quote_number ?? '#'.$invoice->quote_id); ?></p>
+                                                <?php endif; ?>
                                             </div>
                                         </div>
                                     </td>
 
-                                    {{-- Customer --}}
+                                    
                                     <td>
                                         <div>
-                                            <p class="fw-semibold mb-0">{{ $invoice->customer->name ?? ($invoice->customer_name ?? 'Cash Sale') }}</p>
-                                            @if ($invoice->customer)
-                                                <p class="fs-12 text-muted mb-0">{{ $invoice->customer->email }}</p>
-                                            @elseif($invoice->customer_phone)
-                                                <p class="fs-12 text-muted mb-0">{{ $invoice->customer_phone }}</p>
-                                        @endif
+                                            <p class="fw-semibold mb-0"><?php echo e($invoice->customer->name ?? ($invoice->customer_name ?? 'Cash Sale')); ?></p>
+                                            <?php if($invoice->customer): ?>
+                                                <p class="fs-12 text-muted mb-0"><?php echo e($invoice->customer->email); ?></p>
+                                            <?php elseif($invoice->customer_phone): ?>
+                                                <p class="fs-12 text-muted mb-0"><?php echo e($invoice->customer_phone); ?></p>
+                                        <?php endif; ?>
                                         </div>
                                     </td>
 
-                                    {{-- Vehicle --}}
+                                    
                                     <td>
-                                        @if ($invoice->vehicle_make)
-                                            <p class="mb-0">{{ $invoice->vehicle_make }} {{ $invoice->vehicle_model }}</p>
-                                            @if ($invoice->vehicle_reg)
-                                                <p class="fs-12 text-muted mb-0">Reg: {{ $invoice->vehicle_reg }}</p>
-                                            @endif
-                                        @else
+                                        <?php if($invoice->vehicle_make): ?>
+                                            <p class="mb-0"><?php echo e($invoice->vehicle_make); ?> <?php echo e($invoice->vehicle_model); ?></p>
+                                            <?php if($invoice->vehicle_reg): ?>
+                                                <p class="fs-12 text-muted mb-0">Reg: <?php echo e($invoice->vehicle_reg); ?></p>
+                                            <?php endif; ?>
+                                        <?php else: ?>
                                             <span class="text-muted">-</span>
-                                        @endif
+                                        <?php endif; ?>
                                     </td>
 
-                                    {{-- Items Count --}}
+                                    
                                     <td>
-                                        <span class="badge bg-info-transparent rounded-pill">{{ $invoice->items->count() }}
+                                        <span class="badge bg-info-transparent rounded-pill"><?php echo e($invoice->items->count()); ?>
+
                                             items</span>
                                     </td>
 
-                                    {{-- Grand Total --}}
+                                    
                                     <td>
                                         <span class="fw-bold text-success">R
-                                            {{ number_format($invoice->grand_total ?? 0, 2) }}</span>
+                                            <?php echo e(number_format($invoice->grand_total ?? 0, 2)); ?></span>
                                     </td>
 
-                                    {{-- Paid Amount --}}
+                                    
                                     <td>
                                         <span class="fw-semibold text-primary">R
-                                            {{ number_format($invoice->amount_paid ?? 0, 2) }}</span>
+                                            <?php echo e(number_format($invoice->amount_paid ?? 0, 2)); ?></span>
                                     </td>
 
-                                    {{-- Balance --}}
+                                    
                                     <td>
-                                        @php
+                                        <?php
                                             $balance = $invoice->balance_due ?? 0;
-                                        @endphp
-                                        <span class="fw-semibold {{ $balance > 0 ? 'text-danger' : 'text-success' }}">R
-                                            {{ number_format($balance, 2) }}</span>
+                                        ?>
+                                        <span class="fw-semibold <?php echo e($balance > 0 ? 'text-danger' : 'text-success'); ?>">R
+                                            <?php echo e(number_format($balance, 2)); ?></span>
                                     </td>
 
-                                    {{-- Status --}}
+                                    
                                     <td>
-                                        @if ($invoice->payment_status === 'draft')
+                                        <?php if($invoice->payment_status === 'draft'): ?>
                                             <span class="badge rounded-pill bg-warning-transparent">Draft</span>
-                                        @elseif($invoice->payment_status === 'posted')
+                                        <?php elseif($invoice->payment_status === 'posted'): ?>
                                             <span class="badge rounded-pill bg-info-transparent">Posted</span>
-                                        @elseif($invoice->payment_status === 'paid')
+                                        <?php elseif($invoice->payment_status === 'paid'): ?>
                                             <span class="badge rounded-pill bg-success-transparent">Paid</span>
-                                        @elseif($invoice->payment_status === 'unpaid')
+                                        <?php elseif($invoice->payment_status === 'unpaid'): ?>
                                             <span class="badge rounded-pill bg-danger-transparent">Unpaid</span>
-                                        @elseif($invoice->payment_status === 'partially_paid')
+                                        <?php elseif($invoice->payment_status === 'partially_paid'): ?>
                                             <span class="badge rounded-pill bg-warning-transparent">Partially Paid</span>
-                                        @elseif($invoice->payment_status === 'partial')
+                                        <?php elseif($invoice->payment_status === 'partial'): ?>
                                             <span class="badge rounded-pill bg-warning-transparent">Partial</span>
-                                        @elseif($invoice->payment_status === 'cancelled')
+                                        <?php elseif($invoice->payment_status === 'cancelled'): ?>
                                             <span class="badge rounded-pill bg-danger-transparent">Cancelled</span>
-                                        @else
-                                            <span class="badge rounded-pill bg-light">{{ ucfirst($invoice->payment_status) }}</span>
-                                        @endif
+                                        <?php else: ?>
+                                            <span class="badge rounded-pill bg-light"><?php echo e(ucfirst($invoice->payment_status)); ?></span>
+                                        <?php endif; ?>
                                     </td>
 
-                                    {{-- Actions --}}
+                                    
                                     <td class="text-end">
                                         <div class="btn-list">
                                             <!-- View -->
                                             <button class="btn btn-sm btn-info-light btn-icon openViewInvoiceModalBtn"
-                                                data-id="{{ $invoice->id }}" title="View Details">
+                                                data-id="<?php echo e($invoice->id); ?>" title="View Details">
                                                 <i class="ri-eye-line"></i>
                                             </button>
 
                                           
 
                                             <!-- Return (Only if Posted/Paid/Partially Paid) -->
-                                            @if(in_array($invoice->payment_status, ['posted', 'paid', 'partially_paid', 'unpaid']))
-                                                <button type="button" onclick="openReturnModal('{{ $invoice->invoice_number }}')"
+                                            <?php if(in_array($invoice->payment_status, ['posted', 'paid', 'partially_paid', 'unpaid'])): ?>
+                                                <button type="button" onclick="openReturnModal('<?php echo e($invoice->invoice_number); ?>')"
                                                     class="btn btn-sm btn-warning-light btn-icon" title="Process Return">
                                                     <i class="ri-refund-2-line"></i>
                                                 </button>
-                                            @endif
+                                            <?php endif; ?>
 
                                               <!-- Actions Dropdown -->
-                                              {{-- <div class="btn-group" role="group"> --}}
+                                              
                                                 <button type="button" class="btn btn-sm btn-primary-light" 
                                                     data-bs-toggle="dropdown" aria-expanded="false" title="More Actions">
                                                     <i class="ri-more-2-fill"></i>
@@ -573,47 +569,47 @@
                                                 <ul class="dropdown-menu">
                                                     <!-- Print -->
                                                     <li>
-                                                        <a class="dropdown-item" href="javascript:void(0);" onclick="printInvoice({{ $invoice->id }})">
+                                                        <a class="dropdown-item" href="javascript:void(0);" onclick="printInvoice(<?php echo e($invoice->id); ?>)">
                                                             <i class="ri-printer-line me-2"></i>Print Invoice
                                                         </a>
                                                     </li>
                                                     <!-- Download PDF -->
                                                     <li>
-                                                        <a class="dropdown-item" href="{{ route('invoices.pdf', $invoice->id) }}" target="_blank">
+                                                        <a class="dropdown-item" href="<?php echo e(route('invoices.pdf', $invoice->id)); ?>" target="_blank">
                                                             <i class="ri-file-pdf-line me-2"></i>Download PDF
                                                         </a>
                                                     </li>
                                                     <!-- Picking List -->
                                                     <li>
-                                                        <a class="dropdown-item" href="{{ route('invoices.picking-list', $invoice->id) }}" target="_blank">
+                                                        <a class="dropdown-item" href="<?php echo e(route('invoices.picking-list', $invoice->id)); ?>" target="_blank">
                                                             <i class="ri-file-list-3-line me-2"></i>Picking List
                                                         </a>
                                                     </li>
                                                     <li><hr class="dropdown-divider"></li>
                                                     <!-- Send WhatsApp -->
                                                     <li>
-                                                        <a class="dropdown-item" href="javascript:void(0);" onclick="sendWhatsAppFromList({{ $invoice->id }})">
+                                                        <a class="dropdown-item" href="javascript:void(0);" onclick="sendWhatsAppFromList(<?php echo e($invoice->id); ?>)">
                                                             <i class="ri-whatsapp-line me-2 text-success"></i>Send WhatsApp
                                                         </a>
                                                     </li>
                                                     <!-- Send Email -->
                                                     <li>
-                                                        <a class="dropdown-item" href="javascript:void(0);" onclick="sendEmailFromList({{ $invoice->id }})">
+                                                        <a class="dropdown-item" href="javascript:void(0);" onclick="sendEmailFromList(<?php echo e($invoice->id); ?>)">
                                                             <i class="ri-mail-line me-2 text-info"></i>Send Email
                                                         </a>
                                                     </li>
                                                 </ul>
-                                            {{-- </div> --}}
+                                            
                                         </div>
                                     </td>
                                 </tr>
 
-                                {{-- Delete Modal --}}
-                                <div class="modal fade" id="deleteInvoice{{ $invoice->id }}" tabindex="-1">
+                                
+                                <div class="modal fade" id="deleteInvoice<?php echo e($invoice->id); ?>" tabindex="-1">
                                     <div class="modal-dialog">
-                                        <form method="POST" action="{{ route('invoices.destroy', $invoice->id) }}">
-                                            @csrf
-                                            @method('DELETE')
+                                        <form method="POST" action="<?php echo e(route('invoices.destroy', $invoice->id)); ?>">
+                                            <?php echo csrf_field(); ?>
+                                            <?php echo method_field('DELETE'); ?>
                                             <div class="modal-content">
                                                 <div class="modal-header">
                                                     <h5 class="modal-title">Confirm Delete</h5>
@@ -621,7 +617,7 @@
                                                 </div>
                                                 <div class="modal-body">
                                                     Are you sure you want to delete invoice
-                                                    <strong>{{ $invoice->invoice_number }}</strong>?
+                                                    <strong><?php echo e($invoice->invoice_number); ?></strong>?
                                                 </div>
                                                 <div class="modal-footer">
                                                     <button type="button" class="btn btn-light"
@@ -632,20 +628,21 @@
                                         </form>
                                     </div>
                                 </div>
-                                @empty
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                                 <tr>
                                     <td colspan="10" class="text-center text-muted py-5">
                                         <i class="ri-file-list-line ri-3x mb-3 d-block"></i>
                                         <p class="mb-0">No invoices found</p>
                                     </td>
                                 </tr>
-                                @endforelse
+                                <?php endif; ?>
                             </tbody>
                         </table>
                     </div>
                         </div>
             <div class="card-footer">
-                {{ $invoices->appends(request()->query())->links() }}
+                <?php echo e($invoices->appends(request()->query())->links()); ?>
+
         </div>
     </div>
 </div>
@@ -657,9 +654,9 @@
     </div>
 </div>
 
-@endsection
+<?php $__env->stopSection(); ?>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
 <script>
         $(function() {
             // Create Invoice Modal
@@ -673,7 +670,7 @@
                 $('#invoicesTable').css('display', 'block').show();
                 $('.table-responsive').not('#invoiceModal .table-responsive').show();
                 
-                $.get("{{ route('invoices.create') }}", function(html) {
+                $.get("<?php echo e(route('invoices.create')); ?>", function(html) {
                     console.log('Modal HTML loaded');
                     $('#invoiceModalContent').html(html);
                     
@@ -695,7 +692,7 @@
             $(document).on('click', '.openViewInvoiceModalBtn', function(e) {
                 e.stopPropagation();
                 var id = $(this).data('id');
-                $.get("{{ route('invoices.view-modal', ':id') }}".replace(':id', id), function(html) {
+                $.get("<?php echo e(route('invoices.view-modal', ':id')); ?>".replace(':id', id), function(html) {
                     $('#invoiceModalContent').html(html);
                     $('#invoiceModal').modal('show');
                 });
@@ -705,7 +702,7 @@
             $(document).on('click', '.openEditInvoiceModalBtn', function(e) {
                 e.stopPropagation();
                 var id = $(this).data('id');
-                $.get("{{ route('invoices.edit-modal', ':id') }}".replace(':id', id), function(html) {
+                $.get("<?php echo e(route('invoices.edit-modal', ':id')); ?>".replace(':id', id), function(html) {
                     $('#invoiceModalContent').html(html);
                     $('#invoiceModal').modal('show');
                 });
@@ -735,7 +732,7 @@
             // Print Invoice Function - Opens print dialog directly
             window.printInvoice = function(invoiceId) {
                 // Create a hidden iframe
-                const printUrl = "{{ url('invoices') }}/" + invoiceId + "/print";
+                const printUrl = "<?php echo e(url('invoices')); ?>/" + invoiceId + "/print";
                 const iframe = document.createElement('iframe');
                 iframe.style.display = 'none';
                 iframe.src = printUrl;
@@ -775,13 +772,13 @@
             window.sendWhatsAppFromList = function(invoiceId) {
                 toastr.info('Preparing WhatsApp...');
                 
-                const url = '{{ route("invoices.whatsapp", ":id") }}'.replace(':id', invoiceId);
+                const url = '<?php echo e(route("invoices.whatsapp", ":id")); ?>'.replace(':id', invoiceId);
                 
                 fetch(url, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>'
                     }
                 })
                 .then(response => response.json())
@@ -822,13 +819,13 @@
             window.sendEmailFromList = function(invoiceId) {
                 toastr.info('Sending email...');
                 
-                const url = '{{ route("invoices.email", ":id") }}'.replace(':id', invoiceId);
+                const url = '<?php echo e(route("invoices.email", ":id")); ?>'.replace(':id', invoiceId);
                 
                 fetch(url, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>'
                     }
                 })
                 .then(response => response.json())
@@ -874,7 +871,9 @@
             }
         });
     </script>
-@endpush
+<?php $__env->stopPush(); ?>
 
-{{-- Include Return Modal --}}
-@include('credit-notes.partials.return_modal')
+
+<?php echo $__env->make('credit-notes.partials.return_modal', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\MMP\resources\views/invoices/index.blade.php ENDPATH**/ ?>

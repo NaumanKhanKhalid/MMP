@@ -161,15 +161,7 @@
             <h6 class="text-primary border-bottom pb-2 mb-3"><i class="ri-bank-card-line me-2"></i> Account Details</h6>
             
             <table class="table table-sm table-borderless">
-                <tr>
-                    <td width="40%" class="fw-bold text-muted">Customer Type:</td>
-                    <td>
-                        <span class="badge bg-{{ $customer->customer_type === 'business' ? 'success' : 'secondary' }}">
-                            {{ ucfirst($customer->customer_type) }}
-                        </span>
-                    </td>
-                </tr>
-                @if($customer->customer_type === 'credit' && $customer->credit_limit > 0)
+                @if($customer->terms === 'credit' && $customer->credit_limit > 0)
                 <tr>
                     <td class="fw-bold text-muted">Credit Limit:</td>
                     <td>

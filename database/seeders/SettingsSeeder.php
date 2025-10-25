@@ -53,6 +53,10 @@ class SettingsSeeder extends Seeder
             ['key' => 'invoice_footer', 'value' => 'Thank you for your business!', 'type' => 'string', 'group' => 'pos', 'label' => 'Invoice Footer'],
             ['key' => 'show_bank_on_quotes', 'value' => 'false', 'type' => 'boolean', 'group' => 'pos', 'label' => 'Show Bank Details on Quotes'],
             ['key' => 'auto_merge_scans', 'value' => 'true', 'type' => 'boolean', 'group' => 'pos', 'label' => 'Auto-merge Duplicate Scans'],
+            ['key' => 'discount_type', 'value' => 'flat', 'type' => 'string', 'group' => 'pos', 'label' => 'Discount Type'],
+            ['key' => 'admin_max_discount', 'value' => '100', 'type' => 'decimal', 'group' => 'pos', 'label' => 'Admin Max Discount (%)'],
+            ['key' => 'manager_max_discount', 'value' => '25', 'type' => 'decimal', 'group' => 'pos', 'label' => 'Manager Max Discount (%)'],
+            ['key' => 'staff_max_discount', 'value' => '10', 'type' => 'decimal', 'group' => 'pos', 'label' => 'Staff Max Discount (%)'],
             
             // Email Settings
             ['key' => 'email_provider', 'value' => 'smtp', 'type' => 'string', 'group' => 'email', 'label' => 'Email Provider'],
@@ -66,6 +70,7 @@ class SettingsSeeder extends Seeder
             
             // WhatsApp Settings
             ['key' => 'whatsapp_enabled', 'value' => 'false', 'type' => 'boolean', 'group' => 'whatsapp', 'label' => 'WhatsApp Enabled'],
+            ['key' => 'whatsapp_share_type', 'value' => 'web', 'type' => 'string', 'group' => 'whatsapp', 'label' => 'WhatsApp Share Type'],
             ['key' => 'whatsapp_provider', 'value' => '', 'type' => 'string', 'group' => 'whatsapp', 'label' => 'WhatsApp Provider'],
             ['key' => 'whatsapp_api_key', 'value' => '', 'type' => 'string', 'group' => 'whatsapp', 'label' => 'API Key'],
             ['key' => 'whatsapp_phone_number', 'value' => '', 'type' => 'string', 'group' => 'whatsapp', 'label' => 'WhatsApp Number'],

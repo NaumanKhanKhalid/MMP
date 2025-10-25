@@ -205,6 +205,11 @@ class SettingsController extends Controller
             'invoice_footer' => 'nullable|string',
             'show_bank_on_quotes' => 'required|boolean',
             'auto_merge_scans' => 'required|boolean',
+            'discount_type' => 'required|in:flat,percentage',
+            'admin_max_discount' => 'required|numeric|min:0|max:100',
+            'manager_max_discount' => 'required|numeric|min:0|max:100',
+            'staff_max_discount' => 'required|numeric|min:0|max:100',
+            'whatsapp_share_type' => 'required|in:web,desktop',
         ]);
 
         Setting::set('default_price_tier', $validated['default_price_tier'], 'string', 'pos', 'Default Price Tier');
@@ -212,6 +217,11 @@ class SettingsController extends Controller
         Setting::set('invoice_footer', $validated['invoice_footer'], 'string', 'pos', 'Invoice Footer');
         Setting::set('show_bank_on_quotes', $validated['show_bank_on_quotes'], 'boolean', 'pos', 'Show Bank on Quotes');
         Setting::set('auto_merge_scans', $validated['auto_merge_scans'], 'boolean', 'pos', 'Auto-merge Scans');
+        Setting::set('discount_type', $validated['discount_type'], 'string', 'pos', 'Discount Type');
+        Setting::set('admin_max_discount', $validated['admin_max_discount'], 'decimal', 'pos', 'Admin Max Discount');
+        Setting::set('manager_max_discount', $validated['manager_max_discount'], 'decimal', 'pos', 'Manager Max Discount');
+        Setting::set('staff_max_discount', $validated['staff_max_discount'], 'decimal', 'pos', 'Staff Max Discount');
+        Setting::set('whatsapp_share_type', $validated['whatsapp_share_type'], 'string', 'whatsapp', 'WhatsApp Share Type');
 
         Setting::clearCache();
 

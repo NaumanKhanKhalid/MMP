@@ -23,14 +23,7 @@
                         <label class="form-label fw-bold">Customer Code</label>
                         <input type="text" name="customer_code" class="form-control" placeholder="Auto-generated">
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label fw-bold">Customer Type <span class="text-danger">*</span></label>
-                        <select name="customer_type" class="form-control" required id="customerTypeSelect">
-                            <option value="credit">Credit Customer</option>
-                            <option value="cash">Cash Customer</option>
-                        </select>
-                    </div>
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-12 mb-3">
                         <label class="form-label fw-bold">Category <span class="text-danger">*</span></label>
                         <select name="customer_category" class="form-control" required id="customerCategorySelect">
                             <option value="individual">Individual</option>
@@ -96,7 +89,7 @@
                         <label class="form-label fw-bold">Payment Terms <span class="text-danger">*</span></label>
                         <select name="terms" class="form-control" required id="paymentTermsSelect">
                             <option value="cash">Cash</option>
-                            <option value="on_account">On Account</option>
+                            <option value="credit">Credit</option>
                         </select>
                     </div>
                     <div class="col-md-6 mb-3">
@@ -180,14 +173,12 @@ $(document).ready(function() {
         }
     });
 
-    // Show/hide credit limit based on customer type
-    $('#customerTypeSelect').on('change', function() {
+    // Show/hide credit limit based on payment terms
+    $('#paymentTermsSelect').on('change', function() {
         if ($(this).val() === 'credit') {
             $('#creditLimitField').show();
-            $('#paymentTermsSelect').val('on_account');
         } else {
             $('#creditLimitField').hide();
-            $('#paymentTermsSelect').val('cash');
         }
     });
 

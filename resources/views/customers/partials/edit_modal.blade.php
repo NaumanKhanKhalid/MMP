@@ -24,14 +24,7 @@
                         <label class="form-label fw-bold">Customer Code</label>
                         <input type="text" name="customer_code" class="form-control" value="{{ $customer->customer_code }}">
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label fw-bold">Customer Type <span class="text-danger">*</span></label>
-                        <select name="customer_type" class="form-control" required id="editCustomerTypeSelect">
-                            <option value="cash" {{ $customer->customer_type === 'cash' ? 'selected' : '' }}>Cash Customer</option>
-                            <option value="credit" {{ $customer->customer_type === 'credit' ? 'selected' : '' }}>Credit Customer</option>
-                        </select>
-                    </div>
-                    <div class="col-md-6 mb-3">
+                    <div class="col-md-12 mb-3">
                         <label class="form-label fw-bold">Category <span class="text-danger">*</span></label>
                         <select name="customer_category" class="form-control" required id="editCustomerCategorySelect">
                             <option value="individual" {{ $customer->customer_category === 'individual' ? 'selected' : '' }}>Individual</option>
@@ -153,7 +146,7 @@
                         <label class="form-label fw-bold">Payment Terms <span class="text-danger">*</span></label>
                         <select name="terms" class="form-control" required id="editPaymentTermsSelect">
                             <option value="cash" {{ $customer->terms === 'cash' ? 'selected' : '' }}>Cash</option>
-                            <option value="on_account" {{ $customer->terms === 'on_account' ? 'selected' : '' }}>On Account</option>
+                            <option value="credit" {{ $customer->terms === 'credit' ? 'selected' : '' }}>Credit</option>
                         </select>
                     </div>
                     <div class="col-md-6 mb-3">
@@ -219,16 +212,21 @@ $(document).ready(function() {
         }
     });
 
-    // Show/hide credit limit based on customer type
-    $('#editCustomerTypeSelect').on('change', function() {
+    // Show/hide credit limit based on payment terms
+    $('#editPaymentTermsSelect').on('change', function() {
         if ($(this).val() === 'credit') {
             $('#editCreditLimitField').show();
-            $('#editPaymentTermsSelect').val('on_account');
         } else {
             $('#editCreditLimitField').hide();
-            $('#editPaymentTermsSelect').val('cash');
         }
     });
+    
+    // Initialize credit limit visibility on load
+    if ($('#editPaymentTermsSelect').val() === 'credit') {
+        $('#editCreditLimitField').show();
+    } else {
+        $('#editCreditLimitField').hide();
+    }
 
     // Initialize existing vehicle Select2
     $('.existing-vehicle-make-select').each(function() {

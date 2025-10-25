@@ -1422,7 +1422,7 @@ function showConvertToInvoiceModal(jobCardId) {
                 // Show/hide payment options based on customer type
                 if (currentCustomerType === 'credit') {
                     $('#invoiceOnAccountOption').show();
-                    $('#invoicePaymentMethod').val('on_account');
+                    $('#invoicePaymentMethod').val('credit');
                     $('#invoiceAmountPaid').val('0.00');
                     $('#cashCustomerWarning').hide();
                     
@@ -1465,7 +1465,7 @@ function showConvertToInvoiceModal(jobCardId) {
 function updateInvoicePaymentFields() {
     const paymentMethod = $('#invoicePaymentMethod').val();
     
-    if (paymentMethod === 'on_account') {
+    if (paymentMethod === 'credit') {
         $('#invoiceAmountPaidRow').hide();
         $('#invoiceChangeRow').hide();
         $('#invoiceAmountPaid').val('0.00');
@@ -1508,9 +1508,9 @@ function confirmConvertToInvoice() {
     const paymentReference = $('#invoicePaymentReference').val();
     
     // Validation
-    if (paymentMethod === 'on_account') {
+    if (paymentMethod === 'credit') {
         if (currentCustomerType !== 'credit') {
-            toastr.error('Only credit customers can use on account payment');
+            toastr.error('Only credit customers can use credit payment');
             return;
         }
     } else {

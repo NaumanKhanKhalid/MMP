@@ -453,10 +453,75 @@
                                         </div>
                                     </div>
 
+                                    <!-- Discount Settings -->
+                                    <div class="col-md-12 mt-4">
+                                        <h6 class="border-bottom pb-2">
+                                            <i class="ri-percent-line me-2"></i>Discount Settings
+                                        </h6>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">Discount Type</label>
+                                        <select name="discount_type" class="form-select">
+                                            <option value="flat" {{ ($posSettings['discount_type'] ?? 'flat') === 'flat' ? 'selected' : '' }}>Flat Amount (R)</option>
+                                            <option value="percentage" {{ ($posSettings['discount_type'] ?? 'flat') === 'percentage' ? 'selected' : '' }}>Percentage (%)</option>
+                                        </select>
+                                        <small class="text-muted">How discounts will be calculated in POS</small>
+                                    </div>
+
+                                    <div class="col-md-12 mt-3">
+                                        <h6 class="text-muted small">Role-Based Discount Limits (%)</h6>
+                                        <p class="text-muted small mb-3">Maximum discount percentage each role can apply</p>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label">Admin Maximum Discount (%)</label>
+                                        <input type="number" name="admin_max_discount" class="form-control" 
+                                               value="{{ $posSettings['admin_max_discount'] ?? 100 }}" min="0" max="100" step="0.01">
+                                        <small class="text-muted">Default: 100% (unlimited)</small>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label">Manager Maximum Discount (%)</label>
+                                        <input type="number" name="manager_max_discount" class="form-control" 
+                                               value="{{ $posSettings['manager_max_discount'] ?? 25 }}" min="0" max="100" step="0.01">
+                                        <small class="text-muted">Default: 25%</small>
+                                    </div>
+
+                                    <div class="col-md-4">
+                                        <label class="form-label">Staff Maximum Discount (%)</label>
+                                        <input type="number" name="staff_max_discount" class="form-control" 
+                                               value="{{ $posSettings['staff_max_discount'] ?? 10 }}" min="0" max="100" step="0.01">
+                                        <small class="text-muted">Default: 10%</small>
+                                    </div>
+
                                     <div class="col-md-12">
                                         <label class="form-label">Invoice Footer Text</label>
                                         <textarea name="invoice_footer" class="form-control" rows="3">{{ $posSettings['invoice_footer'] ?? 'Thank you for your business!' }}</textarea>
                                         <small class="text-muted">Text shown at the bottom of invoices and quotes</small>
+                                    </div>
+
+                                    <!-- WhatsApp Settings -->
+                                    <div class="col-md-12 mt-4">
+                                        <h6 class="border-bottom pb-2">
+                                            <i class="ri-whatsapp-line me-2 text-success"></i>WhatsApp Share Settings
+                                        </h6>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-semibold">WhatsApp Share Type</label>
+                                        <select name="whatsapp_share_type" class="form-select">
+                                            <option value="web" {{ ($posSettings['whatsapp_share_type'] ?? 'web') === 'web' ? 'selected' : '' }}>
+                                                WhatsApp Web (Browser) - Recommended
+                                            </option>
+                                            <option value="desktop" {{ ($posSettings['whatsapp_share_type'] ?? 'web') === 'desktop' ? 'selected' : '' }}>
+                                                WhatsApp Desktop Application
+                                            </option>
+                                        </select>
+                                        <small class="text-muted">
+                                            <strong>Web:</strong> Opens in browser, message pre-filled reliably<br>
+                                            <strong>Desktop:</strong> Opens desktop app, may not pre-fill message
+                                        </small>
                                     </div>
 
                                     <div class="col-md-12 text-end mt-4">
@@ -641,6 +706,11 @@ document.getElementById('posForm').addEventListener('submit', function(e) {
     formData.append('auto_merge_scans', document.getElementById('autoMergeScans').checked ? 1 : 0);
     formData.append('show_bank_on_quotes', document.getElementById('showBankOnQuotes').checked ? 1 : 0);
     formData.append('invoice_footer', this.invoice_footer.value);
+    formData.append('discount_type', this.discount_type.value);
+    formData.append('admin_max_discount', this.admin_max_discount.value);
+    formData.append('manager_max_discount', this.manager_max_discount.value);
+    formData.append('staff_max_discount', this.staff_max_discount.value);
+    formData.append('whatsapp_share_type', this.whatsapp_share_type.value);
     
     submitFormData(formData, '{{ route('settings.update-pos') }}', 'POS');
 });

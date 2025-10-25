@@ -21,7 +21,13 @@ class POSController extends Controller
      */
     public function index()
     {
-        return view('pos.index');
+        // Get VAT settings from database
+        $vatSettings = [
+            'enabled' => Setting::vatEnabled(),
+            'rate' => Setting::vatRate(),
+        ];
+        
+        return view('pos.index', compact('vatSettings'));
     }
 
     /**
@@ -29,7 +35,7 @@ class POSController extends Controller
      */
     public function getProducts()
     {
-        $products = Product::with(['brand', 'category'])
+        $products = Product::with(['brand', 'category', 'oeNumbers'])
             ->withSum('stockBatches as on_hand_sum', 'qty_left')
             ->withSum('stockBatches as reserved', 'reserved_qty')
             ->where('status', 'active')
@@ -41,6 +47,10 @@ class POSController extends Controller
                     'name' => $product->name,
                     'sku' => $product->sku,
                     'barcode_primary' => $product->barcode_primary,
+                    'description' => $product->description,
+                    'supplier_code' => $product->supplier_code,
+                    'brand_code' => $product->brand_code,
+                    'bin_location' => $product->bin_location,
                     'price_normal' => $product->price_normal,
                     'price_online' => $product->price_online,
                     'price_workshop' => $product->price_workshop,
@@ -51,6 +61,7 @@ class POSController extends Controller
                     'category_id' => $product->category_id,
                     'category_name' => $product->category->name ?? 'Uncategorized',
                     'brand_name' => $product->brand->name ?? 'No Brand',
+                    'oeNumbers' => $product->oeNumbers->pluck('oe_number')->implode(', '),
                 ];
             });
 
@@ -62,9 +73,42 @@ class POSController extends Controller
      */
     public function getCustomers()
     {
-        $customers = Customer::select('id', 'name', 'email', 'phone', 'customer_type', 'credit_limit', 'balance')
+        $customers = Customer::select(
+            'id', 
+            'name', 
+            'customer_code',
+            'email', 
+            'phone', 
+            'address',
+            'city',
+            'postal_code',
+            'country',
+            'terms',
+            'credit_limit', 
+            'balance',
+            'price_tier'
+        )
             ->orderBy('name')
-            ->get();
+            ->get()
+            ->map(function($customer) {
+                return [
+                    'id' => $customer->id,
+                    'name' => $customer->name,
+                    'customer_code' => $customer->customer_code,
+                    'email' => $customer->email,
+                    'phone' => $customer->phone,
+                    'address' => $customer->address,
+                    'city' => $customer->city,
+                    'postal_code' => $customer->postal_code,
+                    'country' => $customer->country,
+                    'terms' => $customer->terms,
+                    'credit_limit' => (float) $customer->credit_limit,
+                    'balance' => (float) $customer->balance,
+                    'outstanding_balance' => (float) $customer->balance,
+                    'available_credit' => (float) ($customer->credit_limit - $customer->balance),
+                    'price_tier' => $customer->price_tier,
+                ];
+            });
 
         return response()->json($customers);
     }
@@ -93,7 +137,12 @@ class POSController extends Controller
             'cart.*.quantity' => 'required|numeric|min:0.001',
             'cart.*.price' => 'required|numeric|min:0',
             'customer_id' => 'nullable|exists:customers,id',
-            'payment_method' => 'required|in:cash,card,eft,on_account',
+            'walk_in_customer' => 'nullable|array',
+            'walk_in_customer.name' => 'nullable|string|max:255',
+            'walk_in_customer.phone' => 'nullable|string|max:20',
+            'walk_in_customer.email' => 'nullable|email|max:255',
+            'walk_in_customer.address' => 'nullable|string|max:500',
+            'payment_method' => 'required|in:cash,card,eft,credit',
             'amount_paid' => 'required|numeric|min:0',
             'payment_reference' => 'nullable|string',
             'vat_enabled' => 'nullable|boolean',
@@ -115,11 +164,11 @@ class POSController extends Controller
             $customer = $customerId ? Customer::find($customerId) : null;
             
             // Validate customer type and payment method
-            if ($paymentMethod === 'on_account') {
-                if (!$customer || $customer->customer_type !== 'credit') {
+            if ($paymentMethod === 'credit') {
+                if (!$customer || $customer->terms !== 'credit') {
                     return response()->json([
                         'success' => false,
-                        'message' => 'Only credit customers can use on account payment'
+                        'message' => 'Only credit customers can use credit payment'
                     ], 400);
                 }
                 
@@ -199,7 +248,7 @@ class POSController extends Controller
                 $warningMessage .= '<small class="text-muted">Sale will proceed with negative stock.</small>';
                 $stockWarning = $warningMessage;
             }
-
+            
             // Calculate VAT
             $vatAmount = 0;
             if ($vatEnabled) {
@@ -208,17 +257,12 @@ class POSController extends Controller
 
             $grandTotal = $subtotal + $vatAmount;
             
-            // Validate payment amount for non-account payments
-            if ($paymentMethod !== 'on_account' && $amountPaid < $grandTotal) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Amount paid must be equal to or greater than total'
-                ], 400);
-            }
+            // No validation needed for cash/card/eft - amount is auto-set to grand total in frontend
+            // Credit payments are handled separately with credit limit validation
 
             // Determine payment status based on amount paid
             $paymentStatus = 'paid'; // Default for cash customers
-            if ($paymentMethod === 'on_account') {
+            if ($paymentMethod === 'credit') {
                 // Credit customer
                 if ($amountPaid == 0) {
                     $paymentStatus = 'unpaid';
@@ -228,17 +272,25 @@ class POSController extends Controller
                     $paymentStatus = 'paid';
                 }
             } else {
-                // Cash/Card/EFT - must pay full amount
+                // Cash/Card/EFT - full amount paid
                 $paymentStatus = 'paid';
             }
 
             // Create invoice
+            // Handle walk-in customer details
+            $walkInCustomer = $request->walk_in_customer;
+            $customerName = $customer ? $customer->name : ($walkInCustomer['name'] ?? 'Walk-in Customer');
+            $customerEmail = $customer ? $customer->email : ($walkInCustomer['email'] ?? null);
+            $customerPhone = $customer ? $customer->phone : ($walkInCustomer['phone'] ?? null);
+            $customerAddress = $customer ? $customer->address : ($walkInCustomer['address'] ?? null);
+            
             $invoice = Invoice::create([
                 'invoice_number' => Invoice::generateInvoiceNumber(),
                 'customer_id' => $customerId,
-                'customer_name' => $customer ? $customer->name : 'Walk-in Customer',
-                'customer_email' => $customer ? $customer->email : null,
-                'customer_phone' => $customer ? $customer->phone : null,
+                'customer_name' => $customerName,
+                'customer_email' => $customerEmail,
+                'customer_phone' => $customerPhone,
+                'customer_address' => $customerAddress,
                 'vehicle_make' => $request->vehicle_make,
                 'vehicle_model' => $request->vehicle_model,
                 'vehicle_reg' => $request->vehicle_reg,
@@ -297,7 +349,7 @@ class POSController extends Controller
             ]);
 
             // Create customer ledger entry for credit customers
-            if ($customer && $customer->customer_type === 'credit') {
+            if ($customer && $customer->terms === 'credit') {
                 \App\Models\CustomerLedger::create([
                     'customer_id' => $customer->id,
                     'transaction_type' => 'invoice',
@@ -427,12 +479,36 @@ class POSController extends Controller
             return response()->json([]);
         }
 
-        $products = Product::with(['brand', 'category'])
+        $products = Product::with(['brand', 'category', 'oeNumbers', 'stockBatches'])
+            ->withSum('stockBatches as on_hand_sum', 'qty_left')
             ->where(function ($q) use ($query) {
+                // Search by Product Name
                 $q->where('name', 'like', "%{$query}%")
+                  // Search by SKU
                   ->orWhere('sku', 'like', "%{$query}%")
+                  // Search by Barcode (Primary and Alternate)
                   ->orWhere('barcode_primary', 'like', "%{$query}%")
-                  ->orWhere('barcode_alternate', 'like', "%{$query}%");
+                  ->orWhere('barcode_alternate', 'like', "%{$query}%")
+                  // Search by Description
+                  ->orWhere('description', 'like', "%{$query}%")
+                  // Search by Supplier Code
+                  ->orWhere('supplier_code', 'like', "%{$query}%")
+                  // Search by Brand Code
+                  ->orWhere('brand_code', 'like', "%{$query}%")
+                  // Search by Bin Location
+                  ->orWhere('bin_location', 'like', "%{$query}%")
+                  // Search by OE Numbers
+                  ->orWhereHas('oeNumbers', function ($oq) use ($query) {
+                      $oq->where('oe_number', 'like', "%{$query}%");
+                  })
+                  // Search by Brand Name
+                  ->orWhereHas('brand', function ($bq) use ($query) {
+                      $bq->where('name', 'like', "%{$query}%");
+                  })
+                  // Search by Category Name
+                  ->orWhereHas('category', function ($cq) use ($query) {
+                      $cq->where('name', 'like', "%{$query}%");
+                  });
             })
             ->where('status', 'active')
             ->limit(10)
@@ -443,11 +519,18 @@ class POSController extends Controller
                     'name' => $product->name,
                     'sku' => $product->sku,
                     'barcode_primary' => $product->barcode_primary,
+                    'description' => $product->description,
+                    'supplier_code' => $product->supplier_code,
+                    'brand_code' => $product->brand_code,
+                    'bin_location' => $product->bin_location,
                     'price_normal' => $product->price_normal,
-                    'on_hand' => $product->on_hand,
-                    'image' => $product->images->first() ? asset('storage/' . $product->images->first()->image_path) : null,
+                    'price_online' => $product->price_online,
+                    'price_workshop' => $product->price_workshop,
+                    'on_hand' => $product->on_hand_sum ?? 0,
+                    'image' => $product->images->first() ? asset('storage/' . $product->images->first()->path) : null,
                     'category_name' => $product->category->name ?? 'Uncategorized',
                     'brand_name' => $product->brand->name ?? 'No Brand',
+                    'oe_numbers' => $product->oeNumbers->pluck('oe_number')->implode(', '),
                 ];
             });
 

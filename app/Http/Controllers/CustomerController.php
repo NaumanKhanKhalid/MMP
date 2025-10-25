@@ -32,9 +32,9 @@ class CustomerController extends Controller
             $query->where('customer_status', request('status'));
         }
 
-        // Filter by type
+        // Filter by terms
         if (request('type')) {
-            $query->where('customer_type', request('type'));
+            $query->where('terms', request('type'));
         }
 
         // Filter by category
@@ -76,12 +76,14 @@ class CustomerController extends Controller
                 'email' => 'nullable|email|max:255|unique:customers,email',
                 'phone' => 'nullable|string|max:20',
                 'address' => 'nullable|string|max:500',
+                'terms' => 'nullable|in:cash,credit,mixed',
+                'credit_limit' => 'nullable|numeric|min:0',
                 'price_tier' => 'nullable|in:normal,online,workshop',
             ]);
 
             // Set defaults for quick add
-            $data['terms'] = 'cash';
-            $data['customer_type'] = 'cash';
+            $data['terms'] = $data['terms'] ?? 'cash';
+            $data['credit_limit'] = $data['credit_limit'] ?? 0;
             $data['customer_category'] = 'individual';
             $data['customer_status'] = 'active';
             $data['price_tier'] = $data['price_tier'] ?? 'normal';
@@ -101,12 +103,11 @@ class CustomerController extends Controller
                 'vehicle_vin' => 'nullable|string|max:100',
                 'vehicle_reg' => 'nullable|string|max:20',
                 'vehicle_mileage' => 'nullable|string|max:20',
-                'terms' => 'required|in:cash,on_account',
+                'terms' => 'required|in:cash,credit,mixed',
                 'credit_limit' => 'nullable|numeric|min:0',
                 'price_tier' => 'required|in:normal,online,workshop',
                 'company_name' => 'nullable|string|max:255',
                 'contact_person' => 'nullable|string|max:255',
-                'customer_type' => 'required|in:cash,credit',
                 'customer_category' => 'required|in:individual,business',
                 'customer_status' => 'required|in:active,inactive',
                 'marketing_consent' => 'boolean',
@@ -196,14 +197,13 @@ class CustomerController extends Controller
             'vehicle_vin' => 'nullable|string|max:100',
             'vehicle_reg' => 'nullable|string|max:20',
             'vehicle_mileage' => 'nullable|string|max:20',
-            'terms' => 'required|in:cash,on_account',
+            'terms' => 'required|in:cash,credit,mixed',
             'credit_limit' => 'nullable|numeric|min:0',
             'price_tier' => 'required|in:normal,online,workshop',
             'tax_number' => 'nullable|string|max:100',
             'date_of_birth' => 'nullable|date',
             'company_name' => 'nullable|string|max:255',
             'contact_person' => 'nullable|string|max:255',
-            'customer_type' => 'required|in:cash,credit',
             'customer_category' => 'required|in:individual,business',
             'customer_status' => 'required|in:active,inactive',
             'marketing_consent' => 'boolean',
@@ -403,7 +403,6 @@ class CustomerController extends Controller
                     'balance' => $customer->balance,
                     'available_credit' => $customer->available_credit,
                     'price_tier' => $customer->price_tier,
-                    'customer_type' => $customer->customer_type,
                     'customer_status' => $customer->customer_status,
                     'vehicle_make' => $customer->vehicle_make,
                     'vehicle_model' => $customer->vehicle_model,
@@ -556,6 +555,41 @@ class CustomerController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Vehicle deleted successfully!',
+        ]);
+    }
+    
+    /**
+     * Get customer vehicles for POS
+     */
+    public function getVehicles($id)
+    {
+        $customer = Customer::with(['vehicles.make', 'vehicles.model', 'vehicles.engine'])->findOrFail($id);
+        
+        $vehicles = $customer->vehicles->map(function($vehicle) {
+            return [
+                'id' => $vehicle->id,
+                'make_id' => $vehicle->make_id,
+                'model_id' => $vehicle->model_id,
+                'make_name' => $vehicle->make->name ?? 'Unknown',
+                'model_name' => $vehicle->model->name ?? 'Unknown',
+                'engine' => $vehicle->engine->code ?? $vehicle->engine ?? '',
+                'registration_number' => $vehicle->registration_number ?? '',
+                'year' => $vehicle->year ?? '',
+                'color' => $vehicle->color ?? '',
+                'mileage' => $vehicle->mileage ?? '',
+                'vin_number' => $vehicle->vin_number ?? '',
+                'is_primary' => $vehicle->is_primary ?? false,
+                'display_name' => sprintf('%s %s - %s', 
+                    $vehicle->make->name ?? 'Unknown',
+                    $vehicle->model->name ?? 'Unknown',
+                    $vehicle->registration_number ?? 'No Reg'
+                )
+            ];
+        });
+        
+        return response()->json([
+            'success' => true,
+            'vehicles' => $vehicles
         ]);
     }
 }

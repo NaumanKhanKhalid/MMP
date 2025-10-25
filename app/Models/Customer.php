@@ -37,7 +37,6 @@ class Customer extends Model
         'date_of_birth',
         'company_name',
         'contact_person',
-        'customer_type',
         'customer_category',
         'customer_status',
         'marketing_consent',

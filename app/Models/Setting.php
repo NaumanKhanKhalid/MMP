@@ -217,6 +217,27 @@ class Setting extends Model
         return self::get('show_bank_on_invoices', false);
     }
 
+    // Discount Settings
+    public static function discountType()
+    {
+        return self::get('discount_type', 'flat');
+    }
+
+    public static function adminMaxDiscount()
+    {
+        return self::get('admin_max_discount', 100);
+    }
+
+    public static function managerMaxDiscount()
+    {
+        return self::get('manager_max_discount', 25);
+    }
+
+    public static function staffMaxDiscount()
+    {
+        return self::get('staff_max_discount', 10);
+    }
+
     // Banking Settings
     public static function bankName()
     {

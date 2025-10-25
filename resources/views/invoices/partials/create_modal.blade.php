@@ -49,7 +49,7 @@
                             <option value="cash">Cash</option>
                             <option value="card">Card</option>
                             <option value="eft">EFT</option>
-                            <option value="on_account">On Account</option>
+                            <option value="credit">Credit</option>
                         </select>
                     </div>
                 </div>
@@ -393,7 +393,7 @@ document.querySelector('select[name="payment_method"]').addEventListener('change
         'cash': '💵',
         'card': '💳',
         'eft': '🏦',
-        'on_account': '👤'
+        'credit': '👤'
     };
     display.textContent = `${icons[method]} ${method.charAt(0).toUpperCase() + method.slice(1)}`;
 });

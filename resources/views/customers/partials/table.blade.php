@@ -37,8 +37,8 @@
             </div>
         </td>
         <td>
-            <span class="badge bg-{{ $customer->terms === 'on_account' ? 'warning' : 'success' }}-transparent">
-                {{ ucfirst($customer->terms) }}
+            <span class="badge bg-{{ $customer->terms === 'credit' ? 'warning' : 'success' }}-transparent">
+                {{ ucfirst(str_replace('_', ' ', $customer->terms)) }}
             </span>
         </td>
         <td>

@@ -1,6 +1,4 @@
-@extends('layouts.app')
-
-@push('styles')
+<?php $__env->startPush('styles'); ?>
     <style>
         .clickable-row {
             transition: background-color 0.2s ease;
@@ -19,7 +17,7 @@
             }
 
             // Open the view modal
-            $.get("{{ route('quotes.view-modal', ':id') }}".replace(':id', quoteId), function(html) {
+            $.get("<?php echo e(route('quotes.view-modal', ':id')); ?>".replace(':id', quoteId), function(html) {
                 $('#quoteModalContent').html(html);
                 $('#quoteModal').modal('show');
             });
@@ -28,10 +26,10 @@
         function printQuotes() {
             try {
                 // Get quote data for summary
-                const totalQuotes = {{ $quotes->total() }};
-                const draftQuotes = {{ $quotes->where('status', 'draft')->count() }};
-                const sentQuotes = {{ $quotes->where('status', 'sent')->count() }};
-                const acceptedQuotes = {{ $quotes->where('status', 'accepted')->count() }};
+                const totalQuotes = <?php echo e($quotes->total()); ?>;
+                const draftQuotes = <?php echo e($quotes->where('status', 'draft')->count()); ?>;
+                const sentQuotes = <?php echo e($quotes->where('status', 'sent')->count()); ?>;
+                const acceptedQuotes = <?php echo e($quotes->where('status', 'accepted')->count()); ?>;
 
                 // Create new window for printing
                 const printWindow = window.open('', '_blank', 'width=1200,height=800');
@@ -182,30 +180,31 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($quotes as $index => $quote)
+                        <?php $__currentLoopData = $quotes; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $quote): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                             <tr>
-                                <td class="text-center">{{ $index + 1 }}</td>
-                                <td><strong>{{ $quote->quote_number }}</strong></td>
-                                <td>{{ $quote->customer->name ?? 'Cash Sale' }}</td>
+                                <td class="text-center"><?php echo e($index + 1); ?></td>
+                                <td><strong><?php echo e($quote->quote_number); ?></strong></td>
+                                <td><?php echo e($quote->customer->name ?? 'Cash Sale'); ?></td>
                                 <td>
-                                    @if($quote->vehicle_make)
-                                        {{ $quote->vehicle_make }} {{ $quote->vehicle_model }}
-                                        @if($quote->vehicle_reg)
-                                            <br><small>({{ $quote->vehicle_reg }})</small>
-                                        @endif
-                                    @else
+                                    <?php if($quote->vehicle_make): ?>
+                                        <?php echo e($quote->vehicle_make); ?> <?php echo e($quote->vehicle_model); ?>
+
+                                        <?php if($quote->vehicle_reg): ?>
+                                            <br><small>(<?php echo e($quote->vehicle_reg); ?>)</small>
+                                        <?php endif; ?>
+                                    <?php else: ?>
                                         -
-                                    @endif
+                                    <?php endif; ?>
                                 </td>
-                                <td class="text-center">{{ $quote->items->count() ?? 0 }}</td>
-                                <td class="text-end">R {{ number_format($quote->grand_total ?? 0, 2) }}</td>
+                                <td class="text-center"><?php echo e($quote->items->count() ?? 0); ?></td>
+                                <td class="text-end">R <?php echo e(number_format($quote->grand_total ?? 0, 2)); ?></td>
                                 <td class="text-center">
-                                    <span class="badge badge-{{ $quote->status }}">{{ ucfirst($quote->status) }}</span>
+                                    <span class="badge badge-<?php echo e($quote->status); ?>"><?php echo e(ucfirst($quote->status)); ?></span>
                                 </td>
-                                <td class="text-center">{{ $quote->valid_until ? \Carbon\Carbon::parse($quote->valid_until)->format('d/m/Y') : '-' }}</td>
-                                <td class="text-center">{{ $quote->created_at->format('d/m/Y') }}</td>
+                                <td class="text-center"><?php echo e($quote->valid_until ? \Carbon\Carbon::parse($quote->valid_until)->format('d/m/Y') : '-'); ?></td>
+                                <td class="text-center"><?php echo e($quote->created_at->format('d/m/Y')); ?></td>
                             </tr>
-                        @endforeach
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </tbody>
                 </table>
                 
@@ -255,7 +254,7 @@
             // Clear filters button
             $('#clearFilters').on('click', function() {
                 $('#filterForm')[0].reset();
-                window.location.href = '{{ route('quotes.index') }}';
+                window.location.href = '<?php echo e(route('quotes.index')); ?>';
             });
 
             // Filter function
@@ -263,7 +262,7 @@
                 const formData = $('#filterForm').serialize();
 
                 $.ajax({
-                    url: '{{ route('quotes.index') }}',
+                    url: '<?php echo e(route('quotes.index')); ?>',
                     type: 'GET',
                     data: formData,
                     beforeSend: function() {
@@ -339,7 +338,7 @@
             $('#postSaleModal').modal('hide');
             // Redirect to invoices page
             setTimeout(function() {
-                window.location.href = '{{ route("invoices.index") }}';
+                window.location.href = '<?php echo e(route("invoices.index")); ?>';
             }, 300);
         }
         
@@ -348,7 +347,7 @@
                 toastr.error('No invoice found');
                 return;
             }
-            const url = '{{ route("invoices.pdf", ":id") }}'.replace(':id', currentInvoiceId);
+            const url = '<?php echo e(route("invoices.pdf", ":id")); ?>'.replace(':id', currentInvoiceId);
             window.open(url, '_blank');
             toastr.success('Downloading invoice PDF...');
         }
@@ -359,7 +358,7 @@
                 return;
             }
             
-            const url = '{{ route("invoices.print", ":id") }}'.replace(':id', currentInvoiceId);
+            const url = '<?php echo e(route("invoices.print", ":id")); ?>'.replace(':id', currentInvoiceId);
             
             // Create hidden iframe for printing
             let printFrame = document.getElementById('printFrame');
@@ -398,13 +397,13 @@
             
             toastr.info('Preparing WhatsApp...');
             
-            const url = '{{ route("invoices.whatsapp", ":id") }}'.replace(':id', currentInvoiceId);
+            const url = '<?php echo e(route("invoices.whatsapp", ":id")); ?>'.replace(':id', currentInvoiceId);
             
             fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>'
                 }
             })
             .then(response => response.json())
@@ -446,13 +445,13 @@
             
             toastr.info('Sending email...');
             
-            const url = '{{ route("invoices.email", ":id") }}'.replace(':id', currentInvoiceId);
+            const url = '<?php echo e(route("invoices.email", ":id")); ?>'.replace(':id', currentInvoiceId);
             
             fetch(url, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>'
                 }
             })
             .then(response => response.json())
@@ -474,7 +473,7 @@
                 toastr.error('No invoice found');
                 return;
             }
-            const url = '{{ route("invoices.picking-list", ":id") }}'.replace(':id', currentInvoiceId);
+            const url = '<?php echo e(route("invoices.picking-list", ":id")); ?>'.replace(':id', currentInvoiceId);
             window.open(url, '_blank');
             toastr.success('Downloading picking list...');
         }
@@ -507,9 +506,9 @@
         }
         
     </script>
-@endpush
+<?php $__env->stopPush(); ?>
 
-@section('content')
+<?php $__env->startSection('content'); ?>
 
 
 
@@ -527,25 +526,25 @@
             </div>
         </div>
 
-        {{-- Filters --}}
+        
         <div class="card shadow-sm mb-3">
             <div class="card-body">
-                <form id="filterForm" method="GET" action="{{ route('quotes.index') }}">
+                <form id="filterForm" method="GET" action="<?php echo e(route('quotes.index')); ?>">
                     <div class="row g-2">
                         <div class="col-md-4">
                             <input type="text" name="search" id="searchInput" class="form-control"
-                                placeholder="Search by quote number, customer..." value="{{ request('search') }}">
+                                placeholder="Search by quote number, customer..." value="<?php echo e(request('search')); ?>">
                         </div>
                         <div class="col-md-3">
                             <select name="status" id="statusFilter" class="form-select">
                                 <option value="">All Status</option>
-                                <option value="draft" {{ request('status') == 'draft' ? 'selected' : '' }}>Draft</option>
-                                <option value="sent" {{ request('status') == 'sent' ? 'selected' : '' }}>Sent</option>
-                                <option value="accepted" {{ request('status') == 'accepted' ? 'selected' : '' }}>Accepted
+                                <option value="draft" <?php echo e(request('status') == 'draft' ? 'selected' : ''); ?>>Draft</option>
+                                <option value="sent" <?php echo e(request('status') == 'sent' ? 'selected' : ''); ?>>Sent</option>
+                                <option value="accepted" <?php echo e(request('status') == 'accepted' ? 'selected' : ''); ?>>Accepted
                                 </option>
-                                <option value="declined" {{ request('status') == 'declined' ? 'selected' : '' }}>Declined
+                                <option value="declined" <?php echo e(request('status') == 'declined' ? 'selected' : ''); ?>>Declined
                                 </option>
-                                <option value="expired" {{ request('status') == 'expired' ? 'selected' : '' }}>Expired
+                                <option value="expired" <?php echo e(request('status') == 'expired' ? 'selected' : ''); ?>>Expired
                                 </option>
                             </select>
                         </div>
@@ -560,13 +559,13 @@
             </div>
         </div>
 
-        {{-- Quotes Table --}}
+        
         <div class="card shadow-sm">
             <div class="card-body">
                 <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-3">
                     <div class="card-title">
                         Quotations<span
-                            class="badge bg-light text-default rounded ms-1 fs-12 align-middle">{{ $quotes->total() }}</span>
+                            class="badge bg-light text-default rounded ms-1 fs-12 align-middle"><?php echo e($quotes->total()); ?></span>
                     </div>
                     <div class="d-flex flex-wrap gap-2">
                         <!-- Print & Export Dropdown -->
@@ -582,13 +581,13 @@
                                 <li>
                                     <hr class="dropdown-divider">
                                 </li>
-                                <li><a class="dropdown-item" href="{{ route('quotes.export', ['format' => 'pdf']) }}">
+                                <li><a class="dropdown-item" href="<?php echo e(route('quotes.export', ['format' => 'pdf'])); ?>">
                                         <i class="ri-file-pdf-line me-2 text-danger"></i>Export as PDF
                                     </a></li>
-                                <li><a class="dropdown-item" href="{{ route('quotes.export', ['format' => 'csv']) }}">
+                                <li><a class="dropdown-item" href="<?php echo e(route('quotes.export', ['format' => 'csv'])); ?>">
                                         <i class="ri-file-text-line me-2 text-info"></i>Export as CSV
                                     </a></li>
-                                <li><a class="dropdown-item" href="{{ route('quotes.export', ['format' => 'excel']) }}">
+                                <li><a class="dropdown-item" href="<?php echo e(route('quotes.export', ['format' => 'excel'])); ?>">
                                         <i class="ri-file-excel-line me-2 text-success"></i>Export as Excel
                                     </a></li>
                             </ul>
@@ -612,11 +611,11 @@
             </thead>
             <tbody>
 
-                            @forelse ($quotes as $quote)
-                                <tr class="clickable-row" data-quote-id="{{ $quote->id }}" style="cursor: pointer;">
-                                    <td>{{ $loop->iteration + ($quotes->currentPage() - 1) * $quotes->perPage() }}</td>
+                            <?php $__empty_1 = true; $__currentLoopData = $quotes; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $quote): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                                <tr class="clickable-row" data-quote-id="<?php echo e($quote->id); ?>" style="cursor: pointer;">
+                                    <td><?php echo e($loop->iteration + ($quotes->currentPage() - 1) * $quotes->perPage()); ?></td>
 
-                                    {{-- Quote Details --}}
+                                    
                                     <td>
                                         <div class="d-flex">
                                             <span class="avatar avatar-md avatar-square bg-primary-transparent p-2">
@@ -624,139 +623,143 @@
                                             </span>
                                             <div class="ms-2">
                                                 <p class="fw-semibold mb-0 d-flex align-items-center">
-                                                    {{ $quote->quote_number }}
+                                                    <?php echo e($quote->quote_number); ?>
+
                                                 </p>
                                                 <p class="fs-12 text-muted mb-0">Created:
-                                                    {{ $quote->created_at->format('d M Y') }}</p>
+                                                    <?php echo e($quote->created_at->format('d M Y')); ?></p>
                                             </div>
                                         </div>
                                     </td>
 
-                                    {{-- Customer --}}
+                                    
                                     <td>
                                         <div>
-                                            <p class="fw-semibold mb-0">{{ $quote->customer->name ?? 'Cash Sale' }}</p>
-                                            @if ($quote->customer)
-                                                <p class="fs-12 text-muted mb-0">{{ $quote->customer->email }}</p>
-                                                <span class="badge badge-sm {{ $quote->customer->terms === 'credit' ? 'bg-success-transparent text-success' : 'bg-warning-transparent text-warning' }}">
-                                                    {{ $quote->customer->terms === 'credit' ? 'Credit Customer' : 'Cash Customer' }}
+                                            <p class="fw-semibold mb-0"><?php echo e($quote->customer->name ?? 'Cash Sale'); ?></p>
+                                            <?php if($quote->customer): ?>
+                                                <p class="fs-12 text-muted mb-0"><?php echo e($quote->customer->email); ?></p>
+                                                <span class="badge badge-sm <?php echo e($quote->customer->terms === 'credit' ? 'bg-success-transparent text-success' : 'bg-warning-transparent text-warning'); ?>">
+                                                    <?php echo e($quote->customer->terms === 'credit' ? 'Credit Customer' : 'Cash Customer'); ?>
+
                                                 </span>
-                                            @else
+                                            <?php else: ?>
                                                 <span class="badge badge-sm bg-info-transparent text-info">Walk-in Customer</span>
-                                            @endif
+                                            <?php endif; ?>
                                         </div>
                                     </td>
 
-                                    {{-- Vehicle --}}
+                                    
                                     <td>
-                                        @if ($quote->vehicle_make)
-                                            <p class="mb-0">{{ $quote->vehicle_make }} {{ $quote->vehicle_model }}</p>
-                                            @if ($quote->vehicle_reg)
-                                                <p class="fs-12 text-muted mb-0">Reg: {{ $quote->vehicle_reg }}</p>
-                                            @endif
-                                        @else
+                                        <?php if($quote->vehicle_make): ?>
+                                            <p class="mb-0"><?php echo e($quote->vehicle_make); ?> <?php echo e($quote->vehicle_model); ?></p>
+                                            <?php if($quote->vehicle_reg): ?>
+                                                <p class="fs-12 text-muted mb-0">Reg: <?php echo e($quote->vehicle_reg); ?></p>
+                                            <?php endif; ?>
+                                        <?php else: ?>
                                             <span class="text-muted">-</span>
-                                        @endif
+                                        <?php endif; ?>
                                     </td>
 
-                                    {{-- Items Count --}}
+                                    
                                     <td>
-                                        <span class="badge bg-info-transparent rounded-pill">{{ $quote->items->count() }}
+                                        <span class="badge bg-info-transparent rounded-pill"><?php echo e($quote->items->count()); ?>
+
                                             items</span>
                                     </td>
 
-                                    {{-- Grand Total --}}
+                                    
                                     <td>
                                         <span class="fw-bold text-success">R
-                                            {{ number_format($quote->grand_total ?? 0, 2) }}</span>
+                                            <?php echo e(number_format($quote->grand_total ?? 0, 2)); ?></span>
                                     </td>
 
-                                    {{-- Status --}}
+                                    
                                     <td>
-                                        @php
+                                        <?php
                                             // Auto-check if quote is expired
                                             $validDate = $quote->valid_until ? \Carbon\Carbon::parse($quote->valid_until) : null;
                                             $isExpired = $validDate && $validDate->isPast();
                                             $displayStatus = ($isExpired && in_array($quote->status, ['draft', 'sent'])) ? 'expired' : $quote->status;
-                                        @endphp
+                                        ?>
                                         
-                                        @if ($displayStatus === 'draft')
+                                        <?php if($displayStatus === 'draft'): ?>
                                             <span class="badge rounded-pill bg-warning-transparent">Draft</span>
-                                        @elseif($displayStatus === 'sent')
+                                        <?php elseif($displayStatus === 'sent'): ?>
                                             <span class="badge rounded-pill bg-info-transparent">Sent</span>
-                                        @elseif($displayStatus === 'accepted')
+                                        <?php elseif($displayStatus === 'accepted'): ?>
                                             <span class="badge rounded-pill bg-success-transparent">Accepted</span>
-                                        @elseif($displayStatus === 'declined')
+                                        <?php elseif($displayStatus === 'declined'): ?>
                                             <span class="badge rounded-pill bg-danger-transparent">Declined</span>
-                                        @elseif($displayStatus === 'expired')
+                                        <?php elseif($displayStatus === 'expired'): ?>
                                             <span class="badge rounded-pill bg-secondary-transparent">Expired</span>
-                                        @else
-                                            <span class="badge rounded-pill bg-light">{{ ucfirst($displayStatus) }}</span>
-                                        @endif
+                                        <?php else: ?>
+                                            <span class="badge rounded-pill bg-light"><?php echo e(ucfirst($displayStatus)); ?></span>
+                                        <?php endif; ?>
                                     </td>
 
-                                    {{-- Valid Until --}}
+                                    
                                     <td>
-                                        @if ($quote->valid_until)
-                                            @php
+                                        <?php if($quote->valid_until): ?>
+                                            <?php
                                                 $validDate = \Carbon\Carbon::parse($quote->valid_until);
                                                 $isExpired = $validDate->isPast();
-                                            @endphp
-                                            <span class="{{ $isExpired ? 'text-danger' : 'text-muted' }}">
-                                                {{ $validDate->format('d M Y') }}
+                                            ?>
+                                            <span class="<?php echo e($isExpired ? 'text-danger' : 'text-muted'); ?>">
+                                                <?php echo e($validDate->format('d M Y')); ?>
+
                                             </span>
-                                            @if ($isExpired)
+                                            <?php if($isExpired): ?>
                                                 <br><small class="badge bg-danger-transparent">Expired</small>
-                                            @endif
-                                        @else
+                                            <?php endif; ?>
+                                        <?php else: ?>
                                             <span class="text-muted">-</span>
-                                        @endif
+                                        <?php endif; ?>
                                     </td>
 
-                                    {{-- Actions --}}
+                                    
                                     <td class="text-end">
                                         <div class="btn-list">
                                             <!-- View -->
                                             <button class="btn btn-sm btn-info-light btn-icon openViewQuoteModal"
-                                                data-id="{{ $quote->id }}" title="View Details">
+                                                data-id="<?php echo e($quote->id); ?>" title="View Details">
                                     <i class="ri-eye-line"></i>
                                 </button>
 
                                             <!-- Edit (Only if NOT accepted/declined/converted) -->
-                                            @if(!in_array($quote->status, ['accepted', 'declined']) && !$quote->converted_invoice_id)
+                                            <?php if(!in_array($quote->status, ['accepted', 'declined']) && !$quote->converted_invoice_id): ?>
                                 <button class="btn btn-sm btn-success-light btn-icon openEditQuoteModal"
-                                    data-id="{{ $quote->id }}" title="Edit">
+                                    data-id="<?php echo e($quote->id); ?>" title="Edit">
                                     <i class="ri-pencil-line"></i>
                                 </button>
-                                            @endif
+                                            <?php endif; ?>
 
                                             <!-- Print -->
-                                            <button type="button" onclick="printQuote({{ $quote->id }})"
+                                            <button type="button" onclick="printQuote(<?php echo e($quote->id); ?>)"
                                     class="btn btn-sm btn-primary-light btn-icon" title="Print">
                                                 <i class="ri-printer-line"></i>
                                     </button>
 
                                             <!-- Convert to Invoice (Only if NOT already converted) -->
-                                            @if(!$quote->converted_invoice_id && !in_array($quote->status, ['declined', 'cancelled']))
+                                            <?php if(!$quote->converted_invoice_id && !in_array($quote->status, ['declined', 'cancelled'])): ?>
                                 <button type="button" class="btn btn-sm btn-warning-light btn-icon convert-to-invoice-btn"
-                                    title="Convert to Invoice" data-quote-id="{{ $quote->id }}" data-quote-total="{{ $quote->grand_total ?? $quote->items->sum('total') }}">
+                                    title="Convert to Invoice" data-quote-id="<?php echo e($quote->id); ?>" data-quote-total="<?php echo e($quote->grand_total ?? $quote->items->sum('total')); ?>">
                                     <i class="ri-arrow-right-circle-line"></i>
                                 </button>
-                                            @else
+                                            <?php else: ?>
                                                 <!-- Show "View Invoice" if already converted -->
-                                                @if($quote->converted_invoice_id)
-                                                    <a href="{{ route('invoices.index') }}" 
+                                                <?php if($quote->converted_invoice_id): ?>
+                                                    <a href="<?php echo e(route('invoices.index')); ?>" 
                                                        class="btn btn-sm btn-success-light btn-icon"
                                                        title="View Invoice">
                                                         <i class="ri-file-check-line"></i>
                                                     </a>
-                                                @endif
-                                            @endif
+                                                <?php endif; ?>
+                                            <?php endif; ?>
 
                                             <!-- Duplicate -->
-                                <form action="{{ route('quotes.duplicate', $quote->id) }}" method="POST"
+                                <form action="<?php echo e(route('quotes.duplicate', $quote->id)); ?>" method="POST"
                                                 class="d-inline duplicate-quote-form">
-                                    @csrf
+                                    <?php echo csrf_field(); ?>
                                                 <button type="submit" class="btn btn-sm btn-secondary-light btn-icon"
                                         title="Duplicate Quote">
                                                     <i class="ri-file-copy-line"></i>
@@ -764,22 +767,22 @@
                                 </form>
 
                                             <!-- Delete (Only if NOT accepted/converted) -->
-                                            @if(!in_array($quote->status, ['accepted']) && !$quote->converted_invoice_id)
+                                            <?php if(!in_array($quote->status, ['accepted']) && !$quote->converted_invoice_id): ?>
                                                 <button class="btn btn-sm btn-danger-light btn-icon" data-bs-toggle="modal"
-                                                    data-bs-target="#deleteQuote{{ $quote->id }}" title="Delete">
+                                                    data-bs-target="#deleteQuote<?php echo e($quote->id); ?>" title="Delete">
                                                     <i class="ri-delete-bin-line"></i>
                                                 </button>
-                                            @endif
+                                            <?php endif; ?>
                             </div>
                         </td>
                     </tr>
 
-                                {{-- Delete Modal --}}
-                                <div class="modal fade" id="deleteQuote{{ $quote->id }}" tabindex="-1">
+                                
+                                <div class="modal fade" id="deleteQuote<?php echo e($quote->id); ?>" tabindex="-1">
                                     <div class="modal-dialog">
-                                        <form method="POST" action="{{ route('quotes.destroy', $quote->id) }}">
-                                            @csrf
-                                            @method('DELETE')
+                                        <form method="POST" action="<?php echo e(route('quotes.destroy', $quote->id)); ?>">
+                                            <?php echo csrf_field(); ?>
+                                            <?php echo method_field('DELETE'); ?>
                                             <div class="modal-content">
                                                 <div class="modal-header">
                                                     <h5 class="modal-title">Confirm Delete</h5>
@@ -787,7 +790,7 @@
                                                 </div>
                                                 <div class="modal-body">
                                                     Are you sure you want to delete quote
-                                                    <strong>{{ $quote->quote_number }}</strong>?
+                                                    <strong><?php echo e($quote->quote_number); ?></strong>?
                                                 </div>
                                                 <div class="modal-footer">
                                                     <button type="button" class="btn btn-light"
@@ -798,20 +801,21 @@
                                         </form>
                                     </div>
                                 </div>
-                            @empty
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                                 <tr>
                                     <td colspan="9" class="text-center text-muted py-5">
                                         <i class="ri-file-list-line ri-3x mb-3 d-block"></i>
                                         <p class="mb-0">No quotes found</p>
                                     </td>
                                 </tr>
-                            @endforelse
+                            <?php endif; ?>
             </tbody>
         </table>
                 </div>
             </div>
             <div class="card-footer">
-                {{ $quotes->appends(request()->query())->links() }}
+                <?php echo e($quotes->appends(request()->query())->links()); ?>
+
             </div>
         </div>
     </div>
@@ -823,9 +827,9 @@
             </div>
         </div>
 
-@endsection
+<?php $__env->stopSection(); ?>
 
-    @push('scripts')
+    <?php $__env->startPush('scripts'); ?>
         <script>
             $(function() {
                 // Create Quote Modal
@@ -839,7 +843,7 @@
                     $('#quotesTable').css('display', 'block').show();
                     $('.table-responsive').not('#quoteModal .table-responsive').show();
                     
-                    $.get("{{ route('quotes.create') }}", function(html) {
+                    $.get("<?php echo e(route('quotes.create')); ?>", function(html) {
                         console.log('Modal HTML loaded');
                         $('#quoteModalContent').html(html);
                         
@@ -907,7 +911,7 @@
             $(document).on('click', '.openViewQuoteModal', function(e) {
                 e.stopPropagation();
                     var id = $(this).data('id');
-                    $.get("{{ route('quotes.view-modal', ':id') }}".replace(':id', id), function(html) {
+                    $.get("<?php echo e(route('quotes.view-modal', ':id')); ?>".replace(':id', id), function(html) {
                         $('#quoteModalContent').html(html);
                         $('#quoteModal').modal('show');
                     });
@@ -917,7 +921,7 @@
             $(document).on('click', '.openEditQuoteModal', function(e) {
                 e.stopPropagation();
                     var id = $(this).data('id');
-                    $.get("{{ route('quotes.edit-modal', ':id') }}".replace(':id', id), function(html) {
+                    $.get("<?php echo e(route('quotes.edit-modal', ':id')); ?>".replace(':id', id), function(html) {
                         $('#quoteModalContent').html(html);
                         $('#quoteModal').modal('show');
                     });
@@ -1017,7 +1021,7 @@
         // Print Quote Function - Opens print dialog directly (GLOBAL FUNCTION)
         window.printQuote = function(quoteId) {
             // Create a hidden iframe
-            const printUrl = "{{ url('quotes') }}/" + quoteId + "/print";
+            const printUrl = "<?php echo e(url('quotes')); ?>/" + quoteId + "/print";
             const iframe = document.createElement('iframe');
             iframe.style.display = 'none';
             iframe.src = printUrl;
@@ -1057,7 +1061,7 @@
         // Show Payment Options Modal
         function showPaymentOptionsModal(quoteId, quoteTotal) {
             // First get customer info to determine available payment methods
-            $.get("{{ route('quotes.customer-info', ':id') }}".replace(':id', quoteId), function(customerData) {
+            $.get("<?php echo e(route('quotes.customer-info', ':id')); ?>".replace(':id', quoteId), function(customerData) {
                 
                 // 💳 CREDIT CUSTOMER - Show payment modal (same as POS)
                 if (customerData && customerData.customer_type === 'credit') {
@@ -1238,7 +1242,7 @@
             $('#paymentOptionsModal').modal('hide');
             
             // Convert quote to invoice
-            const formData = `_token={{ csrf_token() }}&payment_method=${paymentMethod}&amount_paid=${amountPaid}&payment_reference=${paymentReference}`;
+            const formData = `_token=<?php echo e(csrf_token()); ?>&payment_method=${paymentMethod}&amount_paid=${amountPaid}&payment_reference=${paymentReference}`;
             
             setTimeout(function() {
                 convertQuoteToInvoiceWithPayment(quoteId, formData);
@@ -1257,7 +1261,7 @@
             button.prop('disabled', true).html('<i class="spinner-border spinner-border-sm me-1"></i>Converting...');
             
             $.ajax({
-                url: "{{ route('quotes.convert-to-invoice', ':id') }}".replace(':id', quoteId),
+                url: "<?php echo e(route('quotes.convert-to-invoice', ':id')); ?>".replace(':id', quoteId),
                 method: 'POST',
                 data: formData,
                 success: function(response) {
@@ -1406,7 +1410,7 @@
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                                     <i class="ri-close-line me-1"></i>Close
                                 </button>
-                                <a href="{{ route('goods-receipts.index') }}" class="btn btn-primary">
+                                <a href="<?php echo e(route('goods-receipts.index')); ?>" class="btn btn-primary">
                                     <i class="ri-inbox-line me-1"></i>Add Stock (GRN)
                                 </a>
                             </div>
@@ -1515,4 +1519,6 @@
                 </div>
             </div>
         </div>
-    @endpush
+    <?php $__env->stopPush(); ?>
+
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\xampp\htdocs\MMP\resources\views/quotes/index.blade.php ENDPATH**/ ?>

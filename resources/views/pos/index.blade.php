@@ -29,23 +29,22 @@
             <!-- Product Search Bar -->
             <div class="card border-0 shadow-sm mb-3">
                 <div class="card-body p-3">
-                        <div class="input-group input-group-lg">
-                        <span class="input-group-text bg-primary text-white">
-                                <i class="ri-barcode-line"></i>
+                        <!-- Enhanced Search Bar -->
+                        <div class="input-group input-group-lg mb-3 shadow-sm" style="overflow: hidden;">
+                            <span class="input-group-text bg-primary text-white border-0" style="padding: 0 15px;">
+                                <i class="ri-barcode-line fs-4"></i>
                             </span>
                             <input type="text" 
                                class="form-control border-0" 
                                    id="productSearch" 
-                               placeholder="Scan barcode or search by name, SKU..."
+                                placeholder="Scan barcode or search by name, SKU, OE Number..."
                                    autocomplete="off"
-                                   autofocus>
-                            <button class="btn btn-success" type="button" onclick="showQuickAddProduct()" title="Quick Add Product">
-                                <i class="ri-add-line me-1"></i>Quick Add
-                            </button>
-                            <button class="btn btn-outline-secondary" type="button" onclick="clearSearch()">
-                                <i class="ri-close-line"></i>
-                            </button>
+                                autofocus
+                                style="font-size: 1.1rem; background: #f8f9fa; border-left: 3px solid #007bff;">
                         </div>
+                        
+                        <!-- Quick Action Buttons -->
+                        
                         
                         <!-- Search Results Dropdown -->
                     <div id="searchResults" class="search-results-dropdown mt-2" style="display: none;">
@@ -54,33 +53,52 @@
                     
                     <!-- Quick Add Product -->
                     <div id="quickAddSection" class="mt-3" style="display: none;">
-                        <div class="alert alert-success border-success">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <h6 class="mb-0"><i class="ri-add-circle-line me-2"></i>Quick Add New Product</h6>
-                                <button type="button" class="btn-close btn-close-sm" onclick="$('#quickAddSection').slideUp();"></button>
+                        <div class="card border-success shadow-lg">
+                            <div class="card-header bg-success text-white">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h6 class="mb-0">
+                                        <i class="ri-add-circle-fill me-2"></i>Quick Add New Product
+                                    </h6>
+                                    <button type="button" class="btn-close btn-close-white" onclick="$('#quickAddSection').slideUp();"></button>
+                                </div>
                             </div>
-                            <p class="mb-2 text-muted small">Product will be saved to inventory and added to cart</p>
-                            <div class="row g-2">
+                            <div class="card-body p-3">
+                                <div class="alert alert-light border-success mb-3 py-2">
+                                    <small class="text-muted">
+                                        <i class="ri-information-line text-success"></i>
+                                        Product will be saved to inventory and added to cart
+                                    </small>
+                                </div>
+                                <div class="row g-3">
                                 <div class="col-md-6">
-                                    <label class="form-label small mb-1">Product Name *</label>
-                                    <input type="text" class="form-control" id="quickAddName" placeholder="Enter product name" required>
+                                        <label class="form-label fw-bold mb-1">
+                                            <i class="ri-product-hunt-line me-1 text-primary"></i>Product Name *
+                                        </label>
+                                        <input type="text" class="form-control shadow-sm" id="quickAddName" placeholder="Enter product name..." required>
                                 </div>
                                 <div class="col-md-3">
-                                    <label class="form-label small mb-1">Price *</label>
-                                    <input type="number" class="form-control" id="quickAddPrice" placeholder="R 0.00" step="0.01" required>
+                                        <label class="form-label fw-bold mb-1">
+                                            <i class="ri-price-tag-3-line me-1 text-success"></i>Price *
+                                        </label>
+                                        <input type="number" class="form-control shadow-sm" id="quickAddPrice" placeholder="R 0.00" step="0.01" required>
                                 </div>
                                 <div class="col-md-3">
-                                    <label class="form-label small mb-1">Quantity *</label>
-                                    <input type="number" class="form-control" id="quickAddQty" placeholder="1" step="0.001" value="1" required>
+                                        <label class="form-label fw-bold mb-1">
+                                            <i class="ri-stack-line me-1 text-warning"></i>Qty *
+                                        </label>
+                                        <input type="number" class="form-control shadow-sm" id="quickAddQty" placeholder="1" value="1" min="0" step="1" required>
                                 </div>
                             </div>
-                            <div class="mt-3">
-                                <button class="btn btn-success" onclick="addQuickProduct()">
-                                    <i class="ri-check-line me-1"></i>Create & Add to Cart
-                                </button>
-                                <button class="btn btn-light" onclick="$('#quickAddSection').slideUp();">
-                                    <i class="ri-close-line me-1"></i>Cancel
-                                </button>
+                            </div>
+                            <div class="card-footer bg-light border-top-0">
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-success shadow-sm flex-grow-1" onclick="addQuickProduct()">
+                                        <i class="ri-check-line me-1"></i>Create & Add to Cart
+                                    </button>
+                                    <button class="btn btn-outline-secondary" onclick="$('#quickAddSection').slideUp();">
+                                        <i class="ri-close-line me-1"></i>Cancel
+                            </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -109,93 +127,126 @@
 
         <!-- Right Column - Customer & Summary -->
         <div class="col-lg-4">
-            <!-- Customer Selection -->
+            <!-- Customer & Vehicle - Combined -->
             <div class="card border-0 shadow-sm mb-3">
                 <div class="card-header bg-primary text-white py-2">
                     <h6 class="mb-0 fw-bold">
-                        <i class="ri-user-line me-2"></i>Customer
+                        <i class="ri-user-line me-2"></i>Customer & Vehicle
                     </h6>
                 </div>
                 <div class="card-body p-3">
-                    <div class="mb-2">
-                        <div class="input-group">
-                            <select class="form-select form-select-sm" id="customerSelect" onchange="selectCustomer()">
-                                <option value="">Walk-in Customer</option>
-                            </select>
-                            <button class="btn btn-sm btn-outline-primary" onclick="showAddCustomerModal()" title="Add New Customer">
-                                <i class="ri-add-line"></i>
+                    <!-- Customer Search -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold mb-2">
+                            <i class="ri-search-line me-1 text-primary"></i>Search Customer
+                        </label>
+                        <div class="input-group shadow-sm" style="overflow: hidden;">
+                            <span class="input-group-text bg-primary text-white border-0" style="padding: 0 12px;">
+                                <i class="ri-user-search-line"></i>
+                            </span>
+                            <input type="text" 
+                                class="form-control border-0" 
+                                id="customerSearch" 
+                                placeholder="Type name, code, phone..."
+                                style="font-size: 1rem; background: #f8f9fa; border-left: 3px solid #007bff;">
+                            <button class="btn btn-warning border-0" onclick="clearCustomer()" title="Switch to Walk-in" style="display: none; padding: 0 12px;" id="clearCustomerBtn">
+                                <i class="ri-refresh-line"></i>
+                            </button>
+                            <button class="btn btn-success border-0" onclick="showAddCustomerModal()" title="Quick Add Customer" style="padding: 0 15px;">
+                                <i class="ri-user-add-line me-1"></i>Add
                             </button>
                         </div>
+                        <div id="customerSearchResults" class="list-group mt-2 shadow-sm" style="display: none; max-height: 250px; overflow-y: auto; position: absolute; z-index: 1050; width: calc(100% - 30px); border-radius: 0.375rem;"></div>
+                        <small class="text-muted d-block mt-1">
+                            <i class="ri-information-line"></i> Leave empty for Walk-in Customer
+                        </small>
                     </div>
                     
-                    <div id="customerInfo" class="d-none">
-                        <!-- Customer details will be shown here -->
+                    <!-- Customer Info Form -->
+                    <div id="customerInfoForm" class="mb-3" style="display: none;">
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold mb-1">Name</label>
+                                <input type="text" class="form-control form-control-sm" id="customerName" readonly>
                     </div>
-
-                    <div class="row g-2 mt-2">
                         <div class="col-md-6">
-                            <label class="form-label small">Price Tier</label>
-                            <select class="form-select form-select-sm" id="priceTier" onchange="updatePriceTier()">
-                                <option value="normal">Normal Price</option>
-                                <option value="online">Online Price</option>
-                                <option value="workshop">Workshop Price</option>
-                            </select>
+                                <label class="form-label small fw-bold mb-1">Phone</label>
+                                <input type="text" class="form-control form-control-sm" id="customerPhone" readonly>
                         </div>
                         <div class="col-md-6">
-                            <div class="form-check form-switch mt-3">
-                                <input class="form-check-input" type="checkbox" id="vatEnabled" onchange="toggleVAT()">
-                                <label class="form-check-label" for="vatEnabled">
-                                    <small>Enable VAT (15%)</small>
-                                </label>
+                                <label class="form-label small fw-bold mb-1">Email</label>
+                                <input type="email" class="form-control form-control-sm" id="customerEmail" readonly>
                             </div>
-                        </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-bold mb-1">Address</label>
+                                <input type="text" class="form-control form-control-sm" id="customerAddress" readonly>
                     </div>
                 </div>
             </div>
 
-            <!-- Vehicle Details -->
-            <div class="card border-0 shadow-sm mb-3">
-                <div class="card-header bg-info text-white py-2">
-                    <h6 class="mb-0 fw-bold">
-                        <i class="ri-car-line me-2"></i>Vehicle Details
-                    </h6>
+                    <!-- Walk-in Customer Form -->
+                    <div id="walkInCustomerForm" class="mb-3">
+                        <div class="alert alert-info border-info shadow-sm py-2 mb-3" style="background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);">
+                            <div class="d-flex align-items-center">
+                                <i class="ri-user-smile-line fs-4 me-2 text-info"></i>
+                                <div>
+                                    <strong class="text-info">Walk-in Customer</strong>
+                                    <small class="d-block text-muted">Add details for invoice (optional)</small>
                 </div>
-                <div class="card-body p-3">
+                            </div>
+                        </div>
                     <div class="row g-2">
                         <div class="col-md-6">
-                            <label class="form-label small">Make</label>
-                            <select class="form-select form-select-sm select2-vehicle-make" id="vehicleMake">
-                                <option value="">Select Make</option>
-                            </select>
+                                <label class="form-label small fw-bold mb-1">
+                                    <i class="ri-user-line me-1 text-primary"></i>Name
+                                </label>
+                                <input type="text" class="form-control form-control-sm shadow-sm" id="walkInName" placeholder="Enter name...">
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label small">Model</label>
-                            <select class="form-select form-select-sm select2-vehicle-model" id="vehicleModel">
-                                <option value="">Select Model</option>
-                            </select>
+                                <label class="form-label small fw-bold mb-1">
+                                    <i class="ri-phone-line me-1 text-success"></i>Phone
+                                </label>
+                                <input type="text" class="form-control form-control-sm shadow-sm" id="walkInPhone" placeholder="Enter phone...">
                     </div>
                         <div class="col-md-6">
-                            <label class="form-label small">Engine</label>
-                            <select class="form-select form-select-sm select2-vehicle-engine" id="vehicleEngine">
-                                <option value="">Select Engine</option>
+                                <label class="form-label small fw-bold mb-1">
+                                    <i class="ri-mail-line me-1 text-info"></i>Email
+                                </label>
+                                <input type="email" class="form-control form-control-sm shadow-sm" id="walkInEmail" placeholder="Optional">
+                        </div>
+                        <div class="col-md-6">
+                                <label class="form-label small fw-bold mb-1">
+                                    <i class="ri-map-pin-line me-1 text-danger"></i>Address
+                                </label>
+                                <input type="text" class="form-control form-control-sm shadow-sm" id="walkInAddress" placeholder="Optional">
+                        </div>
+                        </div>
+                        </div>
+                    
+                    <!-- Vehicle Selection (Dynamic based on customer) -->
+                    <div id="vehicleSection" class="mb-3" style="display: none;">
+                        <label class="form-label small fw-bold mb-1"><i class="ri-car-line me-1"></i>Vehicle</label>
+                        <div class="input-group input-group-sm">
+                            <select class="form-select" id="vehicleSelect" onchange="selectVehicle()">
+                                <option value="">Select Vehicle</option>
                             </select>
+                            <button class="btn btn-success" onclick="showAddVehicleModal()" title="Add Vehicle">
+                                <i class="ri-add-line"></i>
+                            </button>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label small">Year</label>
-                            <input type="number" class="form-control form-control-sm" id="vehicleYear" placeholder="e.g., 2020">
+                        <div id="vehicleInfo" class="mt-2" style="display: none;">
+                            <!-- Vehicle details shown here -->
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label small">VIN Number</label>
-                            <input type="text" class="form-control form-control-sm" id="vehicleVin" placeholder="Vehicle Identification Number">
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label small">Registration</label>
-                            <input type="text" class="form-control form-control-sm" id="vehicleReg" placeholder="e.g., ABC123GP">
-                        </div>
-                        <div class="col-md-12">
-                            <label class="form-label small">Mileage</label>
-                            <input type="number" class="form-control form-control-sm" id="vehicleMileage" placeholder="e.g., 50000">
-                        </div>
+                    </div>
+                    
+                    <!-- Price Tier -->
+                    <div class="mb-3">
+                        <label class="form-label small mb-1">Price Tier</label>
+                        <select class="form-select form-select-sm" id="priceTier" onchange="updatePriceTier()">
+                            <option value="normal">Normal</option>
+                            <option value="online">Online</option>
+                            <option value="workshop">Workshop</option>
+                        </select>
                     </div>
                 </div>
             </div>
@@ -216,7 +267,12 @@
                         <div class="col-6">
                             <label class="form-label small mb-1">
                                 Discount
-                                <i class="ri-information-line text-info ms-1" data-bs-toggle="tooltip" title="Enter discount amount"></i>
+                                @if(\App\Models\Setting::discountType() == 'percentage')
+                                    <span class="badge bg-info-transparent">%</span>
+                                @else
+                                    <span class="badge bg-success-transparent">R</span>
+                                @endif
+                                <i class="ri-information-line text-info ms-1" data-bs-toggle="tooltip" data-bs-html="true" id="discountTooltip"></i>
                             </label>
                             <input type="number" class="form-control form-control-sm" id="discountInput" value="0.00" step="0.01" min="0" placeholder="0.00">
                         </div>
@@ -245,7 +301,8 @@
                         <span class="fw-bold fs-5 text-primary" id="grandTotal">R 0.00</span>
                     </div>
 
-                    <div class="d-flex justify-content-between mb-2">
+                    <!-- Amount Paid and Balance Due removed - payment happens at checkout -->
+                    <!-- <div class="d-flex justify-content-between mb-2">
                         <span class="text-muted">Amount Paid:</span>
                         <span class="fw-bold text-success" id="amountPaidDisplay">R 0.00</span>
                     </div>
@@ -253,14 +310,81 @@
                     <div class="d-flex justify-content-between">
                         <span class="fw-bold">BALANCE DUE:</span>
                         <span class="fw-bold fs-5 text-danger" id="balanceDue">R 0.00</span>
-                </div>
+                    </div> -->
             </div>
             </div>
 
-            <!-- Checkout Button -->
-            <button type="button" class="btn btn-primary btn-lg w-100 shadow-sm" onclick="processSale()" id="checkoutBtn">
+            <!-- Action Buttons -->
+            <div class="d-grid gap-2">
+                <button type="button" class="btn btn-primary btn-lg shadow-sm" onclick="processSale()" id="checkoutBtn">
                 <i class="ri-shopping-cart-check-line me-2"></i>Checkout
             </button>
+                <button type="button" class="btn btn-outline-secondary" onclick="saveAsQuotation()" id="saveQuoteBtn">
+                    <i class="ri-file-list-line me-2"></i>Save as Quotation
+            </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Vehicle Modal -->
+<div class="modal fade" id="addVehicleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">
+                    <i class="ri-car-add-line me-2"></i>Add Vehicle
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addVehicleForm">
+                    <div class="row g-2">
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label fw-bold small">Make *</label>
+                            <select class="form-select form-select-sm select2-add-vehicle-make" id="newVehicleMake" required>
+                                <option value="">Select Make</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label fw-bold small">Model *</label>
+                            <select class="form-select form-select-sm select2-add-vehicle-model" id="newVehicleModel" required disabled>
+                                <option value="">Select Model</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label small">Engine</label>
+                            <input type="text" class="form-control form-control-sm" id="newVehicleEngine" placeholder="e.g., 2.0T">
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label small">Year</label>
+                            <input type="number" class="form-control form-control-sm" id="newVehicleYear" placeholder="e.g., 2020">
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label fw-bold small">Registration *</label>
+                            <input type="text" class="form-control form-control-sm" id="newVehicleReg" placeholder="e.g., ABC123GP" required>
+                        </div>
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label small">Mileage</label>
+                            <input type="number" class="form-control form-control-sm" id="newVehicleMileage" placeholder="e.g., 50000">
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="newVehiclePrimary" checked>
+                                <label class="form-check-label small" for="newVehiclePrimary">
+                                    Set as primary vehicle
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-info" onclick="addNewVehicle()">
+                    <i class="ri-check-line me-1"></i>Add Vehicle
+                </button>
+            </div>
         </div>
     </div>
 </div>
@@ -283,10 +407,10 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Customer Type *</label>
+                        <label class="form-label fw-bold">Payment Terms *</label>
                         <select class="form-select" id="newCustomerType" required>
-                            <option value="cash">Cash Customer</option>
-                            <option value="credit">Credit Customer</option>
+                            <option value="cash">Cash</option>
+                            <option value="credit">Credit</option>
                             </select>
                         </div>
                     
@@ -321,6 +445,67 @@
     </div>
 </div>
 
+<!-- Post-Sale Actions Modal -->
+<div class="modal fade" id="postSaleModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <!-- Header -->
+            <div class="modal-header bg-success text-white">
+                <div class="w-100 text-center">
+                    <h5 class="modal-title mb-0">
+                        <i class="ri-checkbox-circle-line me-2"></i>Sale Completed Successfully
+                    </h5>
+                </div>
+            </div>
+            
+            <!-- Body -->
+            <div class="modal-body text-center py-4">
+                <!-- Invoice Info -->
+                <div class="card border-primary mb-3">
+                    <div class="card-body py-3">
+                        <div class="row">
+                            <div class="col-6 border-end">
+                                <small class="text-muted d-block mb-1">Invoice Number</small>
+                                <h5 id="postSaleInvoiceNumber" class="text-primary mb-0 fw-bold"></h5>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block mb-1">Total Amount</small>
+                                <h5 class="text-success mb-0 fw-bold">R <span id="postSaleTotal">0.00</span></h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Actions -->
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-primary" onclick="downloadInvoicePDF()">
+                        <i class="ri-file-pdf-line me-2"></i>Download PDF
+                    </button>
+                    <button type="button" class="btn btn-danger" onclick="printInvoiceInline()">
+                        <i class="ri-printer-line me-2"></i>Print Invoice
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="sendWhatsApp()">
+                        <i class="ri-whatsapp-line me-2"></i>Send via WhatsApp
+                    </button>
+                    <button type="button" class="btn btn-info" onclick="sendEmail()">
+                        <i class="ri-mail-line me-2"></i>Send via Email
+                    </button>
+                    <button type="button" class="btn btn-warning" onclick="downloadPickingList()">
+                        <i class="ri-file-list-3-line me-2"></i>Download Picking List
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div class="modal-footer justify-content-center border-top">
+                <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">
+                    <i class="ri-close-line me-1"></i>Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Payment Modal -->
 <div class="modal fade" id="paymentModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -340,7 +525,7 @@
                         <option value="cash">Cash</option>
                         <option value="card">Card</option>
                         <option value="eft">EFT</option>
-                        <option value="on_account" id="onAccountOption" style="display: none;">On Account</option>
+                        <option value="credit" id="onAccountOption" style="display: none;">Credit</option>
                     </select>
                     </div>
 
@@ -513,26 +698,92 @@
 let products = [];
 let customers = [];
 let categories = [];
-let vehicleMakes = [];
-let vehicleModels = [];
-let vehicleEngines = [];
+let customerVehicles = [];
 let cart = [];
 let currentCustomer = null;
-let vatEnabled = false;
-let vatRate = 15;
+let currentVehicle = null;
+let vatEnabled = {{ $vatSettings['enabled'] ? 'true' : 'false' }};
+let vatRate = {{ $vatSettings['rate'] }};
 let discountAmount = 0;
 let discountType = 'amount';
 let shippingAmount = 0;
 
+// Discount Settings from database
+let discountTypeSettings = '{{ \App\Models\Setting::discountType() }}'; // 'flat' or 'percentage'
+@php
+    $userRoleName = 'staff'; // default
+    if (auth()->check()) {
+        $role = auth()->user()->role;
+        if (is_object($role) && isset($role->name)) {
+            $userRoleName = strtolower($role->name);
+        } elseif (is_string($role)) {
+            $userRoleName = strtolower($role);
+        }
+    }
+    // Map common role names to our discount categories
+    $roleMap = [
+        'owner' => 'admin',
+        'administrator' => 'admin',
+        'admin' => 'admin',
+        'manager' => 'manager',
+        'staff' => 'staff',
+        'employee' => 'staff'
+    ];
+    $userRoleName = $roleMap[$userRoleName] ?? 'staff';
+@endphp
+let userRole = '{{ $userRoleName }}'; // admin, manager, staff
+let maxDiscountPercentage = {
+    'admin': {{ \App\Models\Setting::adminMaxDiscount() }},
+    'manager': {{ \App\Models\Setting::managerMaxDiscount() }},
+    'staff': {{ \App\Models\Setting::staffMaxDiscount() }}
+};
+let maxDiscountLimit = maxDiscountPercentage[userRole] || 10;
+
 // Initialize
 $(document).ready(function() {
+    // Initialize VAT checkbox from settings
+    $('#vatEnabled').prop('checked', vatEnabled);
+    
+    // Initialize all tooltips first
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl, {
+            html: true
+        });
+    });
+    
+    // Set dynamic tooltip for discount field after initialization
+    const discountTypeText = discountTypeSettings === 'percentage' ? 'Percentage (%)' : 'Flat Amount (R)';
+    const roleText = userRole.charAt(0).toUpperCase() + userRole.slice(1);
+    const tooltipText = '<strong>Discount Type:</strong> ' + discountTypeText + '<br><strong>Your Role:</strong> ' + roleText + '<br><strong>Max Discount:</strong> ' + maxDiscountLimit + '%';
+    
+    // Get tooltip instance and update
+    const discountTooltipEl = document.getElementById('discountTooltip');
+    if (discountTooltipEl) {
+        const tooltipInstance = bootstrap.Tooltip.getInstance(discountTooltipEl);
+        if (tooltipInstance) {
+            tooltipInstance.dispose();
+        }
+        new bootstrap.Tooltip(discountTooltipEl, {
+            html: true,
+            title: tooltipText
+        });
+    }
+    
+    // Initialize walk-in customer form on page load
+    $('#walkInCustomerForm').show();
+    $('#customerInfoForm').hide();
+    
     loadProducts();
     loadCustomers();
     loadCategories();
-    // Load data first, then initialize Select2
-    loadVehicleMakes();
-    loadVehicleModels();
-    loadVehicleEngines();
+    
+    // Close customer search results when clicking outside
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('#customerSearch, #customerSearchResults').length) {
+            $('#customerSearchResults').hide();
+        }
+    });
     
     // Product search with debounce
     let searchTimeout;
@@ -578,11 +829,10 @@ function loadCustomers() {
         .then(data => {
             customers = data.map(customer => ({
                 ...customer,
-                customer_type: customer.customer_type || 'cash',
                 credit_limit: parseFloat(customer.credit_limit) || 0,
                 balance: parseFloat(customer.balance) || 0
             }));
-            populateCustomerDropdown();
+            // Customers loaded and ready for search
         })
         .catch(error => {
             console.error('Error loading customers:', error);
@@ -735,7 +985,7 @@ function initVehicleSelect2() {
             placeholder: $element.find('option:first').text(),
             allowClear: true,
             tags: true,
-            dropdownParent: $element.closest('.modal').length ? $element.closest('.modal') : $('body'),
+            dropdownParent: $('body'),
             createTag: function(params) {
                 const term = $.trim(params.term);
                 if (term === '') return null;
@@ -831,11 +1081,142 @@ $(document).on('change', '#vehicleMake', function() {
 });
 
 // Populate customer dropdown
-function populateCustomerDropdown() {
-    const select = $('#customerSelect');
-    customers.forEach(customer => {
-        select.append(`<option value="${customer.id}">${customer.name}</option>`);
+// Customer search with live results
+let customerSearchTimeout;
+$('#customerSearch').on('input', function() {
+    const searchTerm = $(this).val().toLowerCase().trim();
+    
+    clearTimeout(customerSearchTimeout);
+    
+    if (searchTerm.length === 0) {
+        // Walk-in customer (no customer selected)
+        $('#customerSearchResults').hide();
+        currentCustomer = null;
+        $('#customerInfo').addClass('d-none');
+        $('#vehicleSection').hide();
+        $('#priceTier').closest('.mb-3').show();
+        
+        // Show walk-in customer form
+        $('#customerInfoForm').hide();
+        $('#walkInCustomerForm').show();
+        $('#clearCustomerBtn').hide();
+        return;
+    }
+    
+    if (searchTerm.length < 2) {
+        $('#customerSearchResults').hide();
+        return;
+    }
+    
+    customerSearchTimeout = setTimeout(() => {
+        searchCustomers(searchTerm);
+    }, 300);
+});
+
+function searchCustomers(searchTerm) {
+    const results = customers.filter(customer => {
+        return customer.name.toLowerCase().includes(searchTerm) ||
+               (customer.customer_code && customer.customer_code.toLowerCase().includes(searchTerm)) ||
+               (customer.phone && customer.phone.includes(searchTerm)) ||
+               (customer.email && customer.email.toLowerCase().includes(searchTerm));
     });
+    
+    displayCustomerResults(results);
+}
+
+function displayCustomerResults(results) {
+    const resultsDiv = $('#customerSearchResults');
+    resultsDiv.empty();
+    
+    if (results.length === 0) {
+        resultsDiv.html('<div class="list-group-item text-muted">No customers found</div>');
+        resultsDiv.show();
+        return;
+    }
+    
+    results.forEach(customer => {
+        const balance = customer.outstanding_balance || customer.balance || 0;
+        const balanceClass = balance > 0 ? 'text-danger' : 'text-success';
+        const termsText = customer.terms === 'credit' ? 'Credit' : 'Cash';
+        
+        const item = $(`
+            <a href="#" class="list-group-item list-group-item-action" data-customer-id="${customer.id}">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <strong>${customer.name}</strong>
+                        <br>
+                        <small class="text-muted">${customer.customer_code || ''}</small>
+                        ${customer.phone ? `<small class="text-muted"> • ${customer.phone}</small>` : ''}
+                    </div>
+                    <div class="text-end">
+                        <span class="badge bg-${customer.terms === 'credit' ? 'warning' : 'success'}">${termsText}</span>
+                        ${balance !== 0 ? `<br><small class="${balanceClass}">Bal: R ${Math.abs(balance).toFixed(2)}</small>` : ''}
+                    </div>
+                </div>
+            </a>
+        `);
+        
+        item.on('click', function(e) {
+            e.preventDefault();
+            selectCustomerFromSearch(customer);
+        });
+        
+        resultsDiv.append(item);
+    });
+    
+    resultsDiv.show();
+}
+
+function selectCustomerFromSearch(customer) {
+    currentCustomer = customer;
+    $('#customerSearch').val(customer.name);
+    $('#customerSearchResults').hide();
+    $('#clearCustomerBtn').show(); // Show clear button
+    
+    // Show customer info form (readonly)
+    $('#customerInfoForm').show();
+    $('#walkInCustomerForm').hide();
+    
+    // Populate customer details
+    $('#customerName').val(customer.name || '');
+    $('#customerPhone').val(customer.phone || '');
+    $('#customerEmail').val(customer.email || '');
+    $('#customerAddress').val(customer.address || '');
+    
+    displayCustomerInfo();
+    loadCustomerVehicles(customer.id);
+    applyPriceTierToCart();
+    updatePaymentMethods();
+}
+
+// Clear customer selection (Walk-in)
+function clearCustomer() {
+    currentCustomer = null;
+    currentVehicle = null;
+    $('#customerSearch').val('');
+    $('#customerInfo').addClass('d-none');
+    $('#vehicleSection').hide();
+    $('#vehicleSelect').html('<option value="">Select Vehicle</option>');
+    $('#vehicleInfo').hide();
+    $('#clearCustomerBtn').hide();
+    
+    // Show walk-in customer form
+    $('#customerInfoForm').hide();
+    $('#walkInCustomerForm').show();
+    
+    // Clear walk-in form
+    $('#walkInName').val('');
+    $('#walkInPhone').val('');
+    $('#walkInEmail').val('');
+    $('#walkInAddress').val('');
+    
+    // Show price tier dropdown for walk-in customers
+    $('#priceTier').closest('.mb-3').show();
+    
+    updatePaymentMethods();
+    updateCartTotals();
+    
+    toastr.info('Switched to Walk-in Customer');
 }
 
 // Populate category filter
@@ -853,11 +1234,41 @@ function searchProducts(query) {
         return;
     }
 
-    const filtered = products.filter(p =>
-        p.name.toLowerCase().includes(query.toLowerCase()) ||
-        p.sku.toLowerCase().includes(query.toLowerCase()) ||
-        (p.barcode_primary && p.barcode_primary.toLowerCase().includes(query.toLowerCase()))
-    );
+    const searchTerm = query.toLowerCase();
+    
+    const filtered = products.filter(p => {
+        // Search by Product Name
+        if (p.name && p.name.toLowerCase().includes(searchTerm)) return true;
+        
+        // Search by SKU
+        if (p.sku && p.sku.toLowerCase().includes(searchTerm)) return true;
+        
+        // Search by Barcode
+        if (p.barcode_primary && p.barcode_primary.toLowerCase().includes(searchTerm)) return true;
+        
+        // Search by Description
+        if (p.description && p.description.toLowerCase().includes(searchTerm)) return true;
+        
+        // Search by OE Numbers
+        if (p.oeNumbers && p.oeNumbers.toLowerCase().includes(searchTerm)) return true;
+        
+        // Search by Supplier Code
+        if (p.supplier_code && p.supplier_code.toLowerCase().includes(searchTerm)) return true;
+        
+        // Search by Brand Code
+        if (p.brand_code && p.brand_code.toLowerCase().includes(searchTerm)) return true;
+        
+        // Search by Bin Location
+        if (p.bin_location && p.bin_location.toLowerCase().includes(searchTerm)) return true;
+        
+        // Search by Brand Name
+        if (p.brand_name && p.brand_name.toLowerCase().includes(searchTerm)) return true;
+        
+        // Search by Category Name
+        if (p.category_name && p.category_name.toLowerCase().includes(searchTerm)) return true;
+        
+        return false;
+    });
 
     if (filtered.length === 0) {
         $('#searchResults').html('<div class="p-3 text-center text-muted">No products found</div>').show();
@@ -895,8 +1306,21 @@ function searchProducts(query) {
             reservedInfo = `<small class="text-warning d-block mt-1" title="Reserved for jobs">Reserved: ${reserved}</small>`;
         }
         
+        // Build OE numbers and supplier code display
+        const additionalInfo = [];
+        if (product.supplier_code) {
+            additionalInfo.push(`<span class="badge bg-info-transparent">Supplier: ${product.supplier_code}</span>`);
+        }
+        if (product.oe_numbers) {
+            additionalInfo.push(`<span class="badge bg-secondary-transparent">OE: ${product.oe_numbers}</span>`);
+        }
+        if (product.bin_location) {
+            additionalInfo.push(`<span class="badge bg-primary-transparent">Bin: ${product.bin_location}</span>`);
+        }
+        const additionalInfoHtml = additionalInfo.length > 0 ? `<div class="mt-1">${additionalInfo.join(' ')}</div>` : '';
+        
         html += `
-            <div class="search-result-item">
+            <div class="search-result-item" onclick="addToCart(${JSON.stringify(product).replace(/"/g, '&quot;')})" style="cursor: pointer;">
                 <div class="d-flex align-items-center gap-3">
                     <div class="flex-grow-1">
                         <div class="d-flex align-items-center gap-2">
@@ -909,6 +1333,7 @@ function searchProducts(query) {
                             <div>
                                 <div class="fw-bold">${product.name}</div>
                         <small class="text-muted">SKU: ${product.sku}</small>
+                        ${additionalInfoHtml}
                     </div>
                     </div>
                     </div>
@@ -917,9 +1342,7 @@ function searchProducts(query) {
                         ${stockBadge}
                         ${reservedInfo}
                     </div>
-                    <button class="btn btn-sm btn-primary" onclick="addToCart(${JSON.stringify(product).replace(/"/g, '&quot;')})">
-                        <i class="ri-add-line me-1"></i>Add
-                    </button>
+                    
                 </div>
             </div>
         `;
@@ -948,20 +1371,24 @@ function displayProducts() {
 }
 
 // Add to cart
-function addToCart(product) {
+function addToCart(product, quantity = 1) {
     const existingItem = cart.find(item => item.id === product.id);
     
     if (existingItem) {
-        existingItem.quantity += 1;
+        existingItem.quantity += quantity;
     } else {
         cart.push({
             id: product.id,
             name: product.name,
             sku: product.sku,
             price: parseFloat(product.price_normal),
-            quantity: 1,
+            price_normal: parseFloat(product.price_normal),
+            price_online: parseFloat(product.price_online),
+            price_workshop: parseFloat(product.price_workshop),
+            quantity: quantity,
             discount: 0,
-            stock: product.on_hand || 0
+            stock: product.on_hand || 0,
+            available: product.on_hand || 0
         });
     }
     
@@ -971,10 +1398,42 @@ function addToCart(product) {
     $('#searchResults').hide();
 }
 
+// Add to cart silently (no toast)
+function addToCartSilent(product, quantity = 1) {
+    const existingItem = cart.find(item => item.id === product.id);
+    
+    if (existingItem) {
+        existingItem.quantity += quantity;
+    } else {
+        cart.push({
+            id: product.id,
+            name: product.name,
+            sku: product.sku,
+            price: parseFloat(product.price_normal),
+            price_normal: parseFloat(product.price_normal),
+            price_online: parseFloat(product.price_online),
+            price_workshop: parseFloat(product.price_workshop),
+            quantity: quantity,
+            discount: 0,
+            stock: product.on_hand || 0,
+            available: product.on_hand || 0
+        });
+    }
+    
+    updateCartDisplay();
+    $('#productSearch').val('');
+    $('#searchResults').hide();
+}
+
 // Update cart display
 function updateCartDisplay() {
     const container = $('#cartItemsLeft');
     const itemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+    
+    // Save currently focused element
+    const focusedElement = document.activeElement;
+    const isFocusedOnDiscount = focusedElement && focusedElement.classList.contains('item-discount');
+    const focusedItemId = isFocusedOnDiscount ? parseInt(focusedElement.getAttribute('data-item-id')) : null;
     
     $('#cartItemCountLeft').text(itemCount);
     
@@ -1020,8 +1479,8 @@ function updateCartDisplay() {
                 <th style="width: 80px;" class="text-end">Price</th>
                 <th style="width: 100px;" class="text-center">Qty</th>
                 <th style="width: 80px;" class="text-end">
-                    Discount
-                    <i class="ri-information-line text-warning ms-1" data-bs-toggle="tooltip" title="Max {{ auth()->user()->max_discount_allowed ?? 10 }}% per line"></i>
+                    Discount (R)
+                    <i class="ri-information-line text-warning ms-1" data-bs-toggle="tooltip" data-bs-html="true" title="<strong>Line Item Discount</strong><br>Max: ` + maxDiscountLimit + `% (` + userRole + `)"></i>
                 </th>
                 <th style="width: 100px;" class="text-end">Total</th>
                 <th style="width: 60px;" class="text-center">Action</th>
@@ -1048,7 +1507,17 @@ function updateCartDisplay() {
                     }
                 </td>
                 <td><small class="text-muted">${item.sku}</small></td>
-                <td class="text-end">R ${item.price.toFixed(2)}</td>
+                <td class="text-end">
+                    @if(in_array(auth()->user()->role, ['owner', 'manager']))
+                        <input type="number" class="form-control form-control-sm text-end" 
+                               value="${(item.price || 0).toFixed(2)}" 
+                               onchange="updateItemPrice(${item.id}, this.value)" 
+                               step="0.01" min="0" 
+                               style="width: 90px;">
+                    @else
+                        R ${(item.price || 0).toFixed(2)}
+                    @endif
+                </td>
                 <td class="text-center">
                         <div class="quantity-controls">
                         <button class="quantity-btn btn-sm" onclick="decreaseQuantity(${item.id})">
@@ -1061,15 +1530,19 @@ function updateCartDisplay() {
                             </button>
                         </div>
                 </td>
-                <td class="text-center">
+                <td class="text-end">
+                    <div class="input-group input-group-sm" style="width: 100px;">
+                        <span class="input-group-text bg-light px-2">R</span>
                     <input type="number" class="form-control form-control-sm item-discount" 
                            data-item-id="${item.id}" 
                            value="${item.discount || 0}" 
                            step="0.01" min="0" 
-                           placeholder="0.00"
-                           style="width: 80px;">
+                               placeholder="0"
+                               title="Max: R${((item.price * item.quantity * maxDiscountLimit) / 100).toFixed(2)}"
+                               style="text-align: right;">
+                    </div>
                 </td>
-                <td class="text-end fw-bold text-primary">R ${((item.price * item.quantity) - (item.discount || 0)).toFixed(2)}</td>
+                <td class="text-end fw-bold text-primary">R ${(((item.price || 0) * (item.quantity || 0)) - (item.discount || 0)).toFixed(2)}</td>
                 <td class="text-center">
                     <button class="btn btn-sm btn-link text-danger p-0" onclick="removeFromCart(${item.id})" title="Remove">
                         <i class="ri-delete-bin-line"></i>
@@ -1081,6 +1554,31 @@ function updateCartDisplay() {
         
     html += '</tbody></table></div>';
         container.html(html);
+    
+    // Reinitialize tooltips for cart items
+    const tooltipTriggerList = [].slice.call(container[0].querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl, {
+            html: true
+        });
+    });
+    
+    // Restore focus to the discount input if it was focused before
+    if (focusedItemId) {
+        setTimeout(() => {
+            const inputToFocus = $(`.item-discount[data-item-id="${focusedItemId}"]`);
+            if (inputToFocus.length) {
+                inputToFocus.focus();
+                // Move cursor to end of input
+                const input = inputToFocus[0];
+                if (input.setSelectionRange) {
+                    const len = input.value.length;
+                    input.setSelectionRange(len, len);
+                }
+            }
+        }, 0);
+    }
+    
     updateCartTotals();
 }
 
@@ -1088,31 +1586,40 @@ function updateCartDisplay() {
 function updateCartTotals() {
     // Calculate subtotal with item discounts
     const subtotal = cart.reduce((sum, item) => {
-        const itemTotal = (item.price * item.quantity) - (item.discount || 0);
+        const price = parseFloat(item.price) || 0;
+        const quantity = parseFloat(item.quantity) || 0;
+        const discount = parseFloat(item.discount) || 0;
+        const itemTotal = (price * quantity) - discount;
         return sum + itemTotal;
     }, 0);
     
-    // Get additional discount and shipping from input fields
-    discountAmount = parseFloat($('#discountInput').val()) || 0;
+    // Get discount amount based on settings type
+    discountAmount = getDiscountAmount(subtotal);
     shippingAmount = parseFloat($('#shippingInput').val()) || 0;
     
     // Total after additional discount and shipping
     const totalAfterDiscount = subtotal - discountAmount + shippingAmount;
     
-    // Calculate VAT
+    // Calculate VAT - ensure vatRate is valid
     let vatAmount = 0;
-    if (vatEnabled) {
+    if (vatEnabled && vatRate && !isNaN(vatRate)) {
         vatAmount = totalAfterDiscount * (vatRate / 100);
     }
 
     const grandTotal = totalAfterDiscount + vatAmount;
     
+    // Ensure all values are valid numbers
+    const safeSubtotal = isNaN(subtotal) ? 0 : subtotal;
+    const safeVatAmount = isNaN(vatAmount) ? 0 : vatAmount;
+    const safeGrandTotal = isNaN(grandTotal) ? 0 : grandTotal;
+    
     // Update display
-    $('#subtotalDisplay').val('R ' + subtotal.toFixed(2));
-    $('#vatAmountDisplay').val('R ' + vatAmount.toFixed(2));
-    $('#grandTotal').text('R ' + grandTotal.toFixed(2));
-    $('#amountPaidDisplay').text('R 0.00');
-    $('#balanceDue').text('R ' + grandTotal.toFixed(2));
+    $('#subtotalDisplay').val('R ' + safeSubtotal.toFixed(2));
+    $('#vatAmountDisplay').val('R ' + safeVatAmount.toFixed(2));
+    $('#grandTotal').text('R ' + safeGrandTotal.toFixed(2));
+    // Amount Paid and Balance Due removed from summary
+    // $('#amountPaidDisplay').text('R 0.00');
+    // $('#balanceDue').text('R ' + safeGrandTotal.toFixed(2));
 }
 
 // Increase quantity
@@ -1143,6 +1650,22 @@ function updateQuantity(productId, quantity) {
     }
 }
 
+// Update item price (admin/manager only)
+function updateItemPrice(productId, newPrice) {
+    const item = cart.find(item => item.id === productId);
+    if (item) {
+        const price = parseFloat(newPrice) || 0;
+        if (price < 0) {
+            toastr.error('Price cannot be negative');
+            updateCartDisplay();
+            return;
+        }
+        item.price = price;
+        updateCartDisplay();
+        toastr.success('Price updated');
+    }
+}
+
 // Remove from cart
 function removeFromCart(productId) {
     cart = cart.filter(item => item.id !== productId);
@@ -1151,49 +1674,70 @@ function removeFromCart(productId) {
 }
 
 // Select customer
+// Select customer (legacy function - kept for compatibility)
 function selectCustomer() {
-    const customerId = $('#customerSelect').val();
-    
-    if (customerId) {
-        currentCustomer = customers.find(c => c.id == customerId);
-        displayCustomerInfo();
-        
-        // Auto-enable VAT for credit customers
-        if (currentCustomer && currentCustomer.customer_type === 'credit') {
-            $('#vatEnabled').prop('checked', true);
-            vatEnabled = true;
-            updateCartTotals();
-    } else {
-            $('#vatEnabled').prop('checked', false);
-            vatEnabled = false;
-            updateCartTotals();
-        }
-    } else {
-        currentCustomer = null;
-        $('#customerInfo').addClass('d-none');
-        $('#vatEnabled').prop('checked', false);
-        vatEnabled = false;
-        updateCartTotals();
-    }
-    
-    updatePaymentMethods();
+    // Now handled by selectCustomerFromSearch()
+    // This function kept for any legacy calls
 }
 
 // Display customer info
 function displayCustomerInfo() {
     if (!currentCustomer) return;
     
+    const balance = currentCustomer.outstanding_balance || currentCustomer.balance || 0;
+    const creditLimit = currentCustomer.credit_limit || 0;
+    const availableCredit = currentCustomer.available_credit || (creditLimit - Math.abs(balance));
+    const priceTier = currentCustomer.price_tier || 'normal';
+    const terms = currentCustomer.terms || 'cash';
+    
+    // Auto-set price tier based on customer
+    $('#priceTier').val(priceTier);
+    updatePriceTier();
+    
+    // Hide price tier dropdown (customer's tier is locked)
+    $('#priceTier').closest('.mb-3').hide();
+    
+    // Get terms display text
+    let termsText = 'Cash';
+    if (terms === 'credit') {
+        termsText = 'On Account';
+    } else if (terms === 'mixed') {
+        termsText = 'Mixed';
+    }
+    
     const html = `
-        <div class="alert alert-info py-2 mb-0">
-                    <div class="d-flex justify-content-between align-items-center">
+        <div class="alert alert-primary py-2 mb-0" style="border-left: 4px solid #0d6efd;">
+            <div class="mb-2 d-flex justify-content-between align-items-start">
                 <div>
-                    <small class="fw-bold">${currentCustomer.name}</small><br>
-                    <small class="text-muted">${currentCustomer.email || currentCustomer.phone || ''}</small>
+                    <strong class="d-block">${currentCustomer.name}</strong>
+                    <small class="text-muted">${currentCustomer.customer_code || ''}</small>
                         </div>
                         <div class="text-end">
-                    <small class="text-muted">Credit Limit</small><br>
-                    <small class="fw-bold">R ${(currentCustomer.credit_limit || 0).toFixed(2)}</small>
+                    <span class="badge bg-info">${termsText}</span>
                         </div>
+                    </div>
+            
+            ${creditLimit > 0 ? `
+            <div class="row g-2 small mb-2">
+                <div class="col-4">
+                    <span class="text-muted">Outstanding:</span><br>
+                    <strong class="${balance > 0 ? 'text-danger' : 'text-success'}">R ${Math.abs(balance).toFixed(2)}</strong>
+                </div>
+                <div class="col-4">
+                    <span class="text-muted">Credit Limit:</span><br>
+                    <strong class="text-info">R ${creditLimit.toFixed(2)}</strong>
+                </div>
+                <div class="col-4">
+                    <span class="text-muted">Available:</span><br>
+                    <strong class="${availableCredit > 0 ? 'text-success' : 'text-danger'}">R ${availableCredit.toFixed(2)}</strong>
+                </div>
+            </div>
+            ` : ''}
+            
+            <div class="d-flex gap-2 flex-wrap">
+                <span class="badge bg-primary-transparent">${priceTier.charAt(0).toUpperCase() + priceTier.slice(1)} Price</span>
+                ${currentCustomer.phone ? `<small class="text-muted"><i class="ri-phone-line"></i> ${currentCustomer.phone}</small>` : ''}
+                ${currentCustomer.email ? `<small class="text-muted"><i class="ri-mail-line"></i> ${currentCustomer.email}</small>` : ''}
                     </div>
                 </div>
             `;
@@ -1204,7 +1748,266 @@ function displayCustomerInfo() {
 // Toggle VAT
 function toggleVAT() {
     vatEnabled = $('#vatEnabled').is(':checked');
+    
+    // Debug logging
+    console.log('VAT Toggle:', {
+        vatEnabled: vatEnabled,
+        vatRate: vatRate,
+        cartLength: cart.length
+    });
+    
     updateCartTotals();
+}
+
+// Load customer vehicles
+function loadCustomerVehicles(customerId) {
+    // Show section immediately with loading state
+    $('#vehicleSection').show();
+    $('#vehicleSelect').html('<option value="">Loading vehicles...</option>');
+    
+    const url = "{{ route('customers.vehicles.get', ':id') }}".replace(':id', customerId);
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                customerVehicles = data.vehicles;
+                populateVehicleDropdown();
+                
+                if (customerVehicles.length > 0) {
+                    // Auto-select primary vehicle if exists
+                    const primaryVehicle = customerVehicles.find(v => v.is_primary);
+                    if (primaryVehicle) {
+                        $('#vehicleSelect').val(primaryVehicle.id);
+                        selectVehicle();
+                    }
+                } else {
+                    // No vehicles - show helpful message
+                    $('#vehicleSelect').html('<option value="">No vehicles - Click + to add</option>');
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error loading vehicles:', error);
+            $('#vehicleSelect').html('<option value="">Error loading vehicles</option>');
+        });
+}
+
+// Populate vehicle dropdown
+function populateVehicleDropdown() {
+    const select = $('#vehicleSelect');
+    select.html('<option value="">Select Vehicle</option>');
+    
+    customerVehicles.forEach(vehicle => {
+        select.append(`<option value="${vehicle.id}" 
+            data-make="${vehicle.make_name}" 
+            data-model="${vehicle.model_name}"
+            data-reg="${vehicle.registration_number}"
+            data-mileage="${vehicle.mileage}">
+            ${vehicle.display_name}
+        </option>`);
+    });
+}
+
+// Select vehicle
+function selectVehicle() {
+    const vehicleId = $('#vehicleSelect').val();
+    
+    if (vehicleId) {
+        currentVehicle = customerVehicles.find(v => v.id == vehicleId);
+        
+        if (currentVehicle) {
+            const html = `
+                <div class="alert alert-light py-2 small mb-0">
+                    <div class="row g-1">
+                        <div class="col-6">
+                            <span class="text-muted">Make:</span><br>
+                            <strong class="${!currentVehicle.make_id ? 'text-warning bg-warning bg-opacity-25 px-1 rounded' : ''}">${currentVehicle.make_name}</strong>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted">Model:</span><br>
+                            <strong class="${!currentVehicle.model_id ? 'text-warning bg-warning bg-opacity-25 px-1 rounded' : ''}">${currentVehicle.model_name}</strong>
+                        </div>
+                        ${currentVehicle.engine ? `
+                        <div class="col-6">
+                            <span class="text-muted">Engine:</span><br>
+                            <strong>${currentVehicle.engine}</strong>
+                        </div>
+                        ` : ''}
+                        <div class="col-6">
+                            <span class="text-muted">Reg:</span><br>
+                            <strong>${currentVehicle.registration_number || 'N/A'}</strong>
+                        </div>
+                        ${currentVehicle.mileage ? `
+                        <div class="col-6">
+                            <span class="text-muted">Mileage:</span><br>
+                            <strong>${currentVehicle.mileage} km</strong>
+                        </div>
+                        ` : ''}
+                        ${currentVehicle.vin_number ? `
+                        <div class="col-12">
+                            <span class="text-muted">VIN:</span>
+                            <strong>${currentVehicle.vin_number}</strong>
+                        </div>
+                        ` : ''}
+                        ${!currentVehicle.make_id || !currentVehicle.model_id ? `
+                        <div class="col-12 mt-2">
+                            <div class="alert alert-warning py-2 mb-0" style="border-left: 4px solid #ffc107;">
+                                <div class="d-flex align-items-center">
+                                    <i class="ri-alert-line fs-5 me-2"></i>
+                                    <div>
+                                        <strong>Incomplete Vehicle Data</strong><br>
+                                        <small>Make/Model missing. Please edit customer to update vehicle details.</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+            $('#vehicleInfo').html(html).show();
+        }
+    } else {
+        currentVehicle = null;
+        $('#vehicleInfo').hide();
+    }
+}
+
+// Show Add Vehicle Modal
+function showAddVehicleModal() {
+    if (!currentCustomer) {
+        toastr.error('Please select a customer first');
+        return;
+    }
+    
+    const modal = new bootstrap.Modal(document.getElementById('addVehicleModal'));
+    modal.show();
+    
+    // Reset form
+    $('#addVehicleForm')[0].reset();
+    $('#newVehicleModel').prop('disabled', true);
+    
+    // Initialize Select2 for makes
+    initializeAddVehicleSelect2();
+}
+
+// Initialize Select2 for Add Vehicle modal
+function initializeAddVehicleSelect2() {
+    // Make Select2
+    $('.select2-add-vehicle-make').select2({
+        dropdownParent: $('#addVehicleModal'),
+        placeholder: 'Select Make',
+        allowClear: true,
+        ajax: {
+            url: '{{ route("api.car-makes") }}',
+            dataType: 'json',
+            delay: 250,
+            processResults: function (data) {
+                return {
+                    results: data.results
+                };
+            }
+        }
+    }).on('change', function() {
+        const makeId = $(this).val();
+        const modelSelect = $('.select2-add-vehicle-model');
+        
+        if (makeId) {
+            modelSelect.prop('disabled', false);
+            
+            // Re-initialize model Select2 with make filter
+            modelSelect.select2('destroy');
+            modelSelect.select2({
+                dropdownParent: $('#addVehicleModal'),
+                placeholder: 'Select Model',
+                allowClear: true,
+                ajax: {
+                    url: '{{ route("api.car-models") }}',
+                    dataType: 'json',
+                    delay: 250,
+                    data: function (params) {
+                        return {
+                            q: params.term,
+                            make_id: makeId
+                        };
+                    },
+                    processResults: function (data) {
+                        return {
+                            results: data.results
+                        };
+                    }
+                }
+            });
+        } else {
+            modelSelect.prop('disabled', true).val('').trigger('change');
+        }
+    });
+    
+    // Model Select2 (initially disabled)
+    $('.select2-add-vehicle-model').select2({
+        dropdownParent: $('#addVehicleModal'),
+        placeholder: 'Select Model',
+        disabled: true
+    });
+}
+
+// Add new vehicle
+function addNewVehicle() {
+    const makeId = $('#newVehicleMake').val();
+    const modelId = $('#newVehicleModel').val();
+    const engine = $('#newVehicleEngine').val();
+    const year = $('#newVehicleYear').val();
+    const registration = $('#newVehicleReg').val();
+    const mileage = $('#newVehicleMileage').val();
+    const isPrimary = $('#newVehiclePrimary').is(':checked');
+    
+    if (!makeId || !modelId || !registration) {
+        toastr.error('Please fill in Make, Model, and Registration');
+        return;
+    }
+    
+    if (!currentCustomer) {
+        toastr.error('No customer selected');
+        return;
+    }
+    
+    toastr.info('Adding vehicle...');
+    
+    const url = "{{ route('customers.vehicles.store', ':id') }}".replace(':id', currentCustomer.id);
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            make_id: makeId,
+            model_id: modelId,
+            engine: engine,
+            year: year,
+            registration_number: registration,
+            mileage: mileage,
+            is_primary: isPrimary
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            toastr.success('Vehicle added successfully!');
+            
+            // Close modal
+            bootstrap.Modal.getInstance(document.getElementById('addVehicleModal')).hide();
+            
+            // Reload customer vehicles
+            loadCustomerVehicles(currentCustomer.id);
+        } else {
+            toastr.error(data.message || 'Failed to add vehicle');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        toastr.error('Error adding vehicle');
+    });
 }
 
 // Update payment methods
@@ -1214,18 +2017,39 @@ function updatePaymentMethods() {
     
     select.find('option:not(:first)').remove();
     
-    if (currentCustomer && currentCustomer.customer_type === 'credit') {
-        select.append('<option value="on_account">On Account</option>');
+    // Check customer terms
+    const customerTerms = currentCustomer ? currentCustomer.terms : 'cash';
+    
+    // If customer allows credit/on account
+    if (currentCustomer && customerTerms === 'credit') {
+        select.append('<option value="credit">On Account</option>');
         $('#onAccountOption').show();
         } else {
         $('#onAccountOption').hide();
     }
     
+    // Always allow these payment methods
     select.append('<option value="cash">Cash</option>');
     select.append('<option value="card">Card</option>');
     select.append('<option value="eft">EFT</option>');
     
+    // If mixed terms, allow combination
+    if (currentCustomer && customerTerms === 'mixed') {
+        select.append('<option value="mixed">Mixed Payment</option>');
+    }
+    
     if (currentValue) select.val(currentValue);
+}
+
+// Helper function to calculate discount amount based on type
+function getDiscountAmount(subtotal) {
+    const discountValue = parseFloat($('#discountInput').val()) || 0;
+    
+    if (discountTypeSettings === 'percentage') {
+        return (subtotal * discountValue) / 100;
+    } else {
+        return discountValue;
+    }
 }
 
 // Calculate change
@@ -1238,8 +2062,8 @@ function calculateChange() {
         return sum + itemTotal;
     }, 0);
     
-    // Get additional discount and shipping from input fields
-    const discount = parseFloat($('#discountInput').val()) || 0;
+    // Get discount amount based on type
+    const discount = getDiscountAmount(subtotal);
     const shipping = parseFloat($('#shippingInput').val()) || 0;
     
     const totalAfterDiscount = subtotal - discount + shipping;
@@ -1259,18 +2083,17 @@ function clearCart() {
             shippingAmount = 0;
             $('#discountInput').val('0.00');
             $('#shippingInput').val('0.00');
-            $('#vehicleMake').val('').trigger('change');
-            $('#vehicleModel').val('').trigger('change');
-            $('#vehicleEngine').val('').trigger('change');
-            $('#vehicleYear').val('');
+            $('#vehicleMake').val('');
+            $('#vehicleModel').val('');
             $('#vehicleReg').val('');
-            $('#vehicleVin').val('');
             $('#vehicleMileage').val('');
-            $('#customerSelect').val('');
+            $('#customerSearch').val('');
             currentCustomer = null;
             $('#customerInfo').addClass('d-none');
-            $('#vatEnabled').prop('checked', false);
-            vatEnabled = false;
+            $('#customerInfoForm').hide();
+            $('#walkInCustomerForm').hide();
+            $('#clearCustomerBtn').hide();
+            // Keep VAT setting - user preference maintained
             updateCartDisplay();
             toastr.info('Cart cleared');
         }
@@ -1314,21 +2137,39 @@ $(document).on('input', '#discountInput', function() {
         discountValue = 0;
     }
     
-    // Prevent discount greater than subtotal
+    // Role-based discount validation
+    if (discountTypeSettings === 'percentage') {
+        // Check if percentage exceeds role limit
+        if (discountValue > maxDiscountLimit) {
+            toastr.warning(`Your role (${userRole}) allows maximum ${maxDiscountLimit}% discount`);
+            $(this).val(maxDiscountLimit.toFixed(2));
+            discountValue = maxDiscountLimit;
+        }
+        
+        // Prevent percentage > 100%
+        if (discountValue > 100) {
+            $(this).val('100.00');
+            discountValue = 100;
+        }
+    } else {
+        // Flat discount - prevent discount greater than subtotal
     if (discountValue > subtotal && subtotal > 0) {
         $(this).val(subtotal.toFixed(2));
         discountValue = subtotal;
         toastr.error('Discount cannot exceed subtotal');
+        }
     }
     
-    // Prevent extremely large numbers
-    if (discountValue > 999999.99) {
-        $(this).val('999999.99');
-        discountValue = 999999.99;
-        toastr.error('Discount too large. Maximum is R999,999.99');
+    // Additional check for flat discount if it exceeds role percentage limit
+    if (discountTypeSettings === 'flat' && subtotal > 0) {
+        const discountPercentage = (discountValue / subtotal) * 100;
+        if (discountPercentage > maxDiscountLimit) {
+            const maxAllowedDiscount = (subtotal * maxDiscountLimit) / 100;
+            toastr.warning(`Your role (${userRole}) allows maximum ${maxDiscountLimit}% discount (R ${maxAllowedDiscount.toFixed(2)})`);
+            $(this).val(maxAllowedDiscount.toFixed(2));
+        }
     }
     
-    discountAmount = discountValue;
     updateCartTotals();
 });
 
@@ -1352,39 +2193,52 @@ $(document).on('input', '#shippingInput', function() {
     updateCartTotals();
 });
 
-// Item discount input handler
+// Item discount input handler with debouncing
+let discountUpdateTimeout;
 $(document).on('input', '.item-discount', function() {
     const itemId = parseInt($(this).data('item-id'));
+    const inputElement = this;
     let discountValue = parseFloat($(this).val()) || 0;
     
     const item = cart.find(item => item.id === itemId);
     if (item) {
+        // Update item discount immediately for smooth UX
+        item.discount = discountValue;
+        
+        // Clear previous timeout
+        clearTimeout(discountUpdateTimeout);
+        
+        // Debounce validation and display update
+        discountUpdateTimeout = setTimeout(() => {
         // Prevent negative values
         if (discountValue < 0) {
-            $(this).val('0.00');
+                $(inputElement).val('0.00');
             discountValue = 0;
         }
         
-        // Validate discount limit
-        const maxDiscountAllowed = {{ (auth()->user()->max_discount_allowed ?? 10) }};
+            // Role-based discount validation for line items
         const lineTotal = item.price * item.quantity;
-        const maxDiscountAmount = (lineTotal * maxDiscountAllowed) / 100;
+            const maxDiscountAmount = (lineTotal * maxDiscountLimit) / 100;
         
+            // Check if discount exceeds role-based limit
         if (discountValue > maxDiscountAmount) {
-            toastr.warning(`Discount cannot exceed ${maxDiscountAllowed}% (R${maxDiscountAmount.toFixed(2)}) for your role`);
-            $(this).val(maxDiscountAmount.toFixed(2));
+                toastr.warning(`Your role (${userRole}) allows maximum ${maxDiscountLimit}% discount (R ${maxDiscountAmount.toFixed(2)}) on this item`);
+                $(inputElement).val(maxDiscountAmount.toFixed(2));
             discountValue = maxDiscountAmount;
+                item.discount = discountValue;
         }
         
         // Prevent discount greater than line total
         if (discountValue > lineTotal) {
-            $(this).val(lineTotal.toFixed(2));
+                $(inputElement).val(lineTotal.toFixed(2));
             discountValue = lineTotal;
             toastr.error('Discount cannot exceed line total');
+                item.discount = discountValue;
         }
         
-        item.discount = discountValue;
-        updateCartDisplay();
+            // Update totals without refreshing display
+            updateCartTotals();
+        }, 300);
     }
 });
 
@@ -1431,7 +2285,7 @@ function addNewCustomer() {
         },
         body: JSON.stringify({
             name: name,
-            customer_type: type,
+            terms: type === 'credit' ? 'credit' : 'cash',
             credit_limit: creditLimit,
             email: email,
             phone: phone,
@@ -1475,20 +2329,28 @@ function showQuickAddProduct() {
 function addQuickProduct() {
     const name = $('#quickAddName').val().trim();
     const price = parseFloat($('#quickAddPrice').val());
-    const qty = parseFloat($('#quickAddQty').val());
+    const qty = parseFloat($('#quickAddQty').val()) || 1;
     
-    if (!name || !price || !qty) {
-        toastr.error('Please fill in all fields');
+    if (!name || !price) {
+        toastr.error('Please fill in product name and price');
         return;
     }
     
-    if (price <= 0 || qty <= 0) {
-        toastr.error('Price and quantity must be greater than 0');
+    if (price <= 0) {
+        toastr.error('Price must be greater than 0');
         return;
     }
     
-    // Show loading
-    toastr.info('Creating product...');
+    if (qty < 0) {
+        toastr.error('Quantity cannot be negative');
+        return;
+    }
+    
+    // Disable button during processing
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Creating...';
     
     // Save product to database first
     fetch('{{ route('products.quickAdd') }}', {
@@ -1499,17 +2361,15 @@ function addQuickProduct() {
             'X-CSRF-TOKEN': '{{ csrf_token() }}'
         },
         body: JSON.stringify({
-            name: name,
-            price_normal: price,
-            qty: qty,
+        name: name,
+        price_normal: price,
+            qty: 1,
             unit_cost: price * 0.7 // Estimate 70% cost
         })
     })
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            toastr.success('Product created successfully!');
-            
             // Create product object for cart
             const newProduct = {
                 id: data.product.id,
@@ -1520,36 +2380,47 @@ function addQuickProduct() {
                 price_online: parseFloat(data.product.price_online),
                 price_workshop: parseFloat(data.product.price_workshop),
                 on_hand: data.product.on_hand || 0,
-                reserved: 0,
+        reserved: 0,
                 available: data.product.on_hand || 0,
-                image: null,
+        image: null,
                 category_id: data.product.category_id,
                 category_name: data.product.category_name || 'General',
                 brand_name: data.product.brand_name || 'Generic'
             };
             
-            // Add to cart
-            addToCart(newProduct, qty);
+            // Add to cart silently
+            addToCartSilent(newProduct, qty);
             
             // Reload products list
             loadProducts();
+    
+    // Clear quick add fields
+    $('#quickAddName').val('');
+    $('#quickAddPrice').val('');
+            $('#quickAddQty').val('1'); // Reset to default 1
+    
+    // Hide quick add section
+            $('#quickAddSection').slideUp();
             
-            // Clear quick add fields
-            $('#quickAddName').val('');
-            $('#quickAddPrice').val('');
-            $('#quickAddQty').val('1');
-            
-            // Hide quick add section
-            $('#quickAddSection').hide();
-            
-            toastr.success('Product added to cart!');
+            // Single success message
+            toastr.success(`✓ ${name} created and added to cart!`, '', {
+                timeOut: 2000
+            });
         } else {
             toastr.error(data.message || 'Failed to create product');
         }
+        
+        // Re-enable button
+        btn.disabled = false;
+        btn.innerHTML = originalText;
     })
     .catch(error => {
         console.error('Error:', error);
-        toastr.error('An error occurred while creating the product');
+        toastr.error('Error creating product');
+        
+        // Re-enable button
+        btn.disabled = false;
+        btn.innerHTML = originalText;
     });
 }
 
@@ -1577,21 +2448,81 @@ function updatePriceTier() {
     updateCartTotals();
 }
 
+// Apply price tier to all cart items based on customer
+function applyPriceTierToCart() {
+    if (!currentCustomer) return;
+    
+    const priceTier = currentCustomer.price_tier || 'normal';
+    
+    cart.forEach(item => {
+        if (!item.isQuickAdd) {
+            switch(priceTier) {
+                case 'normal':
+                    item.price = item.price_normal;
+                    break;
+                case 'online':
+                    item.price = item.price_online;
+                    break;
+                case 'workshop':
+                    item.price = item.price_workshop;
+                    break;
+            }
+        }
+    });
+    
+    updateCartDisplay();
+    updateCartTotals();
+}
+
+// Note: POS is always enabled - customers can be registered or walk-in
+
 // Update payment fields based on customer type and payment method
 function updatePaymentFields() {
     const paymentMethod = $('#paymentMethod').val();
-    const isCreditCustomer = currentCustomer && currentCustomer.customer_type === 'credit';
+    const isCreditCustomer = currentCustomer && currentCustomer.terms === 'credit';
     
-    if (paymentMethod === 'on_account') {
-        // On account - hide amount paid and change
+    if (paymentMethod === 'credit') {
+        // Credit payment - hide amount paid and change
         $('#amountPaidRow').hide();
         $('#changeRow').hide();
         $('#amountPaid').val(0);
+        $('#amountPaid').prop('readonly', false);
+        
+        // Show reference field for credit payments
+        $('#paymentReferenceRow').show();
             } else {
-        // Cash/Card/EFT - show amount paid and change
+        // Cash/Card/EFT payment - show amount paid
         $('#amountPaidRow').show();
+        $('#paymentReferenceRow').show();
+        
+        // Calculate totals for setting amount
+        const subtotal = cart.reduce((sum, item) => {
+            const itemTotal = (item.price * item.quantity) - (item.discount || 0);
+            return sum + itemTotal;
+        }, 0);
+        const discount = getDiscountAmount(subtotal);
+        const shipping = parseFloat($('#shippingInput').val()) || 0;
+        const totalAfterDiscount = subtotal - discount + shipping;
+        const vatAmount = vatEnabled ? totalAfterDiscount * (vatRate / 100) : 0;
+        const grandTotal = totalAfterDiscount + vatAmount;
+        
+        // Set amount paid to grand total
+        $('#amountPaid').val(grandTotal.toFixed(2));
+        
+        // For cash terms customers (walk-in), amount is readonly and no change shown
+        if (!currentCustomer || currentCustomer.terms === 'cash') {
+            $('#amountPaid').prop('readonly', true);
+            $('#changeRow').hide(); // Cash customers pay exact amount, no change
+        } else if (isCreditCustomer) {
+            // Credit customer choosing cash/card payment - allow amount editing and show change
+            $('#amountPaid').prop('readonly', false);
+            $('#changeRow').show();
+            calculateChange();
+        } else {
+            $('#amountPaid').prop('readonly', false);
         $('#changeRow').show();
         calculateChange();
+        }
     }
 }
 
@@ -1608,49 +2539,152 @@ function processSale() {
         return sum + itemTotal;
     }, 0);
     
-    // Get additional discount and shipping from input fields
-    const discount = parseFloat($('#discountInput').val()) || 0;
+    // Get discount amount based on type (percentage or flat)
+    const discount = getDiscountAmount(subtotal);
     const shipping = parseFloat($('#shippingInput').val()) || 0;
     
     const totalAfterDiscount = subtotal - discount + shipping;
     const vatAmount = vatEnabled ? totalAfterDiscount * (vatRate / 100) : 0;
     const grandTotal = totalAfterDiscount + vatAmount;
     
-    // Check if credit customer - skip payment modal, create invoice directly
-    if (currentCustomer && currentCustomer.customer_type === 'credit') {
-        // Validate credit limit
-        const availableCredit = (currentCustomer.credit_limit || 0) - Math.abs(currentCustomer.balance || 0);
-        
-        if (grandTotal > availableCredit) {
-            toastr.error(`Insufficient credit limit. Available: R ${availableCredit.toFixed(2)}, Required: R ${grandTotal.toFixed(2)}`);
-            return;
-    }
-    
-        // Directly process sale with on_account payment (no confirmation)
-        processSaleDirect('on_account', 0, '');
-        return;
-    }
-    
-    // Cash customer - show payment modal
+    // Show payment modal for all customers (credit and cash)
     const paymentModal = new bootstrap.Modal(document.getElementById('paymentModal'));
     
-    // Set default amount paid
+    // Set default amount paid to grand total
     $('#amountPaid').val(grandTotal.toFixed(2));
     
-    // Customer type alert
-    let alertHtml = `
+    // Customer type alert and payment method setup
+    let alertHtml = '';
+    
+    if (currentCustomer && currentCustomer.terms === 'credit') {
+        // Credit customer - can choose credit or cash/card payment
+        const availableCredit = (currentCustomer.credit_limit || 0) - Math.abs(currentCustomer.balance || 0);
+        
+        alertHtml = `
+            <div class="alert alert-info">
+                <i class="ri-information-line me-2"></i><strong>Credit Customer</strong><br>
+                <small>You can pay using credit (On Account) or Cash/Card/EFT.</small><br>
+                <small>Available Credit: <strong>R ${availableCredit.toFixed(2)}</strong></small>
+            </div>
+        `;
+        
+        // Show credit option in payment method dropdown
+        $('#onAccountOption').show();
+        
+        // Set default payment method to credit for credit customers
+        $('#paymentMethod').val('credit');
+    } else {
+        // Cash customer - must pay full amount
+        alertHtml = `
         <div class="alert alert-warning">
             <i class="ri-alert-line me-2"></i><strong>Cash Customer</strong><br>
-            <small>Cash customers must pay immediately.</small>
+                <small>Cash customers must pay full amount.</small>
         </div>
     `;
+        
+        // Hide credit option for non-credit customers
+        $('#onAccountOption').hide();
+        
+        // Set default payment method to cash
+        $('#paymentMethod').val('cash');
+        
+        // Make amount paid readonly for cash customers (they pay full amount)
+        $('#amountPaid').prop('readonly', true);
+        
+        // Hide change row for cash customers (they pay exact amount)
+        $('#changeRow').hide();
+    }
     
     $('#customerTypeAlert').html(alertHtml);
     
-    // Update payment fields
+    // Update payment fields based on selection
     updatePaymentFields();
     
     paymentModal.show();
+}
+
+// Save as Quotation
+function saveAsQuotation() {
+    if (cart.length === 0) {
+        toastr.error('Cart is empty');
+        return;
+    }
+    
+    if (!currentCustomer) {
+        toastr.error('Please select a customer');
+        return;
+    }
+    
+    // Calculate totals
+    const subtotal = cart.reduce((sum, item) => {
+        const itemTotal = (item.price * item.quantity) - (item.discount || 0);
+        return sum + itemTotal;
+    }, 0);
+    
+    const discount = getDiscountAmount(subtotal);
+    const shipping = parseFloat($('#shippingInput').val()) || 0;
+    const totalAfterDiscount = subtotal - discount + shipping;
+    const vatAmount = vatEnabled ? totalAfterDiscount * (vatRate / 100) : 0;
+    const grandTotal = totalAfterDiscount + vatAmount;
+    
+    // Prepare quote data
+    const quoteData = {
+        customer_id: currentCustomer.id,
+        quote_date: new Date().toISOString().split('T')[0],
+        valid_until: new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0], // 30 days
+        subtotal: subtotal,
+        discount: discount,
+        shipping: shipping,
+        vat_amount: vatAmount,
+        grand_total: grandTotal,
+        items: cart.map(item => ({
+            product_id: item.id,
+            product_name: item.name,
+            quantity: item.quantity,
+            unit_price: item.price,
+            discount: item.discount || 0,
+            total: (item.price * item.quantity) - (item.discount || 0)
+        })),
+        notes: 'Created from POS'
+    };
+    
+    // Show loading
+    toastr.info('Creating quotation...');
+    
+    // Save quotation
+    fetch('{{ route('quotes.store') }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify(quoteData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            toastr.success('Quotation created successfully!');
+            
+            // Clear cart
+            cart = [];
+            currentCustomer = null;
+            updateCartDisplay();
+            $('#customerSelect').val('').trigger('change');
+            $('#customerInfo').addClass('d-none');
+            
+            // Redirect to quotes page
+            if (confirm('Quotation saved! Would you like to view it now?')) {
+                window.open('{{ route('quotes.index') }}', '_blank');
+            }
+        } else {
+            toastr.error(data.message || 'Failed to create quotation');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        toastr.error('An error occurred while creating quotation');
+    });
 }
 
 // Process sale directly (for credit customers)
@@ -1661,18 +2695,37 @@ function processSaleDirect(paymentMethod, amountPaid, paymentReference) {
         return sum + itemTotal;
     }, 0);
     
-    // Get additional discount and shipping from input fields
-    const discount = parseFloat($('#discountInput').val()) || 0;
+    // Get discount amount based on type (percentage or flat)
+    const discount = getDiscountAmount(subtotal);
     const shipping = parseFloat($('#shippingInput').val()) || 0;
     
     const totalAfterDiscount = subtotal - discount + shipping;
     const vatAmount = vatEnabled ? totalAfterDiscount * (vatRate / 100) : 0;
     const grandTotal = totalAfterDiscount + vatAmount;
     
+    // Get walk-in customer details if no customer selected
+    let walkInCustomerDetails = null;
+    if (!currentCustomer) {
+        const walkInName = $('#walkInName').val().trim();
+        const walkInPhone = $('#walkInPhone').val().trim();
+        const walkInEmail = $('#walkInEmail').val().trim();
+        const walkInAddress = $('#walkInAddress').val().trim();
+        
+        if (walkInName) {
+            walkInCustomerDetails = {
+                name: walkInName,
+                phone: walkInPhone,
+                email: walkInEmail,
+                address: walkInAddress
+            };
+        }
+    }
+    
     // Prepare sale data
     const saleData = {
         cart: cart,
         customer_id: currentCustomer ? currentCustomer.id : null,
+        walk_in_customer: walkInCustomerDetails,
         payment_method: paymentMethod,
         amount_paid: amountPaid,
         payment_reference: paymentReference,
@@ -1681,13 +2734,11 @@ function processSaleDirect(paymentMethod, amountPaid, paymentReference) {
         discount_amount: discount,
         discount_type: 'amount',
         shipping: shipping,
-        vehicle_make: $('#vehicleMake').val(),
-        vehicle_model: $('#vehicleModel').val(),
-        vehicle_engine: $('#vehicleEngine').val(),
-        vehicle_year: $('#vehicleYear').val(),
-        vehicle_reg: $('#vehicleReg').val(),
-        vehicle_vin: $('#vehicleVin').val(),
-        vehicle_mileage: $('#vehicleMileage').val(),
+        vehicle_id: currentVehicle ? currentVehicle.id : null,
+        vehicle_make: currentVehicle ? currentVehicle.make_name : '',
+        vehicle_model: currentVehicle ? currentVehicle.model_name : '',
+        vehicle_reg: currentVehicle ? currentVehicle.registration_number : '',
+        vehicle_mileage: currentVehicle ? currentVehicle.mileage : '',
         _token: '{{ csrf_token() }}'
     };
     
@@ -1703,7 +2754,11 @@ function processSaleDirect(paymentMethod, amountPaid, paymentReference) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            toastr.success('Invoice created successfully!');
+            // Store invoice data globally for post-sale actions
+            window.currentInvoiceId = data.invoice_id;
+            window.currentInvoiceNumber = data.invoice_number;
+            window.currentInvoicePdfUrl = data.pdf_url;
+            window.currentInvoiceTotal = grandTotal;
             
             // Show stock warning if exists
             if (data.stock_warning) {
@@ -1719,19 +2774,22 @@ function processSaleDirect(paymentMethod, amountPaid, paymentReference) {
             shippingAmount = 0;
             $('#discountInput').val('0.00');
             $('#shippingInput').val('0.00');
-            $('#vehicleMake').val('').trigger('change');
-            $('#vehicleModel').val('').trigger('change');
-            $('#vehicleEngine').val('').trigger('change');
-            $('#vehicleYear').val('');
-            $('#vehicleReg').val('');
-            $('#vehicleVin').val('');
-            $('#vehicleMileage').val('');
                 $('#customerSelect').val('');
+            $('#vehicleSelect').val('');
             currentCustomer = null;
+            currentVehicle = null;
                 $('#customerInfo').addClass('d-none');
+            $('#vehicleSection').hide();
+            $('#vehicleInfo').hide();
                 $('#vatEnabled').prop('checked', false);
                 vatEnabled = false;
             updateCartDisplay();
+            
+            // Show post-sale actions modal
+            $('#postSaleInvoiceNumber').text(data.invoice_number);
+            $('#postSaleTotal').text(grandTotal.toFixed(2));
+            const postSaleModal = new bootstrap.Modal(document.getElementById('postSaleModal'));
+            postSaleModal.show();
             } else {
             toastr.error(data.message || 'Error creating invoice');
         }
@@ -1744,6 +2802,9 @@ function processSaleDirect(paymentMethod, amountPaid, paymentReference) {
 
 // Confirm payment
 function confirmPayment() {
+    // Clear any previous error messages
+    toastr.clear();
+    
     const paymentMethod = $('#paymentMethod').val();
     const amountPaid = parseFloat($('#amountPaid').val()) || 0;
     const paymentReference = $('#paymentReference').val();
@@ -1754,18 +2815,18 @@ function confirmPayment() {
         return sum + itemTotal;
     }, 0);
     
-    // Get additional discount and shipping from input fields
-    const discount = parseFloat($('#discountInput').val()) || 0;
+    // Get discount amount based on type (percentage or flat)
+    const discount = getDiscountAmount(subtotal);
     const shipping = parseFloat($('#shippingInput').val()) || 0;
     
     const totalAfterDiscount = subtotal - discount + shipping;
     const vatAmount = vatEnabled ? totalAfterDiscount * (vatRate / 100) : 0;
     const grandTotal = totalAfterDiscount + vatAmount;
     
-    // Validation
-    if (paymentMethod === 'on_account') {
-        if (!currentCustomer || currentCustomer.customer_type !== 'credit') {
-            toastr.error('Only credit customers can use on account payment');
+    // Validation for credit payment only
+    if (paymentMethod === 'credit') {
+        if (!currentCustomer || currentCustomer.terms !== 'credit') {
+            toastr.error('Only credit customers can use credit payment');
             return;
         }
         
@@ -1775,19 +2836,212 @@ function confirmPayment() {
             toastr.error(`Insufficient credit limit. Available: R ${availableCredit.toFixed(2)}, Required: R ${grandTotal.toFixed(2)}`);
             return;
         }
-    } else {
-        // Cash/Card/EFT - must pay full amount
-        if (amountPaid < grandTotal) {
-            toastr.error('Amount paid must be equal to or greater than total');
-            return;
-        }
     }
+    
+    // For Cash/Card/EFT - no validation needed, amount paid is auto-set and change is calculated
     
     // Close modal
     bootstrap.Modal.getInstance(document.getElementById('paymentModal')).hide();
     
     // Process sale
     processSaleDirect(paymentMethod, amountPaid, paymentReference);
+}
+
+// Post-Sale Actions
+function downloadInvoicePDF() {
+    if (!window.currentInvoiceId) {
+        toastr.error('No invoice found');
+        return;
+    }
+    
+    const url = '{{ route("invoices.pdf", ":id") }}'.replace(':id', window.currentInvoiceId);
+    window.open(url, '_blank');
+    toastr.success('Opening PDF...');
+}
+
+function printInvoice() {
+    if (!window.currentInvoiceId) {
+        toastr.error('No invoice found');
+        return;
+    }
+    
+    const url = '{{ route("invoices.print", ":id") }}'.replace(':id', window.currentInvoiceId);
+    window.open(url, '_blank');
+    toastr.success('Opening print view...');
+}
+
+function printInvoiceInline() {
+    if (!window.currentInvoiceId) {
+        toastr.error('No invoice found');
+        return;
+    }
+    
+    const url = '{{ route("invoices.print", ":id") }}'.replace(':id', window.currentInvoiceId);
+    
+    // Create hidden iframe for printing
+    let printFrame = document.getElementById('printFrame');
+    if (!printFrame) {
+        printFrame = document.createElement('iframe');
+        printFrame.id = 'printFrame';
+        printFrame.style.display = 'none';
+        printFrame.style.position = 'fixed';
+        printFrame.style.width = '0';
+        printFrame.style.height = '0';
+        printFrame.style.border = 'none';
+        document.body.appendChild(printFrame);
+    }
+    
+    // Load invoice in iframe
+    printFrame.src = url;
+    
+    // Wait for iframe to load, then trigger print
+    printFrame.onload = function() {
+        try {
+            // Small delay to ensure content is rendered
+            setTimeout(function() {
+                printFrame.contentWindow.focus();
+                printFrame.contentWindow.print();
+            }, 500);
+        } catch (e) {
+            toastr.error('Print failed. Please try Download PDF instead.');
+            console.error('Print error:', e);
+        }
+    };
+    
+    toastr.info('Preparing print...');
+}
+
+function sendWhatsApp() {
+    if (!window.currentInvoiceId) {
+        toastr.error('No invoice found');
+        return;
+    }
+    
+    toastr.info('Preparing WhatsApp...');
+    
+    const url = '{{ route("invoices.whatsapp", ":id") }}'.replace(':id', window.currentInvoiceId);
+    
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success && data.whatsapp_url) {
+            // Open WhatsApp based on setting
+            const shareType = data.share_type || 'web';
+            const whatsappTab = window.open(data.whatsapp_url, '_blank');
+            
+            if (whatsappTab) {
+                if (shareType === 'desktop') {
+                    // Auto-copy message to clipboard for desktop app
+                    const message = data.message || '';
+                    if (message) {
+                        copyToClipboard(message);
+                        toastr.success('WhatsApp Desktop app opened! Message copied to clipboard. Just paste (Ctrl+V) in the app.', {
+                            timeOut: 5000
+                        });
+                    } else {
+                        toastr.warning('WhatsApp Desktop app opened.');
+                    }
+                } else {
+                    toastr.success('WhatsApp Web opened! Message is pre-filled and ready to send.');
+                }
+            } else {
+                // If popup blocked, provide manual link
+                toastr.warning('Please allow popups, or click the link in the notification.');
+            }
+        } else {
+            toastr.error(data.message || 'Failed to generate WhatsApp link');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        toastr.error('Error sending to WhatsApp');
+    });
+}
+
+// Copy to clipboard helper function
+function copyToClipboard(text) {
+    // Modern clipboard API
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(() => {
+            console.log('Message copied to clipboard');
+        }).catch(err => {
+            console.error('Failed to copy:', err);
+            // Fallback
+            copyToClipboardFallback(text);
+        });
+    } else {
+        // Fallback for older browsers or non-secure contexts
+        copyToClipboardFallback(text);
+    }
+}
+
+// Fallback copy method
+function copyToClipboardFallback(text) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        document.execCommand('copy');
+        console.log('Message copied to clipboard (fallback)');
+    } catch (err) {
+        console.error('Fallback copy failed:', err);
+    }
+    
+    document.body.removeChild(textArea);
+}
+
+function sendEmail() {
+    if (!window.currentInvoiceId) {
+        toastr.error('No invoice found');
+        return;
+    }
+    
+    toastr.info('Sending email...');
+    
+    const url = '{{ route("invoices.email", ":id") }}'.replace(':id', window.currentInvoiceId);
+    
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            toastr.success(data.message || 'Email sent successfully!');
+        } else {
+            toastr.error(data.message || 'Failed to send email');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        toastr.error('Error sending email');
+    });
+}
+
+function downloadPickingList() {
+    if (!window.currentInvoiceId) {
+        toastr.error('No invoice found');
+        return;
+    }
+    
+    const url = '{{ route("invoices.picking-list", ":id") }}'.replace(':id', window.currentInvoiceId);
+    window.open(url, '_blank');
+    toastr.success('Generating picking list...');
 }
 </script>
 @endpush

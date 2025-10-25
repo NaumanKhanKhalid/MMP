@@ -271,7 +271,7 @@ class JobCardController extends Controller
                     'id' => $jobCard->id,
                     'job_card_number' => $jobCard->job_card_number,
                     'grand_total' => $jobCard->grand_total,
-                    'customer_type' => $jobCard->customer->customer_type ?? 'cash',
+                    'customer_type' => $jobCard->customer->terms ?? 'cash',
                     'customer_id' => $jobCard->customer_id,
                 ]
             ]);

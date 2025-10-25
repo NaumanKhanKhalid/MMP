@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Invoice {{ $invoice->invoice_number }}</title>
+    <title>Invoice <?php echo e($invoice->invoice_number); ?></title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -287,17 +287,18 @@
         <!-- Header -->
         <div class="header">
             <div class="company-info">
-                @if(\App\Models\Setting::get('company_logo'))
-                    <img src="{{ asset(\App\Models\Setting::get('company_logo')) }}" alt="{{ \App\Models\Setting::companyName() }}" style="max-height: 80px; max-width: 250px; object-fit: contain; margin-bottom: 10px;">
-                @endif
-                <div class="company-name">{{ \App\Models\Setting::companyName() }}</div>
+                <?php if(\App\Models\Setting::get('company_logo')): ?>
+                    <img src="<?php echo e(asset(\App\Models\Setting::get('company_logo'))); ?>" alt="<?php echo e(\App\Models\Setting::companyName()); ?>" style="max-height: 80px; max-width: 250px; object-fit: contain; margin-bottom: 10px;">
+                <?php endif; ?>
+                <div class="company-name"><?php echo e(\App\Models\Setting::companyName()); ?></div>
                 <div class="company-details">
-                    @if(\App\Models\Setting::companyAddress())
-                        {{ \App\Models\Setting::companyAddress() }}<br>
-                    @endif
-                    @if(\App\Models\Setting::companyEmail() || \App\Models\Setting::companyPhone())
-                        Email: {{ \App\Models\Setting::companyEmail() ?? 'N/A' }} | Phone: {{ \App\Models\Setting::companyPhone() ?? 'N/A' }}
-                    @endif
+                    <?php if(\App\Models\Setting::companyAddress()): ?>
+                        <?php echo e(\App\Models\Setting::companyAddress()); ?><br>
+                    <?php endif; ?>
+                    <?php if(\App\Models\Setting::companyEmail() || \App\Models\Setting::companyPhone()): ?>
+                        Email: <?php echo e(\App\Models\Setting::companyEmail() ?? 'N/A'); ?> | Phone: <?php echo e(\App\Models\Setting::companyPhone() ?? 'N/A'); ?>
+
+                    <?php endif; ?>
                 </div>
             </div>
             
@@ -306,55 +307,57 @@
                     <tr>
                         <td class="invoice-info" style="vertical-align: top; width: 50%;">
                             <div class="info-label">Invoice Number:</div>
-                            <div class="info-value">{{ $invoice->invoice_number }}</div>
+                            <div class="info-value"><?php echo e($invoice->invoice_number); ?></div>
                             <div class="info-label">Date:</div>
-                            <div class="info-value">{{ $invoice->created_at->format('d/m/Y') }}</div>
+                            <div class="info-value"><?php echo e($invoice->created_at->format('d/m/Y')); ?></div>
                             <div class="info-label">Created by:</div>
-                            <div class="info-value">{{ $invoice->user->name }}</div>
-                            @if($invoice->quote_id)
+                            <div class="info-value"><?php echo e($invoice->user->name); ?></div>
+                            <?php if($invoice->quote_id): ?>
                             <div class="info-label">From Quote:</div>
-                            <div class="info-value">{{ $invoice->quote->quote_number }}</div>
-                            @endif
+                            <div class="info-value"><?php echo e($invoice->quote->quote_number); ?></div>
+                            <?php endif; ?>
                         </td>
                         
                         <td class="customer-info" style="vertical-align: top; width: 50%; text-align: right;">
                             <div class="info-label">Bill To:</div>
                             <div class="info-value">
-                                @if($invoice->customer)
-                                    <strong>{{ $invoice->customer->name }}</strong><br>
-                                    @if($invoice->customer->email){{ $invoice->customer->email }}<br>@endif
-                                    @if($invoice->customer->phone){{ $invoice->customer->phone }}<br>@endif
-                                    @if($invoice->customer->address){{ $invoice->customer->address }}@endif
-                                @else
-                                    <strong>{{ $invoice->customer_name ?? 'Cash Sale' }}</strong><br>
-                                    @if($invoice->customer_email){{ $invoice->customer_email }}<br>@endif
-                                    @if($invoice->customer_phone){{ $invoice->customer_phone }}@endif
-                                @endif
+                                <?php if($invoice->customer): ?>
+                                    <strong><?php echo e($invoice->customer->name); ?></strong><br>
+                                    <?php if($invoice->customer->email): ?><?php echo e($invoice->customer->email); ?><br><?php endif; ?>
+                                    <?php if($invoice->customer->phone): ?><?php echo e($invoice->customer->phone); ?><br><?php endif; ?>
+                                    <?php if($invoice->customer->address): ?><?php echo e($invoice->customer->address); ?><?php endif; ?>
+                                <?php else: ?>
+                                    <strong><?php echo e($invoice->customer_name ?? 'Cash Sale'); ?></strong><br>
+                                    <?php if($invoice->customer_email): ?><?php echo e($invoice->customer_email); ?><br><?php endif; ?>
+                                    <?php if($invoice->customer_phone): ?><?php echo e($invoice->customer_phone); ?><?php endif; ?>
+                                <?php endif; ?>
                             </div>
                             <div class="info-label">Status:</div>
                             <div class="info-value">
-                                <span class="status-badge status-{{ $invoice->payment_status }}">
-                                    {{ ucfirst($invoice->payment_status) }}
+                                <span class="status-badge status-<?php echo e($invoice->payment_status); ?>">
+                                    <?php echo e(ucfirst($invoice->payment_status)); ?>
+
                                 </span>
                             </div>
                             <div class="info-label">Payment Method:</div>
                             <div class="info-value">
-                                @switch($invoice->payment_method)
-                                    @case('cash')
+                                <?php switch($invoice->payment_method):
+                                    case ('cash'): ?>
                                         Cash
-                                        @break
-                                    @case('card')
+                                        <?php break; ?>
+                                    <?php case ('card'): ?>
                                         Card
-                                        @break
-                                    @case('eft')
+                                        <?php break; ?>
+                                    <?php case ('eft'): ?>
                                         EFT
-                                        @break
-                                    @case('credit')
+                                        <?php break; ?>
+                                    <?php case ('credit'): ?>
                                         Credit
-                                        @break
-                                    @default
-                                        {{ ucfirst($invoice->payment_method) }}
-                                @endswitch
+                                        <?php break; ?>
+                                    <?php default: ?>
+                                        <?php echo e(ucfirst($invoice->payment_method)); ?>
+
+                                <?php endswitch; ?>
                             </div>
                         </td>
                     </tr>
@@ -363,18 +366,18 @@
         </div>
 
         <!-- Vehicle Details -->
-        @if($invoice->vehicle_make || $invoice->vehicle_model || $invoice->vehicle_vin || $invoice->vehicle_reg)
+        <?php if($invoice->vehicle_make || $invoice->vehicle_model || $invoice->vehicle_vin || $invoice->vehicle_reg): ?>
         <div class="vehicle-details">
             <h4 style="margin-top: 0; color: #1976d2; display: inline; margin-right: 15px;">Vehicle Details:</h4>
             <span style="font-size: 11px; color: #555;">
-                @if($invoice->vehicle_make)<strong>Make:</strong> {{ $invoice->vehicle_make }} &nbsp;&nbsp;|&nbsp;&nbsp; @endif
-                @if($invoice->vehicle_model)<strong>Model:</strong> {{ $invoice->vehicle_model }} &nbsp;&nbsp;|&nbsp;&nbsp; @endif
-                @if($invoice->vehicle_reg)<strong>Registration:</strong> {{ $invoice->vehicle_reg }} &nbsp;&nbsp;|&nbsp;&nbsp; @endif
-                @if($invoice->vehicle_vin)<strong>VIN:</strong> {{ $invoice->vehicle_vin }} &nbsp;&nbsp;|&nbsp;&nbsp; @endif
-                @if($invoice->vehicle_mileage)<strong>Mileage:</strong> {{ number_format($invoice->vehicle_mileage) }} km @endif
+                <?php if($invoice->vehicle_make): ?><strong>Make:</strong> <?php echo e($invoice->vehicle_make); ?> &nbsp;&nbsp;|&nbsp;&nbsp; <?php endif; ?>
+                <?php if($invoice->vehicle_model): ?><strong>Model:</strong> <?php echo e($invoice->vehicle_model); ?> &nbsp;&nbsp;|&nbsp;&nbsp; <?php endif; ?>
+                <?php if($invoice->vehicle_reg): ?><strong>Registration:</strong> <?php echo e($invoice->vehicle_reg); ?> &nbsp;&nbsp;|&nbsp;&nbsp; <?php endif; ?>
+                <?php if($invoice->vehicle_vin): ?><strong>VIN:</strong> <?php echo e($invoice->vehicle_vin); ?> &nbsp;&nbsp;|&nbsp;&nbsp; <?php endif; ?>
+                <?php if($invoice->vehicle_mileage): ?><strong>Mileage:</strong> <?php echo e(number_format($invoice->vehicle_mileage)); ?> km <?php endif; ?>
             </span>
         </div>
-        @endif
+        <?php endif; ?>
 
         <!-- Items Table -->
         <table class="items-table">
@@ -390,17 +393,17 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach($invoice->items as $item)
+                <?php $__currentLoopData = $invoice->items; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                 <tr>
-                    <td>{{ $item->product_sku }}</td>
-                    <td>{{ $item->product_name }}</td>
-                    <td class="text-center">{{ number_format($item->quantity, 0) }}</td>
-                    <td class="text-right">R {{ number_format($item->unit_price, 2) }}</td>
-                    <td class="text-center">{{ $item->discount_percentage > 0 ? number_format($item->discount_percentage, 1) . '%' : '-' }}</td>
-                    <td class="text-right">{{ $item->discount_amount > 0 ? 'R ' . number_format($item->discount_amount, 2) : '-' }}</td>
-                    <td class="text-right"><strong>R {{ number_format($item->line_total, 2) }}</strong></td>
+                    <td><?php echo e($item->product_sku); ?></td>
+                    <td><?php echo e($item->product_name); ?></td>
+                    <td class="text-center"><?php echo e(number_format($item->quantity, 0)); ?></td>
+                    <td class="text-right">R <?php echo e(number_format($item->unit_price, 2)); ?></td>
+                    <td class="text-center"><?php echo e($item->discount_percentage > 0 ? number_format($item->discount_percentage, 1) . '%' : '-'); ?></td>
+                    <td class="text-right"><?php echo e($item->discount_amount > 0 ? 'R ' . number_format($item->discount_amount, 2) : '-'); ?></td>
+                    <td class="text-right"><strong>R <?php echo e(number_format($item->line_total, 2)); ?></strong></td>
                 </tr>
-                @endforeach
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </tbody>
         </table>
 
@@ -409,73 +412,70 @@
             <table class="totals-table">
                 <tr>
                     <td class="label">Subtotal:</td>
-                    <td class="amount">R {{ number_format($invoice->subtotal, 2) }}</td>
+                    <td class="amount">R <?php echo e(number_format($invoice->subtotal, 2)); ?></td>
                 </tr>
-                @if($invoice->discount_amount > 0)
+                <?php if($invoice->discount_amount > 0): ?>
                 <tr>
                     <td class="label">Total Discount:</td>
-                    <td class="amount">-R {{ number_format($invoice->discount_amount, 2) }}</td>
+                    <td class="amount">-R <?php echo e(number_format($invoice->discount_amount, 2)); ?></td>
                 </tr>
-                @endif
-                @if($invoice->shipping > 0)
+                <?php endif; ?>
+                <?php if($invoice->shipping > 0): ?>
                 <tr>
                     <td class="label">Shipping:</td>
-                    <td class="amount">R {{ number_format($invoice->shipping, 2) }}</td>
+                    <td class="amount">R <?php echo e(number_format($invoice->shipping, 2)); ?></td>
                 </tr>
-                @endif
-                @if($invoice->vat_amount > 0)
+                <?php endif; ?>
+                <?php if($invoice->vat_amount > 0): ?>
                 <tr>
-                    <td class="label">VAT ({{ $invoice->vat_rate }}%):</td>
-                    <td class="amount">R {{ number_format($invoice->vat_amount, 2) }}</td>
+                    <td class="label">VAT (<?php echo e($invoice->vat_rate); ?>%):</td>
+                    <td class="amount">R <?php echo e(number_format($invoice->vat_amount, 2)); ?></td>
                 </tr>
-                @endif
+                <?php endif; ?>
                 <tr class="grand-total">
                     <td class="label">Grand Total:</td>
-                    <td class="amount">R {{ number_format($invoice->grand_total, 2) }}</td>
+                    <td class="amount">R <?php echo e(number_format($invoice->grand_total, 2)); ?></td>
                 </tr>
                 <tr>
                     <td class="label">Amount Paid:</td>
-                    <td class="amount">R {{ number_format($invoice->amount_paid, 2) }}</td>
+                    <td class="amount">R <?php echo e(number_format($invoice->amount_paid, 2)); ?></td>
                 </tr>
                 <tr>
                     <td class="label">Balance Due:</td>
-                    <td class="amount {{ $invoice->balance_due > 0 ? 'text-danger' : 'text-success' }}">
-                        R {{ number_format($invoice->balance_due, 2) }}
+                    <td class="amount <?php echo e($invoice->balance_due > 0 ? 'text-danger' : 'text-success'); ?>">
+                        R <?php echo e(number_format($invoice->balance_due, 2)); ?>
+
                     </td>
                 </tr>
             </table>
         </div>
 
         <!-- Banking Details -->
-        @if(\App\Models\Setting::showBankOnInvoices())
+        <?php if(\App\Models\Setting::showBankOnInvoices()): ?>
         <div style="margin-top: 20px; padding: 15px; background-color: #fff3cd; border-radius: 5px; border-left: 4px solid #ffc107;">
             <h4 style="margin-top: 0; color: #856404;">Banking Details:</h4>
             <div style="font-size: 14px; color: #856404;">
-                <strong>Bank:</strong> {{ \App\Models\Setting::bankName() }}<br>
-                <strong>Account Name:</strong> {{ \App\Models\Setting::bankAccountName() }}<br>
-                <strong>Account Type:</strong> {{ \App\Models\Setting::bankAccountType() }}<br>
-                <strong>Account Number:</strong> {{ \App\Models\Setting::bankAccountNumber() }}<br>
-                <strong>Branch Code:</strong> {{ \App\Models\Setting::bankBranchCode() }}<br>
-                <strong>Reference:</strong> {{ \App\Models\Setting::bankReference() }}
+                <strong>Bank:</strong> <?php echo e(\App\Models\Setting::bankName()); ?><br>
+                <strong>Account Name:</strong> <?php echo e(\App\Models\Setting::bankAccountName()); ?><br>
+                <strong>Account Type:</strong> <?php echo e(\App\Models\Setting::bankAccountType()); ?><br>
+                <strong>Account Number:</strong> <?php echo e(\App\Models\Setting::bankAccountNumber()); ?><br>
+                <strong>Branch Code:</strong> <?php echo e(\App\Models\Setting::bankBranchCode()); ?><br>
+                <strong>Reference:</strong> <?php echo e(\App\Models\Setting::bankReference()); ?>
+
             </div>
         </div>
-        @endif
+        <?php endif; ?>
 
         <!-- Notes -->
-        {{-- @if($invoice->notes)
-        <div class="notes">
-            <h4 style="margin-top: 0;">Notes</h4>
-            {{ $invoice->notes }}
-        </div>
-        @endif --}}
+        
 
         <!-- Footer -->
         <div class="footer">
             <p>Thank you for your business!</p>
-            <p>This invoice was generated on {{ now()->format('d/m/Y H:i:s') }} by MMP Auto-Meister POS System</p>
-            @if($invoice->reference)
-            <p><strong>Reference:</strong> {{ $invoice->reference }}</p>
-            @endif
+            <p>This invoice was generated on <?php echo e(now()->format('d/m/Y H:i:s')); ?> by MMP Auto-Meister POS System</p>
+            <?php if($invoice->reference): ?>
+            <p><strong>Reference:</strong> <?php echo e($invoice->reference); ?></p>
+            <?php endif; ?>
             <p style="font-weight: bold; margin-top: 10px;">Page 1/2</p>
         </div>
     </div>
@@ -488,12 +488,12 @@
         <div class="terms-page">
             <!-- Compact Header for Page 2 -->
             <div style="text-align: center; margin-bottom: 8px; padding-bottom: 5px; border-bottom: 2px solid #007bff;">
-                @if(\App\Models\Setting::get('company_logo'))
-                    <img src="{{ asset(\App\Models\Setting::get('company_logo')) }}" alt="{{ \App\Models\Setting::companyName() }}" style="max-height: 35px; margin-bottom: 3px;">
-                @else
-                    <h4 style="margin: 0; color: #007bff; font-size: 14px;">{{ \App\Models\Setting::companyName() }}</h4>
-                @endif
-                <p style="margin: 0; font-size: 8px; color: #666;">{{ $invoice->invoice_number }} | {{ now()->format('d/m/Y') }}</p>
+                <?php if(\App\Models\Setting::get('company_logo')): ?>
+                    <img src="<?php echo e(asset(\App\Models\Setting::get('company_logo'))); ?>" alt="<?php echo e(\App\Models\Setting::companyName()); ?>" style="max-height: 35px; margin-bottom: 3px;">
+                <?php else: ?>
+                    <h4 style="margin: 0; color: #007bff; font-size: 14px;"><?php echo e(\App\Models\Setting::companyName()); ?></h4>
+                <?php endif; ?>
+                <p style="margin: 0; font-size: 8px; color: #666;"><?php echo e($invoice->invoice_number); ?> | <?php echo e(now()->format('d/m/Y')); ?></p>
             </div>
             
             <!-- Terms & Conditions -->
@@ -559,7 +559,7 @@
             <!-- Page 2 Footer -->
             <div class="footer" style="margin-top: 15px; padding-top: 8px; border-top: 1px solid #ddd;">
                 <p style="font-size: 9px; margin: 3px 0;"><strong>Thank you for your business!</strong></p>
-                <p style="font-size: 7px; margin: 3px 0;">Generated: {{ now()->format('d/m/Y H:i') }} | Page 2/2</p>
+                <p style="font-size: 7px; margin: 3px 0;">Generated: <?php echo e(now()->format('d/m/Y H:i')); ?> | Page 2/2</p>
             </div>
         </div>
     </div>
@@ -589,4 +589,4 @@
         });
     </script>
 </body>
-</html>
+</html><?php /**PATH C:\xampp\htdocs\MMP\resources\views/invoices/print.blade.php ENDPATH**/ ?>

@@ -52,7 +52,7 @@
                             <option value="cash" {{ $invoice->payment_method == 'cash' ? 'selected' : '' }}>Cash</option>
                             <option value="card" {{ $invoice->payment_method == 'card' ? 'selected' : '' }}>Card</option>
                             <option value="eft" {{ $invoice->payment_method == 'eft' ? 'selected' : '' }}>EFT</option>
-                            <option value="on_account" {{ $invoice->payment_method == 'on_account' ? 'selected' : '' }}>On Account</option>
+                            <option value="credit" {{ $invoice->payment_method == 'credit' ? 'selected' : '' }}>Credit</option>
                         </select>
                     </div>
                 </div>
@@ -430,7 +430,7 @@ document.querySelector('select[name="payment_method"]').addEventListener('change
         'cash': '💵',
         'card': '💳',
         'eft': '🏦',
-        'on_account': '👤'
+        'credit': '👤'
     };
     display.textContent = `${icons[method]} ${method.charAt(0).toUpperCase() + method.slice(1)}`;
 });

@@ -384,6 +384,150 @@ class InvoiceController extends Controller
         $invoice = Invoice::with(['customer', 'user', 'items.product'])->findOrFail($id);
         return view('invoices.print', compact('invoice'));
     }
+    
+    public function downloadPDF(Invoice $invoice)
+    {
+        $invoice->load(['customer', 'user', 'items.product']);
+        $pdf = \PDF::loadView('invoices.print', compact('invoice'));
+        return $pdf->download("Invoice-{$invoice->invoice_number}.pdf");
+    }
+    
+    public function sendWhatsApp(Invoice $invoice)
+    {
+        $invoice->load(['customer']);
+        
+        // Get phone from customer relation or direct invoice fields (for walk-in customers)
+        $customerPhone = null;
+        $customerName = null;
+        
+        if ($invoice->customer && $invoice->customer->phone) {
+            // Regular customer from database
+            $customerPhone = $invoice->customer->phone;
+            $customerName = $invoice->customer->name;
+        } elseif ($invoice->customer_phone) {
+            // Walk-in customer with phone filled
+            $customerPhone = $invoice->customer_phone;
+            $customerName = $invoice->customer_name ?? 'Customer';
+        }
+        
+        if (!$customerPhone) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Customer phone number not found. Please add a phone number.'
+            ], 400);
+        }
+        
+        // Clean phone number - remove spaces, dashes, etc., but keep +
+        $phone = preg_replace('/[^\d+]/', '', $customerPhone);
+        
+        // If phone doesn't start with +, detect country code
+        if (!str_starts_with($phone, '+')) {
+            // Remove leading zeros
+            $cleanPhone = ltrim($phone, '0');
+            
+            // Detect country based on pattern
+            if (str_starts_with($phone, '03') && strlen($phone) === 11) {
+                // Pakistan mobile (03XX-XXXXXXX = 11 digits)
+                $phone = '+92' . $cleanPhone;
+            } elseif (str_starts_with($phone, '092') || str_starts_with($phone, '92')) {
+                // Pakistan with country code
+                $phone = '+92' . ltrim($cleanPhone, '92');
+            } elseif (strlen($cleanPhone) === 9 && in_array(substr($cleanPhone, 0, 1), ['6', '7', '8'])) {
+                // South Africa mobile (9 digits starting with 6, 7, or 8)
+                $phone = '+27' . $cleanPhone;
+            } else {
+                // Default: assume it's already formatted or add + if missing
+                $phone = '+' . $cleanPhone;
+            }
+        }
+        
+        // Create WhatsApp message with full URL
+        $pdfUrl = url(route('invoices.pdf', $invoice, false));
+        $message = "Hi {$customerName}!\n\n";
+        $message .= "Your invoice {$invoice->invoice_number} is ready.\n";
+        $message .= "Total Amount: R " . number_format($invoice->grand_total, 2) . "\n\n";
+        $message .= "Download Invoice:\n{$pdfUrl}\n\n";
+        $message .= "Thank you for your business!\n- MMP Auto-Meister";
+        
+        // Get WhatsApp share type from settings
+        $shareType = \App\Models\Setting::get('whatsapp_share_type', 'web');
+        
+        // Create WhatsApp URL based on setting
+        $phoneForDesktop = ltrim($phone, '+');
+        
+        if ($shareType === 'desktop') {
+            // Desktop app protocol
+            $whatsappUrl = "whatsapp://send?phone={$phoneForDesktop}&text=" . urlencode($message);
+        } else {
+            // Web protocol (default)
+            $whatsappUrl = "https://wa.me/{$phone}?text=" . urlencode($message);
+        }
+        
+        return response()->json([
+            'success' => true,
+            'whatsapp_url' => $whatsappUrl,
+            'share_type' => $shareType,
+            'message' => $message
+        ]);
+    }
+    
+    public function sendEmail(Invoice $invoice)
+    {
+        $invoice->load(['customer', 'items.product']);
+        
+        // Get email from customer relation or direct invoice fields (for walk-in customers)
+        $customerEmail = null;
+        $customerName = null;
+        
+        if ($invoice->customer && $invoice->customer->email) {
+            // Regular customer from database
+            $customerEmail = $invoice->customer->email;
+            $customerName = $invoice->customer->name;
+        } elseif ($invoice->customer_email) {
+            // Walk-in customer with email filled
+            $customerEmail = $invoice->customer_email;
+            $customerName = $invoice->customer_name ?? 'Customer';
+        }
+        
+        if (!$customerEmail) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Customer email not found. Please add an email address.'
+            ], 400);
+        }
+        
+        try {
+            // Generate PDF
+            $pdf = \PDF::loadView('invoices.print', compact('invoice'));
+            $pdfOutput = $pdf->output();
+            
+            // Send email with PDF attachment
+            \Mail::send('emails.invoice', compact('invoice'), function($message) use ($customerEmail, $customerName, $invoice, $pdfOutput) {
+                $message->to($customerEmail, $customerName)
+                        ->subject("Invoice {$invoice->invoice_number} - MMP Auto-Meister")
+                        ->attachData($pdfOutput, "Invoice-{$invoice->invoice_number}.pdf", [
+                            'mime' => 'application/pdf'
+                        ]);
+            });
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Email sent successfully to ' . $customerEmail
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to send email: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    public function pickingList(Invoice $invoice)
+    {
+        $invoice->load(['customer', 'items.product']);
+        $pdf = \PDF::loadView('invoices.picking-list', compact('invoice'));
+        return $pdf->download("Picking-List-{$invoice->invoice_number}.pdf");
+    }
 
     // public function export(Request $request)
     // {

@@ -1,5 +1,5 @@
-<form action="{{ route('quotes.store') }}" method="POST" id="quoteCreateForm">
-    @csrf
+<form action="<?php echo e(route('quotes.store')); ?>" method="POST" id="quoteCreateForm">
+    <?php echo csrf_field(); ?>
     <div class="modal-header">
         <h5 class="modal-title">
             <i class="ri-file-add-line me-2"></i> Create New Quote
@@ -36,14 +36,15 @@
                                 <option value="add_new" class="text-success fw-bold" style="background-color: #e8f5e9;">
                                     ➕ Add New Customer
                                 </option>
-                                @foreach ($customers as $customer)
-                                    <option value="{{ $customer->id }}" data-name="{{ $customer->name }}"
-                                        data-email="{{ $customer->email }}" data-phone="{{ $customer->phone }}"
-                                        data-address="{{ $customer->address }}"
-                                        data-price-tier="{{ $customer->price_tier ?? 'normal' }}">
-                                        {{ $customer->name }} - {{ $customer->email }}
+                                <?php $__currentLoopData = $customers; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $customer): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo e($customer->id); ?>" data-name="<?php echo e($customer->name); ?>"
+                                        data-email="<?php echo e($customer->email); ?>" data-phone="<?php echo e($customer->phone); ?>"
+                                        data-address="<?php echo e($customer->address); ?>"
+                                        data-price-tier="<?php echo e($customer->price_tier ?? 'normal'); ?>">
+                                        <?php echo e($customer->name); ?> - <?php echo e($customer->email); ?>
+
                                     </option>
-                                @endforeach
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </select>
                         </div>
 
@@ -65,7 +66,7 @@
                             <div class="col-6 mb-2">
                                 <label class="form-label mb-1 small">Valid Until</label>
                                 <input type="date" name="valid_until" class="form-control form-control-sm"
-                                    value="{{ date('Y-m-d', strtotime('+30 days')) }}">
+                                    value="<?php echo e(date('Y-m-d', strtotime('+30 days'))); ?>">
                             </div>
                             <div class="col-6 mb-2">
                                 <label class="form-label mb-1 small">Status</label>
@@ -77,28 +78,62 @@
                         </div>
                     </div>
 
-                    <!-- RIGHT SIDE: Vehicle Selection (POS Style) -->
+                    <!-- RIGHT SIDE: Vehicle Fields -->
                     <div class="col-md-6">
-                        <div id="vehicleSection" style="display: none;">
-                            <label class="form-label fw-semibold mb-1 small">
-                                <i class="ri-car-line me-1"></i>Vehicle
-                            </label>
-                            <div class="input-group input-group-sm mb-2">
-                                <select class="form-select form-select-sm" id="vehicleSelect" name="vehicle_id" onchange="selectQuoteVehicle()">
-                                    <option value="">Select Vehicle</option>
+                        <div class="row">
+                            <div class="col-6 mb-2">
+                                <label class="form-label mb-1 small">Make</label>
+                                <select name="vehicle_make_id" id="vehicleMakeSelect"
+                                    class="form-select form-select-sm select2-vehicle-make">
+                                    <option value="">Select Make</option>
+                                    <?php $__currentLoopData = $makes; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $make): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                        <option value="<?php echo e($make->id); ?>" data-name="<?php echo e($make->name); ?>">
+                                            <?php echo e($make->name); ?></option>
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </select>
-                                <button type="button" class="btn btn-success btn-sm" onclick="showAddQuoteVehicleModal()" title="Add Vehicle">
-                                    <i class="ri-add-line"></i>
-                                </button>
                             </div>
-                            <div id="vehicleInfo" style="display: none;">
-                                <!-- Vehicle details shown here (POS style) -->
+                            <div class="col-6 mb-2">
+                                <label class="form-label mb-1 small">Model</label>
+                                <select name="vehicle_model_id" id="vehicleModelSelect"
+                                    class="form-select form-select-sm select2-vehicle-model">
+                                    <option value="">Select Model</option>
+                                    <?php $__currentLoopData = $models; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $model): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                        <option value="<?php echo e($model->id); ?>" data-name="<?php echo e($model->name); ?>"
+                                            data-make-id="<?php echo e($model->make_id); ?>"><?php echo e($model->name); ?></option>
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                </select>
                             </div>
-                        </div>
-                        <div id="noVehicleMessage" class="alert alert-light py-2 mb-0" style="display: none;">
-                            <small class="text-muted">
-                                <i class="ri-car-line me-1"></i>Vehicle info optional - Select customer to load vehicles
-                            </small>
+                            <div class="col-6 mb-2">
+                                <label class="form-label mb-1 small">Engine</label>
+                                <select name="vehicle_engine_id" id="vehicleEngineSelect"
+                                    class="form-select form-select-sm select2-vehicle-engine">
+                                    <option value="">Select Engine</option>
+                                    <?php $__currentLoopData = $engines; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $engine): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                        <option value="<?php echo e($engine->id); ?>" data-code="<?php echo e($engine->code); ?>">
+                                            <?php echo e($engine->code); ?></option>
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                </select>
+                            </div>
+                            <div class="col-6 mb-2">
+                                <label class="form-label mb-1 small">Year</label>
+                                <input type="number" name="vehicle_year" class="form-control form-control-sm"
+                                    placeholder="e.g., 2020">
+                            </div>
+                            <div class="col-12 mb-2">
+                                <label class="form-label mb-1 small">VIN Number</label>
+                                <input type="text" name="vehicle_vin" class="form-control form-control-sm"
+                                    placeholder="Vehicle Identification Number">
+                            </div>
+                            <div class="col-6 mb-2">
+                                <label class="form-label mb-1 small">Registration</label>
+                                <input type="text" name="vehicle_reg" class="form-control form-control-sm"
+                                    placeholder="e.g., ABC123GP">
+                            </div>
+                            <div class="col-6 mb-2">
+                                <label class="form-label mb-1 small">Mileage</label>
+                                <input type="number" name="vehicle_mileage" class="form-control form-control-sm"
+                                    placeholder="e.g., 50000">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -155,13 +190,11 @@
                                 <th class="border-0 py-2" style="width: 10%;">
                                     Discount
                                     <i class="ri-information-line text-warning ms-1" data-bs-toggle="tooltip"
-                                        title="Max {{ auth()->user()->max_discount_allowed ?? 10 }}% per line for your role"></i>
+                                        title="Max <?php echo e(auth()->user()->max_discount_allowed ?? 10); ?>% per line for your role"></i>
                                 </th>
                                 <th class="border-0 py-2" style="width: 12%;">Total</th>
                                 <th class="border-0 py-2" style="width: 8%;">Stock</th>
-                                {{-- @if (auth()->user()->canSeeCosts())
-                                    <th class="border-0 py-2" style="width: 10%;">Cost</th>
-                                @endif --}}
+                                
                                 <th class="border-0 py-2" style="width: 7%;"></th>
                             </tr>
                         </thead>
@@ -225,20 +258,20 @@
                     </div>
                     <div class="col-md-4 mb-2">
                         <label class="form-label mb-1 small">
-                            VAT ({{ $vatSettings['rate'] }}%)
+                            VAT (<?php echo e($vatSettings['rate']); ?>%)
                             <span
-                                class="badge {{ $vatSettings['inclusive'] ? 'bg-info' : 'bg-warning' }} badge-sm">{{ $vatSettings['inclusive'] ? 'Inc' : 'Exc' }}</span>
+                                class="badge <?php echo e($vatSettings['inclusive'] ? 'bg-info' : 'bg-warning'); ?> badge-sm"><?php echo e($vatSettings['inclusive'] ? 'Inc' : 'Exc'); ?></span>
                         </label>
                         <div class="input-group input-group-sm">
                             <div class="input-group-text">
                                 <input type="checkbox" name="vat_enabled" id="vatEnabled" class="form-check-input"
-                                    {{ $vatSettings['enabled'] ? 'checked' : '' }}>
+                                    <?php echo e($vatSettings['enabled'] ? 'checked' : ''); ?>>
                             </div>
                             <input type="number" name="vat_amount" id="vatAmount" class="form-control bg-light"
                                 value="0.00" step="0.01" readonly>
-                            <input type="hidden" id="vatRate" value="{{ $vatSettings['rate'] }}">
+                            <input type="hidden" id="vatRate" value="<?php echo e($vatSettings['rate']); ?>">
                             <input type="hidden" id="vatInclusive"
-                                value="{{ $vatSettings['inclusive'] ? '1' : '0' }}">
+                                value="<?php echo e($vatSettings['inclusive'] ? '1' : '0'); ?>">
                         </div>
                     </div>
 
@@ -334,7 +367,7 @@
                 '<span class="spinner-border spinner-border-sm me-1"></span>Creating...');
 
             $.ajax({
-                url: '{{ route('customers.store') }}',
+                url: '<?php echo e(route('customers.store')); ?>',
                 method: 'POST',
                 data: formData,
                 success: function(response) {
@@ -409,14 +442,9 @@
 
                 // Update prices for existing items based on new customer's price tier
                 updatePricesForCustomerTier(selectedOption.data('price-tier'));
-                
-                // Load customer vehicles (POS style)
-                loadQuoteCustomerVehicles(customerId);
             } else {
                 // No customer selected - hide details
                 $('#customerDetails').hide();
-                $('#vehicleSection').hide();
-                $('#noVehicleMessage').hide();
 
                 // Reset price tier to normal
                 $('#priceTierIndicator').text('(Normal)');
@@ -479,7 +507,7 @@
         // Product search function
         function searchProducts(query) {
             $.ajax({
-                url: '{{ route('quotes.search-products') }}',
+                url: '<?php echo e(route('quotes.search-products')); ?>',
                 method: 'GET',
                 data: {
                     q: query
@@ -743,7 +771,7 @@
             let discount = parseFloat(row.find('.discount').val()) || 0;
 
             // Validate discount limits
-            const maxDiscountAllowed = {{ auth()->user()->max_discount_allowed ?? 10 }};
+            const maxDiscountAllowed = <?php echo e(auth()->user()->max_discount_allowed ?? 10); ?>;
             const lineTotal = quantity * unitPrice;
             const maxDiscountAmount = (lineTotal * maxDiscountAllowed) / 100;
 
@@ -800,7 +828,7 @@
             $('#grandTotal').val(grandTotal.toFixed(2));
             $('#grandTotalDisplay').text('R ' + grandTotal.toFixed(2));
 
-            @if (auth()->user()->canSeeCosts())
+            <?php if(auth()->user()->canSeeCosts()): ?>
                 // Calculate total FIFO cost for Owner
                 let totalCost = 0;
                 let totalQty = 0;
@@ -820,7 +848,7 @@
                     .removeClass('bg-success-transparent bg-warning-transparent bg-danger-transparent')
                     .addClass(profitMargin > 30 ? 'bg-success-transparent' : profitMargin > 15 ?
                         'bg-warning-transparent' : 'bg-danger-transparent');
-            @endif
+            <?php endif; ?>
         }
 
         // VAT toggle
@@ -833,7 +861,7 @@
             const unitPrice = parseFloat(row.find('.unit-price').val()) || 0;
             let discount = parseFloat($(this).val()) || 0;
 
-            const maxDiscountAllowed = {{ auth()->user()->max_discount_allowed ?? 10 }};
+            const maxDiscountAllowed = <?php echo e(auth()->user()->max_discount_allowed ?? 10); ?>;
             const lineTotal = quantity * unitPrice;
             const maxDiscountAmount = (lineTotal * maxDiscountAllowed) / 100;
 
@@ -922,7 +950,7 @@
         });
 
         // Debug: Log max discount on page load
-        console.log('User Max Discount Allowed:', {{ auth()->user()->max_discount_allowed ?? 10 }}, '%');
+        console.log('User Max Discount Allowed:', <?php echo e(auth()->user()->max_discount_allowed ?? 10); ?>, '%');
 
         // Initialize Select2 for fitment dropdowns
         function initFitmentSelect2() {
@@ -953,11 +981,11 @@
 
                             // Determine endpoint based on field type
                             if ($select.hasClass('select2-fitment-make')) {
-                                endpoint = '{{ route('car-makes.quick-add') }}';
+                                endpoint = '<?php echo e(route('car-makes.quick-add')); ?>';
                             } else if ($select.hasClass('select2-fitment-model')) {
-                                endpoint = '{{ route('car-models.quick-add') }}';
+                                endpoint = '<?php echo e(route('car-models.quick-add')); ?>';
                             } else if ($select.hasClass('select2-fitment-engine')) {
-                                endpoint = '{{ route('car-engines.quick-add') }}';
+                                endpoint = '<?php echo e(route('car-engines.quick-add')); ?>';
                             }
 
                             // AJAX call to save
@@ -966,7 +994,7 @@
                                 method: 'POST',
                                 data: {
                                     name: newName,
-                                    _token: '{{ csrf_token() }}'
+                                    _token: '<?php echo e(csrf_token()); ?>'
                                 },
                                 success: function(response) {
                                     if (response.success) {
@@ -1023,11 +1051,11 @@
 
                             // Determine endpoint based on field type
                             if ($select.hasClass('select2-vehicle-make')) {
-                                endpoint = '{{ route('car-makes.quick-add') }}';
+                                endpoint = '<?php echo e(route('car-makes.quick-add')); ?>';
                             } else if ($select.hasClass('select2-vehicle-model')) {
-                                endpoint = '{{ route('car-models.quick-add') }}';
+                                endpoint = '<?php echo e(route('car-models.quick-add')); ?>';
                             } else if ($select.hasClass('select2-vehicle-engine')) {
-                                endpoint = '{{ route('car-engines.quick-add') }}';
+                                endpoint = '<?php echo e(route('car-engines.quick-add')); ?>';
                             }
 
                             // AJAX call to save
@@ -1036,7 +1064,7 @@
                                 method: 'POST',
                                 data: {
                                     name: newName,
-                                    _token: '{{ csrf_token() }}'
+                                    _token: '<?php echo e(csrf_token()); ?>'
                                 },
                                 success: function(response) {
                                     if (response.success) {
@@ -1151,27 +1179,27 @@
                      <label class="form-label mb-1 small text-muted">Make</label>
                      <select class="form-select form-select-sm select2-fitment-make">
                          <option value="">Select Make</option>
-                         @foreach ($makes as $make)
-                             <option value="{{ $make->id }}" data-name="{{ $make->name }}">{{ $make->name }}</option>
-                         @endforeach
+                         <?php $__currentLoopData = $makes; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $make): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                             <option value="<?php echo e($make->id); ?>" data-name="<?php echo e($make->name); ?>"><?php echo e($make->name); ?></option>
+                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                      </select>
                  </div>
                  <div class="col-md-2">
                      <label class="form-label mb-1 small text-muted">Model</label>
                      <select class="form-select form-select-sm select2-fitment-model">
                          <option value="">Select Model</option>
-                         @foreach ($models as $model)
-                             <option value="{{ $model->id }}" data-name="{{ $model->name }}" data-make-id="{{ $model->make_id }}">{{ $model->name }}</option>
-                         @endforeach
+                         <?php $__currentLoopData = $models; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $model): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                             <option value="<?php echo e($model->id); ?>" data-name="<?php echo e($model->name); ?>" data-make-id="<?php echo e($model->make_id); ?>"><?php echo e($model->name); ?></option>
+                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                      </select>
                  </div>
                  <div class="col-md-2">
                      <label class="form-label mb-1 small text-muted">Engine</label>
                      <select class="form-select form-select-sm select2-fitment-engine">
                          <option value="">Optional</option>
-                         @foreach ($engines as $engine)
-                             <option value="{{ $engine->id }}" data-code="{{ $engine->code }}">{{ $engine->code }}</option>
-                         @endforeach
+                         <?php $__currentLoopData = $engines; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $engine): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                             <option value="<?php echo e($engine->id); ?>" data-code="<?php echo e($engine->code); ?>"><?php echo e($engine->code); ?></option>
+                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                      </select>
                  </div>
                  <div class="col-md-2">
@@ -1232,15 +1260,15 @@
                                     // Determine endpoint based on field type
                                     if ($select.hasClass('select2-fitment-make')) {
                                         endpoint =
-                                            '{{ route('car-makes.quick-add') }}';
+                                            '<?php echo e(route('car-makes.quick-add')); ?>';
                                     } else if ($select.hasClass(
                                             'select2-fitment-model')) {
                                         endpoint =
-                                            '{{ route('car-models.quick-add') }}';
+                                            '<?php echo e(route('car-models.quick-add')); ?>';
                                     } else if ($select.hasClass(
                                             'select2-fitment-engine')) {
                                         endpoint =
-                                            '{{ route('car-engines.quick-add') }}';
+                                            '<?php echo e(route('car-engines.quick-add')); ?>';
                                     }
 
                                     // AJAX call to save
@@ -1249,7 +1277,7 @@
                                         method: 'POST',
                                         data: {
                                             name: newName,
-                                            _token: '{{ csrf_token() }}'
+                                            _token: '<?php echo e(csrf_token()); ?>'
                                         },
                                         success: function(response) {
                                             if (response.success) {
@@ -1358,7 +1386,7 @@
                 '<span class="spinner-border spinner-border-sm me-1"></span>Creating...');
 
             $.ajax({
-                url: '{{ route('products.quickAdd') }}',
+                url: '<?php echo e(route('products.quickAdd')); ?>',
                 method: 'POST',
                 data: formData,
                 success: function(response) {
@@ -1515,7 +1543,7 @@
                                 <small>Draft Preview</small>
                             </div>
                             <div class="col-md-6 text-end">
-                                <h5 class="mb-0">{{ auth()->user()->company_name ?? 'Your Company' }}</h5>
+                                <h5 class="mb-0"><?php echo e(auth()->user()->company_name ?? 'Your Company'); ?></h5>
                                 <small>Date: ${new Date().toLocaleDateString()}</small>
                             </div>
                         </div>
@@ -1616,120 +1644,6 @@
 
         // Don't initialize with empty row - let user search/add products
         // addQuoteItemRow(); // Commented out - no manual row on load
-        
-        // POS Style: Vehicle Management Functions
-        let quoteCustomerVehicles = [];
-        let quoteCurrentVehicle = null;
-        let quoteCurrentCustomer = null;
-        
-        // Load Customer Vehicles (Same as POS)
-        function loadQuoteCustomerVehicles(customerId) {
-            quoteCurrentCustomer = customerId;
-            
-            fetch(`/api/customers/${customerId}/vehicles`)
-                .then(response => response.json())
-                .then(data => {
-                    quoteCustomerVehicles = data;
-                    if (data.length > 0) {
-                        $('#vehicleSection').show();
-                        $('#noVehicleMessage').hide();
-                        populateQuoteVehicleDropdown();
-                        
-                        // Auto-select primary vehicle if exists
-                        const primaryVehicle = data.find(v => v.is_primary);
-                        if (primaryVehicle) {
-                            $('#vehicleSelect').val(primaryVehicle.id);
-                            selectQuoteVehicle();
-                        }
-                    } else {
-                        $('#vehicleSection').show();
-                        $('#noVehicleMessage').hide();
-                        $('#vehicleSelect').html('<option value="">No vehicles - Click + to add</option>');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading vehicles:', error);
-                    $('#vehicleSection').show();
-                    $('#noVehicleMessage').show();
-                });
-        }
-        
-        // Populate Vehicle Dropdown
-        function populateQuoteVehicleDropdown() {
-            const select = $('#vehicleSelect');
-            select.html('<option value="">Select Vehicle</option>');
-            
-            quoteCustomerVehicles.forEach(vehicle => {
-                select.append(`<option value="${vehicle.id}" 
-                    data-make="${vehicle.make_name}" 
-                    data-model="${vehicle.model_name}"
-                    data-reg="${vehicle.registration_number}"
-                    data-mileage="${vehicle.mileage}">
-                    ${vehicle.display_name}
-                </option>`);
-            });
-        }
-        
-        // Select Vehicle (Show Details)
-        window.selectQuoteVehicle = function() {
-            const vehicleId = $('#vehicleSelect').val();
-            
-            if (vehicleId) {
-                quoteCurrentVehicle = quoteCustomerVehicles.find(v => v.id == vehicleId);
-                
-                if (quoteCurrentVehicle) {
-                    const html = `
-                        <div class="alert alert-light py-2 small mb-0 mt-1">
-                            <div class="row g-1">
-                                <div class="col-6">
-                                    <span class="text-muted">Make:</span><br>
-                                    <strong>${quoteCurrentVehicle.make_name}</strong>
-                                </div>
-                                <div class="col-6">
-                                    <span class="text-muted">Model:</span><br>
-                                    <strong>${quoteCurrentVehicle.model_name}</strong>
-                                </div>
-                                ${quoteCurrentVehicle.engine ? `
-                                <div class="col-6">
-                                    <span class="text-muted">Engine:</span><br>
-                                    <strong>${quoteCurrentVehicle.engine}</strong>
-                                </div>
-                                ` : ''}
-                                <div class="col-6">
-                                    <span class="text-muted">Reg:</span><br>
-                                    <strong>${quoteCurrentVehicle.registration_number || 'N/A'}</strong>
-                                </div>
-                                ${quoteCurrentVehicle.mileage ? `
-                                <div class="col-6">
-                                    <span class="text-muted">Mileage:</span><br>
-                                    <strong>${quoteCurrentVehicle.mileage} km</strong>
-                                </div>
-                                ` : ''}
-                            </div>
-                        </div>
-                    `;
-                    $('#vehicleInfo').html(html).show();
-                }
-            } else {
-                quoteCurrentVehicle = null;
-                $('#vehicleInfo').hide();
-            }
-        };
-        
-        // Show Add Vehicle Modal
-        window.showAddQuoteVehicleModal = function() {
-            if (!quoteCurrentCustomer) {
-                toastr.error('Please select a customer first');
-                return;
-            }
-            
-            // Open POS add vehicle modal (we'll create this)
-            const addVehicleModal = new bootstrap.Modal(document.getElementById('addQuoteVehicleModal'), {
-                backdrop: false,
-                keyboard: true
-            });
-            addVehicleModal.show();
-        };
     });
 </script>
 
@@ -1739,7 +1653,7 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-warning" style="border-width: 3px;">
             <form id="quickAddProductForm">
-                @csrf
+                <?php echo csrf_field(); ?>
                 <div class="modal-header bg-warning-transparent">
                     <h5 class="modal-title">
                         <i class="ri-flashlight-line text-warning me-2"></i>⚡ Quick Add Product
@@ -1812,7 +1726,7 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-success" style="border-width: 3px;">
             <form id="addCustomerForm">
-                @csrf
+                <?php echo csrf_field(); ?>
                 <div class="modal-header bg-success-transparent">
                     <h5 class="modal-title">
                         <i class="ri-user-add-line text-success me-2"></i>⚡ Quick 
@@ -1869,103 +1783,7 @@
     </div>
 </div>
 
-<!-- Add Vehicle Modal (Same as POS) -->
-<div class="modal fade" id="addQuoteVehicleModal" tabindex="-1" data-bs-backdrop="false" data-bs-keyboard="true" style="z-index: 1070;">
-    <div class="modal-dialog">
-        <div class="modal-content border-primary" style="border-width: 3px;">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title"><i class="ri-car-line me-2"></i>Add New Vehicle</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <form id="addQuoteVehicleForm">
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Registration Number <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="newQuoteVehicleReg" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Make <span class="text-danger">*</span></label>
-                        <select class="form-select" id="newQuoteVehicleMake" required>
-                            <option value="">Select Make</option>
-                            @foreach(\App\Models\VehicleMake::orderBy('name')->get() as $make)
-                                <option value="{{ $make->id }}">{{ $make->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Model <span class="text-danger">*</span></label>
-                        <select class="form-select" id="newQuoteVehicleModel" required>
-                            <option value="">Select Model</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Engine (Optional)</label>
-                        <input type="text" class="form-control" id="newQuoteVehicleEngine" placeholder="e.g., 2.0L Turbo">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">VIN Number (Optional)</label>
-                        <input type="text" class="form-control" id="newQuoteVehicleVin">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Mileage (Optional)</label>
-                        <input type="number" class="form-control" id="newQuoteVehicleMileage" placeholder="km">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="ri-save-line me-1"></i>Save Vehicle
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-<script>
-// Load models when make is selected (for add vehicle modal)
-$('#newQuoteVehicleMake').on('change', function() {
-    const makeId = $(this).val();
-    if (makeId) {
-        $.get(`/api/vehicle-makes/${makeId}/models`, function(models) {
-            let html = '<option value="">Select Model</option>';
-            models.forEach(model => {
-                html += `<option value="${model.id}">${model.name}</option>`;
-            });
-            $('#newQuoteVehicleModel').html(html);
-        });
-    }
-});
-
-// Add Vehicle Form Submit (Same as POS)
-$('#addQuoteVehicleForm').on('submit', function(e) {
-    e.preventDefault();
-    
-    const formData = {
-        customer_id: quoteCurrentCustomer,
-        registration_number: $('#newQuoteVehicleReg').val(),
-        make_id: $('#newQuoteVehicleMake').val(),
-        model_id: $('#newQuoteVehicleModel').val(),
-        engine: $('#newQuoteVehicleEngine').val(),
-        vin_number: $('#newQuoteVehicleVin').val(),
-        mileage: $('#newQuoteVehicleMileage').val(),
-        _token: '{{ csrf_token() }}'
-    };
-    
-    $.post('/vehicles', formData, function(response) {
-        if (response.success) {
-            toastr.success('Vehicle added successfully');
-            $('#addQuoteVehicleModal .btn-close').click();
-            $('#addQuoteVehicleForm')[0].reset();
-            loadQuoteCustomerVehicles(quoteCurrentCustomer);
-        }
-    }).fail(function(xhr) {
-        toastr.error(xhr.responseJSON?.message || 'Error adding vehicle');
-    });
-});
-</script>
-
-@push('styles')
+<?php $__env->startPush('styles'); ?>
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <style>
         /* Fix Select2 in input-group to work properly with button */
@@ -2011,7 +1829,7 @@ $('#addQuoteVehicleForm').on('submit', function(e) {
             transform: scale(1.05);
         }
     </style>
-@endpush
+<?php $__env->stopPush(); ?>
 
 <!-- Quote Preview Modal -->
 <div class="modal fade" id="quotePreviewModal" tabindex="-1" aria-hidden="true">
@@ -2035,7 +1853,7 @@ $('#addQuoteVehicleForm').on('submit', function(e) {
     </div>
 </div>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
         $(document).ready(function() {
@@ -2064,4 +1882,5 @@ $('#addQuoteVehicleForm').on('submit', function(e) {
             });
         });
     </script>
-@endpush
+<?php $__env->stopPush(); ?>
+<?php /**PATH C:\xampp\htdocs\MMP\resources\views/quotes/partials/create_modal.blade.php ENDPATH**/ ?>

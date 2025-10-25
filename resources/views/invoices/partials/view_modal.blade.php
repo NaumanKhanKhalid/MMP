@@ -88,8 +88,8 @@
                             @case('eft')
                                         <i class="ri-exchange-dollar-line me-1"></i>EFT
                                 @break
-                            @case('on_account')
-                                        <i class="ri-account-box-line me-1"></i>On Account
+                            @case('credit')
+                                        <i class="ri-account-box-line me-1"></i>Credit
                                 @break
                                     @default
                                         {{ ucfirst($invoice->payment_method ?? '-') }}

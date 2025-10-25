@@ -194,6 +194,14 @@ Route::middleware(['auth', 'security'])->group(function () {
         Route::put('/products/{product}', [ProductController::class, 'update'])->name('products.update'); // ✅ Changed to PUT
         Route::delete('/products/{product}', [ProductController::class, 'destroy'])->name('products.destroy');
         Route::patch('/products/{product}/toggle-status', [ProductController::class, 'toggleStatus'])->name('products.toggleStatus');
+        
+        // Customer Vehicle API Routes
+        Route::get('/api/car-makes', [App\Http\Controllers\CustomerController::class, 'getMakes'])->name('api.car-makes');
+        Route::get('/api/car-models', [App\Http\Controllers\CustomerController::class, 'getModels'])->name('api.car-models');
+        Route::get('/api/engines', [App\Http\Controllers\CustomerController::class, 'getEngines'])->name('api.engines');
+        Route::get('/customers/{customer}/vehicles', [App\Http\Controllers\CustomerController::class, 'getVehicles'])->name('customers.vehicles.get');
+        Route::post('/customers/{customer}/vehicles', [App\Http\Controllers\CustomerController::class, 'storeVehicle'])->name('customers.vehicles.store');
+        Route::delete('/customers/{customer}/vehicles/{vehicle}', [App\Http\Controllers\CustomerController::class, 'deleteVehicle'])->name('customers.vehicles.delete');
     }); 
 
     // Goods Receipts - Specific routes MUST come BEFORE resource route
@@ -309,17 +317,11 @@ Route::get('/customers/{id}/edit-modal', function ($id) {
     return view('customers.partials.edit_modal', compact('customer'))->render();
 })->name('customers.edit-modal');
 
+
 Route::resource('customers', App\Http\Controllers\CustomerController::class)->except(['create', 'edit', 'show']);
 
 // Customer toggle status route
 Route::patch('/customers/{customer}/toggle-status', [App\Http\Controllers\CustomerController::class, 'toggleStatus'])->name('customers.toggle-status');
-
-// Customer Vehicle API Routes
-Route::get('/api/car-makes', [App\Http\Controllers\CustomerController::class, 'getMakes'])->name('api.car-makes');
-Route::get('/api/car-models', [App\Http\Controllers\CustomerController::class, 'getModels'])->name('api.car-models');
-Route::get('/api/engines', [App\Http\Controllers\CustomerController::class, 'getEngines'])->name('api.engines');
-Route::post('/customers/{customer}/vehicles', [App\Http\Controllers\CustomerController::class, 'storeVehicle'])->name('customers.vehicles.store');
-Route::delete('/customers/{customer}/vehicles/{vehicle}', [App\Http\Controllers\CustomerController::class, 'deleteVehicle'])->name('customers.vehicles.delete');
 
 Route::get('/quotes/{id}/view-modal', [QuoteController::class, 'viewModal'])->name('quotes.view-modal');
 Route::get('/quotes/{id}/edit-modal', [QuoteController::class, 'editModal'])->name('quotes.edit-modal');
@@ -339,6 +341,18 @@ Route::get('/quotes/{id}/edit-modal', [QuoteController::class, 'editModal'])->na
 
     // Print Invoice
     Route::get('/invoices/{invoice}/print', [App\Http\Controllers\InvoiceController::class, 'print'])->name('invoices.print');
+    
+    // PDF Invoice
+    Route::get('/invoices/{invoice}/pdf', [App\Http\Controllers\InvoiceController::class, 'downloadPDF'])->name('invoices.pdf');
+    
+    // WhatsApp Invoice
+    Route::post('/invoices/{invoice}/whatsapp', [App\Http\Controllers\InvoiceController::class, 'sendWhatsApp'])->name('invoices.whatsapp');
+    
+    // Email Invoice
+    Route::post('/invoices/{invoice}/email', [App\Http\Controllers\InvoiceController::class, 'sendEmail'])->name('invoices.email');
+    
+    // Picking List
+    Route::get('/invoices/{invoice}/picking-list', [App\Http\Controllers\InvoiceController::class, 'pickingList'])->name('invoices.picking-list');
 
     // Export Invoices
     Route::get('/invoices/export', [App\Http\Controllers\InvoiceController::class, 'export'])->name('invoices.export');

@@ -461,7 +461,7 @@ class QuoteController extends Controller
             }
             
             // Handle payment information
-            $paymentMethod = $request->get('payment_method', 'on_account');
+            $paymentMethod = $request->get('payment_method', 'credit');
             $amountPaid = (float) ($request->get('amount_paid', 0));
             $paymentReference = $request->get('payment_reference', null);
             
@@ -469,15 +469,15 @@ class QuoteController extends Controller
             $customer = $quote->customer;
             if ($customer) {
                 // Cash customers cannot use credit payment methods
-                if ($customer->isCashCustomer() && $paymentMethod === 'on_account') {
+                if ($customer->isCashCustomer() && $paymentMethod === 'credit') {
                     return response()->json([
                         'success' => false,
                         'message' => 'Cash customers cannot make credit purchases. Please select Cash, Card, or EFT payment method.'
                     ], 400);
                 }
                 
-                // Credit customers - check credit limit
-                if ($customer->isCreditCustomer() && $paymentMethod === 'on_account') {
+                // Credit customers - check credit limit only if using credit payment
+                if ($customer->isCreditCustomer() && $paymentMethod === 'credit') {
                     if (!$customer->canMakeCreditPurchase((float) $invoice->grand_total)) {
                         $availableCredit = (float) $customer->credit_limit - abs((float) $customer->balance);
                         return response()->json([
@@ -488,16 +488,11 @@ class QuoteController extends Controller
                 }
             }
             
-            // Validate payment amount
-            if ($amountPaid > $invoice->grand_total) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Amount paid cannot exceed invoice total.'
-                ], 400);
-            }
+            // No validation needed for cash/card/eft - amount is auto-set to grand total in frontend
+            // Credit payments are handled separately with credit limit validation
             
             // Determine payment status based on payment method and amount
-            if ($paymentMethod === 'on_account') {
+            if ($paymentMethod === 'credit') {
                 // Credit customer
                 if ($amountPaid == 0) {
                     $paymentStatus = 'unpaid';
@@ -507,14 +502,8 @@ class QuoteController extends Controller
                     $paymentStatus = 'paid';
                 }
             } else {
-                // Cash/Card/EFT - must pay full amount
-                if ($amountPaid >= $invoice->grand_total) {
-                    $paymentStatus = 'paid';
-                } elseif ($amountPaid > 0 && $amountPaid < $invoice->grand_total) {
-                    $paymentStatus = 'partially_paid';
-                } else {
-                    $paymentStatus = 'unpaid';
-                }
+                // Cash/Card/EFT - full amount paid
+                $paymentStatus = 'paid';
             }
             
             $invoice->payment_method = $paymentMethod;
@@ -708,6 +697,7 @@ class QuoteController extends Controller
                 'message' => 'Quote converted to invoice successfully!'.($stockWarning ? ' '.$stockWarning : ''),
                 'invoice_id' => $invoice->id,
                 'invoice_number' => $invoice->invoice_number,
+                'grand_total' => $invoice->grand_total,
                 'payment_status' => $paymentStatus,
                 'amount_paid' => $amountPaid,
                 'balance_due' => $invoice->balance_due,
@@ -733,21 +723,24 @@ class QuoteController extends Controller
             
             if (!$quote->customer) {
                 return response()->json([
-                    'customer_type' => null,
+                    'terms' => 'cash',
+                    'customer_type' => 'cash',
                     'credit_limit' => 0,
                     'balance' => 0
                 ]);
             }
             
             return response()->json([
-                'customer_type' => $quote->customer->customer_type,
+                'terms' => $quote->customer->terms ?? 'cash',
+                'customer_type' => $quote->customer->terms ?? 'cash',
                 'credit_limit' => $quote->customer->credit_limit,
                 'balance' => $quote->customer->balance,
                 'customer_name' => $quote->customer->name
             ]);
         } catch (\Exception $e) {
             return response()->json([
-                'customer_type' => null,
+                'terms' => 'cash',
+                'customer_type' => 'cash',
                 'credit_limit' => 0,
                 'balance' => 0
             ]);
