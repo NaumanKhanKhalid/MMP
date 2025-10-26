@@ -27,7 +27,7 @@
                             </select>
                         </div>
                         <div class="col-md-2">
-                            <label class="form-label fw-bold">Type</label>
+                            <label class="form-label fw-bold">Terms</label>
                             <select name="type" class="form-control">
                                 <option value="">All</option>
                                 <option value="cash" {{ request('type') == 'cash' ? 'selected' : '' }}>Cash</option>
@@ -40,6 +40,14 @@
                                 <option value="">All</option>
                                 <option value="individual" {{ request('category') == 'individual' ? 'selected' : '' }}>Individual</option>
                                 <option value="business" {{ request('category') == 'business' ? 'selected' : '' }}>Business</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-bold">Customer Type</label>
+                            <select name="walk_in" class="form-control">
+                                <option value="">All</option>
+                                <option value="1" {{ request('walk_in') == '1' ? 'selected' : '' }}>Walk-in Only</option>
+                                <option value="0" {{ request('walk_in') == '0' ? 'selected' : '' }}>Regular Only</option>
                             </select>
                         </div>
                         <div class="col-md-2">
@@ -138,6 +146,7 @@
                             status: $('select[name="status"]').val(),
                             type: $('select[name="type"]').val(),
                             category: $('select[name="category"]').val(),
+                            walk_in: $('select[name="walk_in"]').val(),
                             page: currentPage,
                             ajax: 1
                         };
@@ -285,7 +294,7 @@
                                 }, 500);
                             });
                             
-                            $('select[name="status"], select[name="type"], select[name="category"]').on('change', function() {
+                            $('select[name="status"], select[name="type"], select[name="category"], select[name="walk_in"]').on('change', function() {
                                 currentPage = 1;
                                 loadCustomers();
                             });

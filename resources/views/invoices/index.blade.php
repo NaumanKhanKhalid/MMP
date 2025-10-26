@@ -400,12 +400,11 @@
 
         {{-- Invoices Table --}}
         <div class="card shadow-sm">
-                <div class="card-body">
-                <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-3">
-                    <div class="card-title">
-                        Invoices<span
-                            class="badge bg-light text-default rounded ms-1 fs-12 align-middle">{{ $invoices->total() }}</span>
-                    </div>
+            <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-3">
+                <div class="card-title">
+                    Invoices<span
+                        class="badge bg-light text-default rounded ms-1 fs-12 align-middle">{{ $invoices->total() }}</span>
+                </div>
                     <div class="d-flex flex-wrap gap-2">
                         <!-- Print & Export Dropdown -->
                         <div class="dropdown">
@@ -432,7 +431,8 @@
                             </ul>
                         </div>
                     </div>
-                </div>
+            </div>
+            <div class="card-body">
                 <div class="table-responsive position-relative" id="invoicesTable">
                     <table class="table table-striped align-middle table-hover">
                         <thead class="table-light">
@@ -643,12 +643,14 @@
                             </tbody>
                         </table>
                     </div>
-                        </div>
+                </div>
             <div class="card-footer">
-                {{ $invoices->appends(request()->query())->links() }}
+                <div id="paginationContainer">
+                    @include('invoices.partials.pagination')
+                </div>
+            </div>
         </div>
     </div>
-</div>
 
     <!-- Invoice Modals -->
     <div class="modal fade" id="invoiceModal" tabindex="-1" aria-hidden="true">

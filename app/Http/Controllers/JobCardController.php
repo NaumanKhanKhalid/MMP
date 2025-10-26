@@ -78,8 +78,16 @@ class JobCardController extends Controller
         $customers = Customer::orderBy('name')->get();
         $products = Product::where('status', 'active')
             ->orderBy('name')
-            ->select('id', 'name', 'sku', 'barcode_primary', 'price_normal', 'price_workshop', 'on_hand', 'reserved')
-            ->get();
+            ->select('id', 'name', 'sku', 'barcode_primary', 'supplier_code', 'price_normal', 'price_workshop', 'on_hand', 'reserved')
+            ->get()
+            ->map(function($product) {
+                // Get OE numbers as comma-separated string
+                $oeNumbers = \App\Models\ProductOENumber::where('product_id', $product->id)
+                    ->pluck('oe_number')
+                    ->implode(', ');
+                $product->oe_numbers = $oeNumbers;
+                return $product;
+            });
         $technicians = User::where('status', 'active')->get();
 
         // Get VAT settings
@@ -95,9 +103,22 @@ class JobCardController extends Controller
      */
     public function store(Request $request)
     {
+        // VALIDATION: Email OR Phone is required for walk-in customers
+        if (empty($request->customer_id)) {
+            $walkInEmail = $request->customer_email;
+            $walkInPhone = $request->customer_phone;
+            
+            if (empty($walkInEmail) && empty($walkInPhone)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Please provide either email or phone number for walk-in customer.',
+                ], 400);
+            }
+        }
+        
         $request->validate([
             'customer_id' => 'nullable|exists:customers,id',
-            'customer_name' => 'required_if:customer_id,null|string|max:255',
+            'customer_name' => 'nullable|string|max:255',  // ✅ Changed to nullable (name is optional for walk-in)
             'customer_phone' => 'nullable|string|max:20',
             'customer_email' => 'nullable|email|max:255',
             'vehicle_make' => 'nullable|string|max:100',
@@ -203,9 +224,13 @@ class JobCardController extends Controller
 
             // Reserve parts if status is booked or in_progress (Requirements!)
             if (in_array($initialStatus, ['booked', 'in_progress']) && $request->has('items')) {
+                \Log::info("Reserving parts for Job Card {$jobCard->job_card_number} with status: {$initialStatus}");
+                
                 foreach ($request->items as $item) {
                     $product = Product::find($item['product_id']);
                     if ($product) {
+                        \Log::info("Reserving {$item['quantity_used']} units of product: {$product->name}");
+                        
                         // Reserve from stock batches (FIFO)
                         $qtyToReserve = $item['quantity_used'];
                         $batches = StockBatch::where('product_id', $product->id)
@@ -219,8 +244,16 @@ class JobCardController extends Controller
                             $available = $batch->qty_left - $batch->reserved_qty;
                             $reserveFromBatch = min($qtyToReserve, $available);
                             
-                            $batch->increment('reserved_qty', $reserveFromBatch);
+                            if ($reserveFromBatch > 0) {
+                                $batch->increment('reserved_qty', $reserveFromBatch);
+                                \Log::info("Reserved {$reserveFromBatch} units from batch {$batch->id}. Batch reserved_qty now: {$batch->reserved_qty}");
+                            }
+                            
                             $qtyToReserve -= $reserveFromBatch;
+                        }
+                        
+                        if ($qtyToReserve > 0) {
+                            \Log::warning("Could not fully reserve product {$product->name}. Still needed: {$qtyToReserve}");
                         }
                         
                         // Create stock ledger entry for reservation
@@ -264,15 +297,17 @@ class JobCardController extends Controller
         $jobCard->load(['customer', 'createdBy', 'items.product', 'labour.technician']);
         
         // If AJAX request for JSON data
-        if ($request->ajax() && $request->get('format') === 'json') {
+        if ($request->ajax() || $request->get('format') === 'json') {
             return response()->json([
                 'success' => true,
                 'job_card' => [
                     'id' => $jobCard->id,
                     'job_card_number' => $jobCard->job_card_number,
+                    'status' => $jobCard->status,
                     'grand_total' => $jobCard->grand_total,
                     'customer_type' => $jobCard->customer->terms ?? 'cash',
                     'customer_id' => $jobCard->customer_id,
+                    'final_invoice_id' => $jobCard->final_invoice_id,
                 ]
             ]);
         }
@@ -402,10 +437,14 @@ class JobCardController extends Controller
                 case 'booked':
                     $jobCard->markAsBooked();
                     
+                    \Log::info("Job Card {$jobCard->job_card_number} status changed to BOOKED. Reserving parts...");
+                    
                     // Reserve parts when booking (Requirements: parts reserved when booked)
                     foreach ($jobCard->items as $item) {
                         $product = Product::find($item->product_id);
                         if ($product) {
+                            \Log::info("Reserving {$item->quantity_used} units of product: {$product->name} (ID: {$product->id})");
+                            
                             // Reserve from stock batches (FIFO)
                             $qtyToReserve = $item->quantity_used;
                             $batches = StockBatch::where('product_id', $product->id)
@@ -419,8 +458,16 @@ class JobCardController extends Controller
                                 $available = $batch->qty_left - $batch->reserved_qty;
                                 $reserveFromBatch = min($qtyToReserve, $available);
                                 
-                                $batch->increment('reserved_qty', $reserveFromBatch);
+                                if ($reserveFromBatch > 0) {
+                                    $batch->increment('reserved_qty', $reserveFromBatch);
+                                    \Log::info("Status Change - Reserved {$reserveFromBatch} units from batch {$batch->id}");
+                                }
+                                
                                 $qtyToReserve -= $reserveFromBatch;
+                            }
+                            
+                            if ($qtyToReserve > 0) {
+                                \Log::warning("Status Change - Could not fully reserve {$product->name}. Still needed: {$qtyToReserve}");
                             }
                             
                             // Create stock ledger entry for reservation
@@ -444,9 +491,13 @@ class JobCardController extends Controller
                     
                     // Reserve parts if not already reserved (coming from pending)
                     if ($oldStatus === 'pending') {
+                        \Log::info("Job Card {$jobCard->job_card_number} status changed from PENDING to IN_PROGRESS. Reserving parts...");
+                        
                         foreach ($jobCard->items as $item) {
                             $product = Product::find($item->product_id);
                             if ($product) {
+                                \Log::info("Reserving {$item->quantity_used} units of product: {$product->name}");
+                                
                                 // Reserve from stock batches (FIFO)
                                 $qtyToReserve = $item->quantity_used;
                                 $batches = StockBatch::where('product_id', $product->id)
@@ -460,8 +511,16 @@ class JobCardController extends Controller
                                     $available = $batch->qty_left - $batch->reserved_qty;
                                     $reserveFromBatch = min($qtyToReserve, $available);
                                     
-                                    $batch->increment('reserved_qty', $reserveFromBatch);
+                                    if ($reserveFromBatch > 0) {
+                                        $batch->increment('reserved_qty', $reserveFromBatch);
+                                        \Log::info("Status Change - Reserved {$reserveFromBatch} units from batch {$batch->id}");
+                                    }
+                                    
                                     $qtyToReserve -= $reserveFromBatch;
+                                }
+                                
+                                if ($qtyToReserve > 0) {
+                                    \Log::warning("Status Change - Could not fully reserve {$product->name}. Still needed: {$qtyToReserve}");
                                 }
                                 
                                 StockLedger::create([
@@ -798,6 +857,7 @@ class JobCardController extends Controller
                 'message' => 'Job card converted to invoice successfully',
                 'invoice_id' => $invoice->id,
                 'invoice_number' => $invoice->invoice_number,
+                'grand_total' => $invoice->grand_total,
                 'payment_status' => $paymentStatus,
                 'amount_paid' => $amountPaid,
                 'balance_due' => $invoice->balance_due,

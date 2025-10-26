@@ -147,7 +147,6 @@
 
     <!-- Job Cards Table -->
     <div class="card shadow-sm">
-        <div class="card-body">
             <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-3">
                 <div class="card-title">
                     Job Cards<span class="badge bg-light text-default rounded ms-1 fs-12 align-middle">{{ $jobCards->total() }}</span>
@@ -179,6 +178,7 @@
                     </div>
                 </div>
             </div>
+        <div class="card-body">
             <div class="table-responsive position-relative" id="jobCardsTable">
                 <table class="table table-striped align-middle table-hover">
                     <thead class="table-light">
@@ -196,7 +196,7 @@
                     </thead>
                     <tbody>
                         @forelse($jobCards as $jobCard)
-                        <tr class="clickable-row" onclick="openViewModal('{{ $jobCard->id }}')" style="cursor: pointer;">
+                        <tr class="clickable-row" onclick="viewJobCard({{ $jobCard->id }})"  style="cursor: pointer;">
                             <td>{{ $loop->iteration + ($jobCards->currentPage() - 1) * $jobCards->perPage() }}</td>
                             
                             {{-- Job Card Number --}}
@@ -399,11 +399,11 @@ function initializeJobCardModal() {
         return;
     }
     
-    // Customer selection
-    const customerSelect = document.getElementById('customerSelect');
-    if (customerSelect) {
-        customerSelect.addEventListener('change', handleCustomerChange);
-    }
+    // Initialize POS-style customer search
+    initializeJobCardCustomerSearch();
+    
+    // Initialize Quick Add Customer form handler
+    initializeQuickAddCustomerForm();
 
     // Product search
     const productSearch = document.getElementById('productSearch');
@@ -449,32 +449,546 @@ function initializeJobCardModal() {
     }
 }
 
-// Customer selection handler
-function handleCustomerChange() {
-    const newCustomerFields = document.getElementById('newCustomerFields');
+// ========================================
+// POS-Style Customer & Vehicle Functions
+// ========================================
+
+let jobCardCustomers = [];
+let jobCardCurrentCustomer = null;
+let jobCardCurrentVehicle = null;
+
+// Initialize customer search
+function initializeJobCardCustomerSearch() {
+    console.log('🔄 Initializing customer search...');
+    console.log('📍 Fetching from:', '{{ route('pos.customers') }}');
     
-    if (this.value === 'new') {
-        newCustomerFields.style.display = 'block';
-        document.getElementById('customerName').required = true;
-    } else if (this.value) {
-        newCustomerFields.style.display = 'none';
-        document.getElementById('customerName').required = false;
-        
-        // Auto-fill customer data
-        const option = this.options[this.selectedIndex];
-        document.getElementById('customerName').value = option.dataset.name || '';
-        document.getElementById('customerPhone').value = option.dataset.phone || '';
-        document.getElementById('customerEmail').value = option.dataset.email || '';
-        document.getElementById('vehicleMake').value = option.dataset.vehicleMake || '';
-        document.getElementById('vehicleModel').value = option.dataset.vehicleModel || '';
-        document.getElementById('vehicleVIN').value = option.dataset.vehicleVin || '';
-        document.getElementById('vehicleRegistration').value = option.dataset.vehicleReg || '';
-        document.getElementById('vehicleMileage').value = option.dataset.vehicleMileage || '';
+    // Load all customers once on modal open
+    fetch('{{ route('pos.customers') }}')
+        .then(response => {
+            console.log('📡 Response received:', response.status, response.statusText);
+            if (!response.ok) {
+                throw new Error(`Failed to load customers: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('📦 Raw data received:', data);
+            // Direct assignment like Quotation (data is already the array)
+            jobCardCustomers = data || [];
+            console.log('✅ Loaded customers for job card:', jobCardCustomers.length);
+            console.log('👥 Sample customer:', jobCardCustomers[0]);
+            
+            if (jobCardCustomers.length === 0) {
+                console.warn('⚠️ No customers loaded - check database');
+                toastr.warning('No customers found in database');
     } else {
-        newCustomerFields.style.display = 'none';
-        document.getElementById('customerName').required = false;
+                console.log('✅ Customer search ready!');
+            }
+        })
+        .catch(error => {
+            console.error('❌ Error loading customers:', error);
+            toastr.error('Error loading customers: ' + error.message);
+        });
+
+    // Customer search input
+    const customerSearch = document.getElementById('customerSearch');
+    if (customerSearch) {
+        customerSearch.addEventListener('input', function(e) {
+            const query = e.target.value.toLowerCase().trim();
+            const resultsDiv = document.getElementById('customerSearchResults');
+            
+            console.log('🔍 Search query:', query, '| Available customers:', jobCardCustomers.length);
+            
+            if (query.length < 2) {
+                resultsDiv.style.display = 'none';
+                // Show walk-in form if search is empty
+                const walkInForm = document.getElementById('walkInCustomerForm');
+                if (walkInForm) walkInForm.style.display = 'block';
+                return;
+            }
+            
+            // Check if customers are loaded
+            if (jobCardCustomers.length === 0) {
+                resultsDiv.innerHTML = '<div class="list-group-item text-warning"><i class="ri-alert-line me-2"></i>Loading customers...</div>';
+                resultsDiv.style.display = 'block';
+                return;
+            }
+            
+            // Filter customers
+            const filtered = jobCardCustomers.filter(customer => 
+                customer.name.toLowerCase().includes(query) ||
+                (customer.phone && customer.phone.toLowerCase().includes(query)) ||
+                (customer.email && customer.email.toLowerCase().includes(query))
+            );
+            
+            console.log('✅ Filtered results:', filtered.length);
+            
+            if (filtered.length > 0) {
+                resultsDiv.innerHTML = filtered.map(customer => `
+                    <a href="javascript:void(0)" class="list-group-item list-group-item-action" 
+                       onclick="selectJobCardCustomer(${customer.id})">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h6 class="mb-0">${customer.name}</h6>
+                                <small class="text-muted">${customer.phone || 'No phone'} • ${customer.email || 'No email'}</small>
+                            </div>
+                            <span class="badge bg-${customer.terms === 'credit' ? 'success' : 'info'}">${customer.terms === 'credit' ? 'Credit' : 'Cash'}</span>
+                        </div>
+                    </a>
+                `).join('');
+                resultsDiv.style.display = 'block';
+                // Hide walk-in form when results found
+                const walkInForm = document.getElementById('walkInCustomerForm');
+                if (walkInForm) walkInForm.style.display = 'none';
+            } else {
+                resultsDiv.innerHTML = '<div class="list-group-item text-muted"><i class="ri-search-line me-2"></i>No customers found</div>';
+                resultsDiv.style.display = 'block';
+                // Show walk-in form when no results
+                const walkInForm = document.getElementById('walkInCustomerForm');
+                if (walkInForm) walkInForm.style.display = 'block';
+            }
+        });
     }
 }
+
+// Select customer
+function selectJobCardCustomer(customerId) {
+    console.log('👤 Selecting customer ID:', customerId);
+    const customer = jobCardCustomers.find(c => c.id == customerId);
+    if (!customer) {
+        console.log('❌ Customer not found');
+        return;
+    }
+    
+    console.log('✅ Customer found:', customer);
+    jobCardCurrentCustomer = customer;
+    
+    // Update UI
+    document.getElementById('customerSearch').value = '';
+    document.getElementById('customerSearchResults').style.display = 'none';
+    document.getElementById('walkInCustomerForm').style.display = 'none';
+    
+    document.getElementById('selectedCustomerCard').style.display = 'block';
+    document.getElementById('selectedCustomerName').textContent = customer.name;
+    document.getElementById('selectedCustomerDetails').textContent = `${customer.phone || 'No phone'} • ${customer.email || 'No email'}`;
+    
+    // Show vehicle dropdown, hide manual entry
+    const vehicleSelectSection = document.getElementById('vehicleSelectSection');
+    const vehicleManualEntry = document.getElementById('vehicleManualEntry');
+    if (vehicleSelectSection) vehicleSelectSection.style.display = 'block';
+    if (vehicleManualEntry) vehicleManualEntry.style.display = 'none';
+    
+    // Add hidden input for customer_id
+    let customerIdInput = document.getElementById('selectedCustomerId');
+    if (!customerIdInput) {
+        customerIdInput = document.createElement('input');
+        customerIdInput.type = 'hidden';
+        customerIdInput.id = 'selectedCustomerId';
+        customerIdInput.name = 'customer_id';
+        document.getElementById('createJobCardForm').appendChild(customerIdInput);
+    }
+    customerIdInput.value = customer.id;
+    
+    // Load customer vehicles
+    loadJobCardCustomerVehicles();
+}
+
+// Clear selected customer
+function clearSelectedCustomer() {
+    jobCardCurrentCustomer = null;
+    jobCardCurrentVehicle = null;
+    
+    document.getElementById('selectedCustomerCard').style.display = 'none';
+    document.getElementById('walkInCustomerForm').style.display = 'block';
+    
+    // Show manual entry, hide dropdown
+    const vehicleSelectSection = document.getElementById('vehicleSelectSection');
+    const vehicleManualEntry = document.getElementById('vehicleManualEntry');
+    if (vehicleSelectSection) vehicleSelectSection.style.display = 'none';
+    if (vehicleManualEntry) vehicleManualEntry.style.display = 'block';
+    
+    document.getElementById('vehicleSelect').innerHTML = '<option value="">Select Vehicle...</option>';
+    
+    // Remove hidden input
+    const customerIdInput = document.getElementById('selectedCustomerId');
+    if (customerIdInput) {
+        customerIdInput.remove();
+    }
+    
+    // Clear vehicle info
+    document.getElementById('vehicleMake').value = '';
+    document.getElementById('vehicleModel').value = '';
+    document.getElementById('vehicleYear').value = '';
+    document.getElementById('vehicleEngine').value = '';
+    document.getElementById('vehicleRegistration').value = '';
+    document.getElementById('vehicleVIN').value = '';
+    document.getElementById('vehicleMileage').value = '';
+}
+
+// Open Add Customer Modal
+window.openJobCardAddCustomerModal = function() {
+    const addCustomerModal = new bootstrap.Modal(document.getElementById('addJobCardCustomerModal'), {
+        backdrop: false,
+        keyboard: true
+    });
+    addCustomerModal.show();
+};
+
+// Initialize Quick Add Customer Form Handler (Same as Quotation)
+function initializeQuickAddCustomerForm() {
+    console.log('✅ Initializing Quick Add Customer form handler');
+    
+    $('#addJobCardCustomerForm').off('submit').on('submit', function(e) {
+        e.preventDefault();
+        
+        console.log('📝 Customer form submitted');
+        
+        const formData = $(this).serialize() + '&quick_add=1';
+        const submitBtn = $(this).find('button[type="submit"]');
+        const originalText = submitBtn.html();
+        
+        submitBtn.prop('disabled', true).html(
+            '<span class="spinner-border spinner-border-sm me-1"></span>Creating...');
+        
+        $.ajax({
+            url: '{{ route('customers.store') }}',
+            method: 'POST',
+            data: formData,
+            success: function(response) {
+                console.log('✅ Customer created:', response);
+                if (response.success) {
+                    toastr.success('Customer created successfully!');
+                    
+                    // Auto-select the new customer
+                    const customer = {
+                        id: response.customer.id,
+                        name: response.customer.name,
+                        email: response.customer.email || '',
+                        phone: response.customer.phone || '',
+                        terms: response.customer.terms || 'cash',
+                        price_tier: response.customer.price_tier || 'normal'
+                    };
+                    
+                    console.log('👤 New customer:', customer);
+                    
+                    // Add to customers array
+                    jobCardCustomers.push(customer);
+                    console.log('📋 Total customers:', jobCardCustomers.length);
+                    
+                    // Select the customer
+                    console.log('🎯 Selecting customer ID:', customer.id);
+                    selectJobCardCustomer(customer.id);
+                    
+                    // Close modal and reset form
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('addJobCardCustomerModal'));
+                    modal.hide();
+                    $('#addJobCardCustomerForm')[0].reset();
+                    
+                    console.log('✅ Quick Add Customer completed!');
+                }
+            },
+            error: function(xhr) {
+                console.error('❌ Error creating customer:', xhr);
+                let errorMsg = 'Failed to create customer.';
+                if (xhr.responseJSON && xhr.responseJSON.errors) {
+                    errorMsg = Object.values(xhr.responseJSON.errors).flat().join('<br>');
+                } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMsg = xhr.responseJSON.message;
+                }
+                toastr.error(errorMsg);
+            },
+            complete: function() {
+                submitBtn.prop('disabled', false).html(originalText);
+            }
+        });
+    });
+}
+
+// Load customer vehicles
+function loadJobCardCustomerVehicles() {
+    console.log('🚗 Loading vehicles for customer:', jobCardCurrentCustomer);
+    
+    // Clear existing data first
+    jobCardCurrentVehicle = null;
+    document.getElementById('vehicleSelect').innerHTML = '<option value="">Select Vehicle...</option>';
+    document.getElementById('vehicleInfo').style.display = 'none';
+    
+    if (!jobCardCurrentCustomer) {
+        console.log('❌ No customer selected');
+        return;
+    }
+    
+    const customerId = jobCardCurrentCustomer.id;
+    const url = '{{ route('api.customers.vehicles', ':id') }}'.replace(':id', customerId);
+    
+    console.log('📍 Fetching vehicles from:', url);
+    
+    fetch(url)
+        .then(response => {
+            console.log('📡 Vehicle response:', response.status, response.statusText);
+            return response.json();
+        })
+        .then(data => {
+            console.log('🚗 Vehicle data received:', data);
+            const select = document.getElementById('vehicleSelect');
+            
+            if (data.length > 0) {
+                console.log('✅ Found vehicles:', data.length);
+                data.forEach(vehicle => {
+                    const option = document.createElement('option');
+                    option.value = vehicle.id;
+                    option.textContent = `${vehicle.make_name} ${vehicle.model_name} (${vehicle.year || 'N/A'}) - ${vehicle.registration || 'No Reg'}`;
+                    option.dataset.vehicle = JSON.stringify(vehicle);
+                    select.appendChild(option);
+                });
+                console.log('🚗 Vehicle dropdown populated');
+            } else {
+                console.log('⚠️ No vehicles found for customer');
+                const option = document.createElement('option');
+                option.value = '';
+                option.textContent = 'No vehicles found';
+                option.disabled = true;
+                select.appendChild(option);
+            }
+        })
+        .catch(error => {
+            console.error('❌ Error loading vehicles:', error);
+            toastr.error('Error loading vehicles');
+        });
+}
+
+// Vehicle select change handler (Same as Quotation)
+window.selectJobCardVehicle = function() {
+    const select = document.getElementById('vehicleSelect');
+    const selectedOption = select.options[select.selectedIndex];
+    
+    console.log('🚗 Vehicle selected:', selectedOption?.value);
+    
+    if (!selectedOption || !selectedOption.value) {
+        document.getElementById('vehicleInfo').style.display = 'none';
+        document.getElementById('vehicleInfo').innerHTML = '';
+        jobCardCurrentVehicle = null;
+        return;
+    }
+    
+    const vehicle = JSON.parse(selectedOption.dataset.vehicle);
+    jobCardCurrentVehicle = vehicle;
+    
+    console.log('✅ Vehicle data:', vehicle);
+    
+    // Display vehicle info in disabled inputs (Same as Quotation)
+    const html = `
+        <div class="card shadow-sm mt-2">
+            <div class="card-body p-2">
+                <div class="row g-2">
+                    <div class="col-12">
+                        <label class="form-label small mb-1 fw-semibold">
+                            <i class="ri-road-map-line text-danger me-1"></i>Registration
+                        </label>
+                        <input type="text" class="form-control form-control-sm shadow-sm" 
+                               value="${vehicle.registration || 'N/A'}" disabled>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small mb-1 fw-semibold">
+                            <i class="ri-car-line text-primary me-1"></i>Make
+                        </label>
+                        <input type="text" class="form-control form-control-sm shadow-sm" 
+                               value="${vehicle.make_name || 'N/A'}" disabled>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small mb-1 fw-semibold">
+                            <i class="ri-car-line text-success me-1"></i>Model
+                        </label>
+                        <input type="text" class="form-control form-control-sm shadow-sm" 
+                               value="${vehicle.model_name || 'N/A'}" disabled>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small mb-1 fw-semibold">
+                            <i class="ri-calendar-line text-info me-1"></i>Year
+                        </label>
+                        <input type="text" class="form-control form-control-sm shadow-sm" 
+                               value="${vehicle.year || 'N/A'}" disabled>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small mb-1 fw-semibold">
+                            <i class="ri-settings-3-line text-warning me-1"></i>Engine
+                        </label>
+                        <input type="text" class="form-control form-control-sm shadow-sm" 
+                               value="${vehicle.engine_name || 'N/A'}" disabled>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small mb-1 fw-semibold">
+                            <i class="ri-barcode-line text-secondary me-1"></i>VIN
+                        </label>
+                        <input type="text" class="form-control form-control-sm shadow-sm" 
+                               value="${vehicle.vin || 'N/A'}" disabled>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small mb-1 fw-semibold">
+                            <i class="ri-speed-line text-warning me-1"></i>Mileage
+                        </label>
+                        <input type="text" class="form-control form-control-sm shadow-sm" 
+                               value="${vehicle.mileage ? vehicle.mileage + ' km' : 'N/A'}" disabled>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('vehicleInfo').innerHTML = html;
+    document.getElementById('vehicleInfo').style.display = 'block';
+    
+    console.log('🚗 Vehicle info displayed');
+};
+
+// Open Add Vehicle Modal
+window.openAddVehicleModal = function() {
+    if (!jobCardCurrentCustomer) {
+        toastr.error('Please select a customer first');
+        return;
+    }
+    
+    const modal = new bootstrap.Modal(document.getElementById('addVehicleModal'));
+    modal.show();
+};
+
+// Load vehicle models based on make
+window.loadVehicleModels = function() {
+    const makeId = document.getElementById('addVehicleMake').value;
+    const modelSelect = document.getElementById('addVehicleModel');
+    const engineSelect = document.getElementById('addVehicleEngine');
+    
+    modelSelect.innerHTML = '<option value="">Select Model...</option>';
+    engineSelect.innerHTML = '<option value="">Select Engine...</option>';
+    
+    if (!makeId) return;
+    
+    const url = '{{ route('api.vehicle-makes.models', ':id') }}'.replace(':id', makeId);
+    
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            data.forEach(model => {
+                const option = document.createElement('option');
+                option.value = model.id;
+                option.textContent = model.name;
+                modelSelect.appendChild(option);
+            });
+        })
+        .catch(error => {
+            console.error('Error loading models:', error);
+            toastr.error('Error loading models');
+        });
+};
+
+// Engine is now a simple text input (removed loadVehicleEngines function)
+
+// Add vehicle to job card
+window.addVehicleToJobCard = function() {
+    if (!jobCardCurrentCustomer) {
+        toastr.error('Please select a customer first');
+        return;
+    }
+    
+    const makeId = document.getElementById('addVehicleMake').value;
+    const modelId = document.getElementById('addVehicleModel').value;
+    const year = document.getElementById('addVehicleYear').value;
+    const engine = document.getElementById('addVehicleEngine').value; // Text input now
+    const registration = document.getElementById('addVehicleRegistration').value;
+    const vin = document.getElementById('addVehicleVIN').value;
+    const mileage = document.getElementById('addVehicleMileage').value;
+    
+    if (!makeId || !modelId || !year) {
+        toastr.error('Please fill in Make, Model, and Year');
+        return;
+    }
+    
+    console.log('🚗 Adding vehicle with engine:', engine);
+    
+    // Save vehicle to customer (Use route name)
+    const url = '{{ route('customers.vehicles.store', ':customerId') }}'.replace(':customerId', jobCardCurrentCustomer.id);
+    
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            make_id: makeId,              // ✅ Correct parameter name
+            model_id: modelId,            // ✅ Correct parameter name
+            year: year,
+            engine: engine,               // ✅ Engine as text
+            registration_number: registration,  // ✅ Correct parameter name
+            vin_number: vin,              // ✅ Correct parameter name
+            mileage: mileage
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('✅ Vehicle added successfully:', data.vehicle);
+            toastr.success('Vehicle added successfully');
+            
+            // Close modal
+            const modal = bootstrap.Modal.getInstance(document.getElementById('addVehicleModal'));
+            modal.hide();
+            
+            // Clear form
+            document.getElementById('addVehicleMake').value = '';
+            document.getElementById('addVehicleModel').value = '';
+            document.getElementById('addVehicleYear').value = '';
+            document.getElementById('addVehicleEngine').value = '';
+            document.getElementById('addVehicleRegistration').value = '';
+            document.getElementById('addVehicleVIN').value = '';
+            document.getElementById('addVehicleMileage').value = '';
+            
+            // Reload vehicles and auto-select the new one
+            const newVehicleId = data.vehicle.id;
+            console.log('🔄 Reloading vehicles and auto-selecting:', newVehicleId);
+            
+            // Reload vehicles
+            const url = '{{ route('api.customers.vehicles', ':id') }}'.replace(':id', jobCardCurrentCustomer.id);
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(vehicles => {
+                    console.log('🚗 Vehicles reloaded:', vehicles.length);
+                    
+                    const select = document.getElementById('vehicleSelect');
+                    select.innerHTML = '<option value="">Select Vehicle...</option>';
+                    
+                    if (vehicles.length > 0) {
+                        vehicles.forEach(vehicle => {
+                            const option = document.createElement('option');
+                            option.value = vehicle.id;
+                            option.textContent = `${vehicle.make_name} ${vehicle.model_name} (${vehicle.year || 'N/A'}) - ${vehicle.registration || 'No Reg'}`;
+                            option.dataset.vehicle = JSON.stringify(vehicle);
+                            select.appendChild(option);
+                        });
+                        
+                        // Auto-select the newly added vehicle
+                        select.value = newVehicleId;
+                        
+                        // Trigger the select event to display vehicle info
+                        selectJobCardVehicle();
+                        
+                        console.log('✅ New vehicle auto-selected!');
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Error reloading vehicles:', error);
+                    toastr.error('Error loading vehicles');
+                });
+        } else {
+            toastr.error(data.message || 'Error adding vehicle');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        toastr.error('Error adding vehicle');
+    });
+};
 
 // Product search handler
 function handleProductSearch(event) {
@@ -497,7 +1011,9 @@ function handleProductSearch(event) {
     const filteredProducts = jobCardProducts.filter(product => 
         product.name.toLowerCase().includes(query) ||
         product.sku.toLowerCase().includes(query) ||
-        (product.barcode_primary && product.barcode_primary.toLowerCase().includes(query))
+        (product.barcode_primary && product.barcode_primary.toLowerCase().includes(query)) ||
+        (product.supplier_code && product.supplier_code.toLowerCase().includes(query)) ||
+        (product.oe_numbers && product.oe_numbers.toLowerCase().includes(query))
     );
     
     console.log('Filtered products:', filteredProducts.length);
@@ -526,7 +1042,11 @@ function handleProductSearch(event) {
                     <div class="d-flex w-100 justify-content-between align-items-start">
                         <div class="flex-grow-1">
                     <h6 class="mb-1">${product.name}</h6>
-                            <p class="mb-1 small text-muted">${product.sku} | ${product.barcode_primary || 'No barcode'}</p>
+                            <p class="mb-1 small text-muted">
+                                SKU: ${product.sku} | Barcode: ${product.barcode_primary || 'N/A'}
+                                ${product.supplier_code ? ` | Supplier: ${product.supplier_code}` : ''}
+                                ${product.oe_numbers ? ` | OE: ${product.oe_numbers}` : ''}
+                            </p>
                             <div class="d-flex gap-2 align-items-center">
                 <small class="text-success"><strong>R${product.price_workshop || product.price_normal || 0}</strong></small>
                                 ${stockBadge}
@@ -546,10 +1066,100 @@ function handleProductSearch(event) {
             });
         });
     } else {
-        resultsDiv.innerHTML = '<div class="list-group-item text-muted"><i class="bi bi-search me-2"></i>No products found matching "' + query + '"</div>';
+        // No results - show Quick Add (Same as Quotation/POS Style)
+        resultsDiv.innerHTML = `
+            <div class="p-3">
+                <div class="card border-success shadow-sm">
+                    <div class="card-body p-3">
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-5">
+                                <label class="form-label small fw-bold mb-1">
+                                    <i class="ri-product-hunt-line text-primary me-1"></i>Product Name <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" class="form-control form-control-sm" id="quickProductName" value="${query}">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold mb-1">
+                                    <i class="ri-price-tag-3-line text-success me-1"></i>Price <span class="text-danger">*</span>
+                                </label>
+                                <input type="number" class="form-control form-control-sm" id="quickProductPrice" value="0.00" step="0.01">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold mb-1">
+                                    <i class="ri-stack-line text-warning me-1"></i>Qty <span class="text-danger">*</span>
+                                </label>
+                                <input type="number" class="form-control form-control-sm" id="quickProductQty" value="1" min="1">
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-success flex-grow-1" id="quickAddJobCardProductBtn">
+                                <i class="ri-check-line me-1"></i>Create & Add to Job Card
+                            </button>
+                            <button type="button" class="btn btn-outline-danger" onclick="document.getElementById('productSearchResults').style.display='none'; document.getElementById('productSearch').value=''; document.getElementById('productSearch').focus();">
+                                <i class="ri-close-line me-1"></i>Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
         resultsDiv.style.display = 'block';
     }
 }
+
+// Quick Add Product Button Handler (Same as Quotation)
+$(document).on('click', '#quickAddJobCardProductBtn', function() {
+    const productName = $('#quickProductName').val().trim();
+    const productPrice = parseFloat($('#quickProductPrice').val()) || 0;
+    const productQty = parseInt($('#quickProductQty').val()) || 1;
+    
+    if (!productName || productPrice <= 0) {
+        toastr.error('Please enter product name and valid price');
+        return;
+    }
+    
+    // Create product via AJAX
+    const formData = {
+        name: productName,
+        price_normal: productPrice,
+        qty: productQty,
+        _token: '{{ csrf_token() }}'
+    };
+    
+    $(this).prop('disabled', true).html(
+        '<i class="ri-loader-4-line ri-spin me-1"></i>Creating...');
+    
+    $.post('{{ route('products.quickAdd') }}', formData, function(response) {
+        if (response.success) {
+            toastr.success('Product created & added to job card!');
+            
+            const product = response.product;
+            
+            // Add product to job card products array
+            jobCardProducts.push({
+                id: product.id,
+                name: product.name,
+                sku: product.sku,
+                barcode_primary: product.barcode_primary,
+                price_workshop: product.price_normal,
+                on_hand: productQty,
+                reserved: 0
+            });
+            
+            // Add to parts table
+            addProductToJobCard(product.id);
+            
+            // Clear search and hide results
+            $('#productSearchResults').hide();
+            $('#productSearch').val('').focus();
+        }
+    }).fail(function(xhr) {
+        toastr.error(xhr.responseJSON?.message || 'Failed to create product');
+        $('#quickAddJobCardProductBtn').prop('disabled', false).html(
+            '<i class="ri-check-line me-1"></i>Create & Add to Job Card');
+    });
+});
 
 // Debounce helper
 function debounce(func, wait) {
@@ -684,7 +1294,7 @@ function addPartRow() {
     updatePartsCount();
 }
 
-// Add labour row (Technician field removed as per user request - not in requirements)
+// Add labour row (Simplified: Description + Price only, Zero Cost)
 function addLabourRow() {
     const row = document.createElement('tr');
     row.innerHTML = `
@@ -692,30 +1302,15 @@ function addLabourRow() {
         <td>
             <input type="text" class="form-control form-control-sm" 
                    name="labour[${labourRowCount}][labour_description]" 
-                   placeholder="e.g., Oil change, Brake service" required>
-        </td>
-        <td>
-            <select class="form-select form-select-sm" name="labour[${labourRowCount}][labour_type]">
-                <option value="diagnostic">Diagnostic</option>
-                <option value="repair">Repair</option>
-                <option value="maintenance">Maintenance</option>
-                <option value="installation">Installation</option>
-                <option value="other">Other</option>
-            </select>
+                   placeholder="e.g., Oil change, Brake service, Engine diagnostic..." required>
         </td>
         <td>
             <input type="number" class="form-control form-control-sm" 
-                   name="labour[${labourRowCount}][hours_worked]" 
-                   min="0" step="0.25" value="1" 
-                   onchange="updateLabourTotal(this.closest('tr'))">
+                   name="labour[${labourRowCount}][total_amount]" 
+                   min="0" step="0.01" value="0" 
+                   onchange="updateLabourTotal(this.closest('tr'))" 
+                   placeholder="Enter price">
         </td>
-        <td>
-            <input type="number" class="form-control form-control-sm" 
-                   name="labour[${labourRowCount}][hourly_rate]" 
-                   min="0" step="0.01" value="300" 
-                   onchange="updateLabourTotal(this.closest('tr'))">
-        </td>
-        <td class="labour-total">R300.00</td>
         <td>
             <button type="button" class="btn btn-sm btn-danger-light btn-icon" onclick="removeLabourRow(this)">
                 <i class="bi bi-trash"></i>
@@ -723,7 +1318,11 @@ function addLabourRow() {
         </td>
     `;
     
+    // Hidden fields for backend compatibility (zero cost, 1 hour @ 0 rate)
     row.innerHTML += `
+        <input type="hidden" name="labour[${labourRowCount}][labour_type]" value="other">
+        <input type="hidden" name="labour[${labourRowCount}][hours_worked]" value="1">
+        <input type="hidden" name="labour[${labourRowCount}][hourly_rate]" value="0">
         <input type="hidden" name="labour[${labourRowCount}][detailed_description]" value="">
         <input type="hidden" name="labour[${labourRowCount}][notes]" value="">
         <input type="hidden" name="labour[${labourRowCount}][technician_id]" value="">
@@ -791,12 +1390,17 @@ function updatePartTotal(row) {
     updatePartsTotal();
 }
 
-// Update labour total
+// Update labour total (Simplified: Just read the price directly)
 function updateLabourTotal(row) {
-    const hours = parseFloat(row.querySelector('input[name*="hours_worked"]').value) || 0;
-    const rate = parseFloat(row.querySelector('input[name*="hourly_rate"]').value) || 0;
-    const total = hours * rate;
-    row.querySelector('.labour-total').textContent = 'R' + total.toFixed(2);
+    const totalInput = row.querySelector('input[name*="total_amount"]');
+    const total = parseFloat(totalInput ? totalInput.value : 0) || 0;
+    
+    // Update the hidden hourly_rate to match total_amount for backend
+    const hourlyRateInput = row.querySelector('input[name*="hourly_rate"]');
+    if (hourlyRateInput) {
+        hourlyRateInput.value = total; // Store price as hourly_rate
+    }
+    
     updateLabourTotalSum();
 }
 
@@ -847,8 +1451,9 @@ function updatePartsTotal() {
 
 function updateLabourTotalSum() {
     let total = 0;
-    document.querySelectorAll('.labour-total').forEach(cell => {
-        const value = parseFloat(cell.textContent.replace('R', '')) || 0;
+    // Sum up all labour prices directly from inputs
+    document.querySelectorAll('input[name*="[total_amount]"]').forEach(input => {
+        const value = parseFloat(input.value) || 0;
         total += value;
     });
     const totalElem = document.getElementById('labourTotal');
@@ -886,10 +1491,10 @@ function calculateJobTotals() {
             grandTotal = subtotal + vatAmount;
         }
         
-        // Update VAT Amount
+        // Update VAT Amount (text content, not input value)
         const vatAmountElem = document.getElementById('vatAmount');
         if (vatAmountElem) {
-            vatAmountElem.value = vatAmount.toFixed(2);
+            vatAmountElem.textContent = vatAmount.toFixed(2);
         }
         
         // Update Grand Total
@@ -901,7 +1506,7 @@ function calculateJobTotals() {
         // No VAT
         const vatAmountElem = document.getElementById('vatAmount');
         if (vatAmountElem) {
-            vatAmountElem.value = '0.00';
+            vatAmountElem.textContent = '0.00';
         }
         
         const grandTotalElem = document.getElementById('grandTotal');
@@ -932,128 +1537,67 @@ function scanBarcode() {
     document.getElementById('productSearch')?.focus();
 }
 
-// Submit Quick Add Product (via modal)
-function submitQuickAddProduct() {
-    const name = document.getElementById('quickProductName').value;
-    const price = parseFloat(document.getElementById('quickProductPrice').value) || 0;
-    const qty = parseFloat(document.getElementById('quickProductQty').value) || 1;
-    
-    if (!name || price <= 0) {
-        alert('Please enter product name and price');
-        return;
-    }
-    
-    // Create product via API first
-    fetch('{{ route("products.quickAdd") }}', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        },
-        body: JSON.stringify({
-            name: name,
-            price_normal: price,
-            qty: 0 // No initial stock for quick add from job card
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Add to products array
-            const newProduct = {
-                id: data.product.id,
-                name: data.product.name,
-                sku: data.product.sku,
-                barcode_primary: data.product.barcode_primary,
-                price_workshop: price,
-                on_hand: 0
-            };
-            jobCardProducts.push(newProduct);
-            
-            // Add to job card parts table
-            const row = document.createElement('tr');
-            row.setAttribute('data-product-id', newProduct.id);
-            row.innerHTML = `
-                <td>${partRowCount + 1}</td>
-                <td>
-                    <strong>${newProduct.name}</strong><br>
-                    <small class="text-muted">${newProduct.sku} - Just Created</small>
-                    <input type="hidden" name="items[${partRowCount}][product_id]" value="${newProduct.id}">
-                </td>
-                <td>
-                    <input type="number" class="form-control form-control-sm" 
-                           name="items[${partRowCount}][quantity_used]" 
-                           min="0.001" step="0.001" value="${qty}" 
-                           onchange="updatePartTotal(this.closest('tr'))">
-                </td>
-                <td>
-                    <input type="number" class="form-control form-control-sm" 
-                           name="items[${partRowCount}][unit_price]" 
-                           min="0" step="0.01" value="${price}" 
-                           onchange="updatePartTotal(this.closest('tr'))">
-                </td>
-                <td class="part-total">R${(qty * price).toFixed(2)}</td>
-                <td>
-                    <span class="badge bg-success">Added</span>
-                </td>
-                <td>
-                    <button type="button" class="btn btn-sm btn-danger-light btn-icon" onclick="removePartRow(this)">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                </td>
-            `;
-            
-            document.getElementById('partsTableBody').appendChild(row);
-            partRowCount++;
-            updatePartsCount();
-            updatePartTotal(row);
-            
-            // Close modal
-            const modal = bootstrap.Modal.getInstance(document.getElementById('quickAddProductJobCardModal'));
-            modal.hide();
-            
-            // Clear form
-            document.getElementById('quickProductName').value = '';
-            document.getElementById('quickProductPrice').value = '';
-            document.getElementById('quickProductQty').value = '1';
-            
-            alert('Product created successfully! SKU: ' + newProduct.sku);
-        } else {
-            alert('Error creating product: ' + data.message);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error creating product');
-    });
-}
+// Quick Add Product function removed - Only search and select existing products
 
 // Form submission
 function handleJobCardFormSubmit(e) {
     e.preventDefault();
     
-    const formData = new FormData(e.target);
-    const url = '{{ route("job-cards.store") }}';
+    console.log('📝 Job card form submitted');
     
-    fetch(url, {
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        },
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            alert('Job card created successfully! Job Card #: ' + data.job_card_number);
-            location.reload();
-        } else {
-            alert('Error creating job card: ' + data.message);
+    // VALIDATION: For walk-in customers, email OR phone is required
+    if (!jobCardCurrentCustomer) {
+        const walkInEmail = $('#walkInEmail').val().trim();
+        const walkInPhone = $('#walkInPhone').val().trim();
+        
+        if (!walkInEmail && !walkInPhone) {
+            toastr.error('Please provide either email or phone number for walk-in customer.');
+            return;
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error creating job card');
+    }
+    
+    const formData = new FormData(e.target);
+    
+    // Show loading state
+    const submitBtn = $('#createJobCardForm button[type="submit"]');
+    const originalText = submitBtn.html();
+    submitBtn.prop('disabled', true).html('<i class="ri-loader-4-line ri-spin me-1"></i>Creating...');
+    
+    $.ajax({
+        url: '{{ route("job-cards.store") }}',
+        method: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(data) {
+            console.log('✅ Job card created:', data);
+        if (data.success) {
+                toastr.success('Job card created successfully! Job Card #: ' + data.job_card_number);
+                
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('createJobCardModal'));
+                if (modal) modal.hide();
+                
+                // Reload page
+                setTimeout(() => {
+            location.reload();
+                }, 1500);
+        } else {
+                toastr.error('Error creating job card: ' + data.message);
+                submitBtn.prop('disabled', false).html(originalText);
+            }
+        },
+        error: function(xhr) {
+            console.error('❌ Error creating job card:', xhr);
+            let errorMsg = 'Failed to create job card.';
+            if (xhr.responseJSON && xhr.responseJSON.errors) {
+                errorMsg = Object.values(xhr.responseJSON.errors).flat().join('<br>');
+            } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                errorMsg = xhr.responseJSON.message;
+            }
+            toastr.error(errorMsg);
+            submitBtn.prop('disabled', false).html(originalText);
+        }
     });
 }
 
@@ -1142,8 +1686,22 @@ function changeStatus(id, status) {
         'cancelled': 'Cancel'
     };
     
-    if (confirm(`Are you sure you want to ${statusText[status]} this job card?`)) {
-        const url = '{{ route("job-cards.change-status", ":id") }}'.replace(':id', id);
+    // Show themed confirmation modal
+    showStatusChangeModal(id, status, statusText[status]);
+}
+
+function showStatusChangeModal(jobCardId, status, statusText) {
+    $('#statusChangeJobCardId').val(jobCardId);
+    $('#statusChangeStatus').val(status);
+    $('#statusChangeText').text(statusText);
+    $('#statusChangeModal').modal('show');
+}
+
+function confirmStatusChange() {
+    const jobCardId = $('#statusChangeJobCardId').val();
+    const status = $('#statusChangeStatus').val();
+    
+    const url = '{{ route("job-cards.change-status", ":id") }}'.replace(':id', jobCardId);
         
         fetch(url, {
             method: 'PATCH',
@@ -1156,43 +1714,210 @@ function changeStatus(id, status) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                location.reload();
+            $('#statusChangeModal').modal('hide');
+            toastr.success('Job card status updated successfully!');
+            setTimeout(() => location.reload(), 1000);
             } else {
-                alert('Error: ' + data.message);
+            toastr.error('Error: ' + data.message);
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Error changing status');
+        toastr.error('Error changing status');
         });
-    }
 }
 
 // Convert to invoice
 function convertToInvoice(id) {
-    if (confirm('Are you sure you want to convert this job card to an invoice?')) {
-        const url = '{{ route("job-cards.convert-to-invoice", ":id") }}'.replace(':id', id);
-        
-        fetch(url, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+    // Show themed confirmation modal
+    showConvertToInvoiceModal(id);
+}
+
+function showConvertToInvoiceModal(jobCardId) {
+    // First check if job card can be converted
+    const url = '{{ route("job-cards.show", ":id") }}'.replace(':id', jobCardId);
+    fetch(url, {
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.job_card) {
+            const jobCard = data.job_card;
+            
+            // Check if can convert
+            if (jobCard.status !== 'completed') {
+                toastr.error('Job card must be completed before converting to invoice');
+                return;
             }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Job card converted to invoice successfully! Invoice #: ' + data.invoice_number);
-                location.reload();
-            } else {
-                alert('Error: ' + data.message);
+            
+            if (jobCard.final_invoice_id) {
+                toastr.error('Job card has already been converted to invoice');
+                return;
             }
+            
+            // Show confirmation modal
+            $('#convertJobCardId').val(jobCardId);
+            $('#convertToInvoiceModal').modal('show');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        toastr.error('Error loading job card details');
+    });
+}
+
+function confirmSimpleConvertToInvoice() {
+    const jobCardId = $('#convertJobCardId').val();
+    const url = '{{ route("job-cards.convert-to-invoice", ":id") }}'.replace(':id', jobCardId);
+    
+    // Show loading on button
+    const btn = event.target;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Converting...';
+    btn.disabled = true;
+    
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            payment_method: 'on_account',
+            amount_paid: 0
         })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Error converting to invoice');
-        });
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            $('#convertToInvoiceModal').modal('hide');
+            // Show post-conversion modal with share options
+            showJobCardPostSaleModal(data.invoice_id, data.invoice_number, data.grand_total);
+        } else {
+            toastr.error(data.message || 'Error converting to invoice');
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        toastr.error('Error converting to invoice');
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    });
+}
+
+// Post-sale modal functions (after job card conversion)
+let currentJobCardInvoiceId = null;
+
+function showJobCardPostSaleModal(invoiceId, invoiceNumber, grandTotal) {
+    currentJobCardInvoiceId = invoiceId;
+    $('#jobCardPostSaleInvoiceNumber').text(invoiceNumber);
+    $('#jobCardPostSaleTotal').text(parseFloat(grandTotal).toFixed(2));
+    $('#jobCardPostSaleModal').modal('show');
+    toastr.success('Invoice created successfully!');
+}
+
+function closeJobCardPostSaleModal() {
+    $('#jobCardPostSaleModal').modal('hide');
+    setTimeout(() => location.reload(), 300);
+}
+
+function viewJobCardInvoice() {
+    if (!currentJobCardInvoiceId) {
+        toastr.error('No invoice found');
+        return;
     }
+    
+    const invoiceNumber = $('#jobCardPostSaleInvoiceNumber').text();
+    const url = '{{ route('invoices.index') }}?search=' + encodeURIComponent(invoiceNumber);
+    window.location.href = url;
+}
+
+// Share functions for job card converted invoice
+function downloadJobCardInvoicePDF() {
+    if (!currentJobCardInvoiceId) {
+        toastr.error('No invoice found');
+        return;
+    }
+    const url = '{{ route("invoices.pdf", ":id") }}'.replace(':id', currentJobCardInvoiceId);
+    window.open(url, '_blank');
+}
+
+function printJobCardInvoiceInline() {
+    if (!currentJobCardInvoiceId) {
+        toastr.error('No invoice found');
+        return;
+    }
+    const url = '{{ route("invoices.print", ":id") }}'.replace(':id', currentJobCardInvoiceId);
+    window.open(url, '_blank');
+}
+
+function sendJobCardWhatsApp() {
+    if (!currentJobCardInvoiceId) {
+        toastr.error('No invoice found');
+        return;
+    }
+    
+    // Use POST request for WhatsApp
+    $.post('{{ route("invoices.whatsapp", ":id") }}'.replace(':id', currentJobCardInvoiceId))
+        .done(function(response) {
+            if (response.success) {
+                const whatsappType = '{{ \App\Models\Setting::where('key', 'whatsapp_share_type')->value('value') ?? 'web' }}';
+                
+                if (whatsappType === 'desktop') {
+                    // Copy message to clipboard for desktop app
+                    if (navigator.clipboard && response.message) {
+                        navigator.clipboard.writeText(response.message).then(() => {
+                            toastr.success('Message copied! Opening WhatsApp...');
+                        });
+                    }
+                }
+                
+                // Open WhatsApp
+                window.open(response.url, '_blank');
+            } else {
+                toastr.error(response.message || 'Failed to send WhatsApp');
+            }
+        })
+        .fail(function(xhr) {
+            const errorMsg = xhr.responseJSON?.message || 'Error sending WhatsApp';
+            toastr.error(errorMsg);
+        });
+}
+
+function sendJobCardEmail() {
+    if (!currentJobCardInvoiceId) {
+        toastr.error('No invoice found');
+        return;
+    }
+    
+    // Use POST request for Email
+    $.post('{{ route("invoices.email", ":id") }}'.replace(':id', currentJobCardInvoiceId))
+        .done(function(response) {
+            if (response.success) {
+                toastr.success(response.message || 'Email sent successfully!');
+            } else {
+                toastr.error(response.message || 'Failed to send email');
+            }
+        })
+        .fail(function(xhr) {
+            const errorMsg = xhr.responseJSON?.message || 'Error sending email';
+            toastr.error(errorMsg);
+        });
+}
+
+function downloadJobCardPickingList() {
+    if (!currentJobCardInvoiceId) {
+        toastr.error('No invoice found');
+        return;
+    }
+    const url = '{{ route("invoices.picking-list", ":id") }}'.replace(':id', currentJobCardInvoiceId);
+    window.open(url, '_blank');
 }
 
 // Download PDF
@@ -1293,8 +2018,8 @@ function printJobCards() {
 $(document).ready(function() {
     let searchTimeout;
 
-    // Search input with debounce
-    $(document).on('input', '#searchInput', function() {
+    // Search input with debounce (only for main filter, not modals)
+    $('#filterForm #searchInput').on('input', function() {
         clearTimeout(searchTimeout);
         searchTimeout = setTimeout(function() {
             console.log('Search triggered');
@@ -1303,13 +2028,13 @@ $(document).ready(function() {
     });
 
     // Select filters with immediate response
-    $(document).on('change', '#statusFilter, #vehicleMakeFilter', function() {
+    $('#statusFilter, #vehicleMakeFilter').on('change', function() {
         console.log('Filter changed');
         filterJobCards();
     });
     
-    // Other filter inputs
-    $(document).on('change', 'input[name="customer_name"], input[name="date_from"]', function() {
+    // Other filter inputs (scoped to filterForm only)
+    $('#filterForm input[name="customer_name"], #filterForm input[name="date_from"]').on('change', function() {
         console.log('Filter changed');
         filterJobCards();
     });
@@ -1397,7 +2122,8 @@ function showConvertToInvoiceModal(jobCardId) {
     currentJobCardId = jobCardId;
     
     // Fetch job card details
-    fetch(`/job-cards/${jobCardId}?format=json`, {
+    const url = '{{ route("job-cards.show", ":id") }}'.replace(':id', jobCardId) + '?format=json';
+    fetch(url, {
         headers: {
             'Accept': 'application/json',
             'X-Requested-With': 'XMLHttpRequest'
@@ -1533,7 +2259,8 @@ function confirmConvertToInvoice() {
     btn.disabled = true;
     
     // Convert to invoice
-    fetch(`/job-cards/${currentJobCardId}/convert-to-invoice`, {
+    const url = '{{ route("job-cards.convert-to-invoice", ":id") }}'.replace(':id', currentJobCardId);
+    fetch(url, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -1575,4 +2302,144 @@ function confirmConvertToInvoice() {
     });
 }
 </script>
+
+<!-- Status Change Confirmation Modal -->
+<div class="modal fade" id="statusChangeModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <!-- Header -->
+            <div class="modal-header bg-warning text-white">
+                <div class="w-100 text-center">
+                    <h5 class="modal-title mb-0">
+                        <i class="ri-question-line me-2"></i>Confirm Status Change
+                    </h5>
+                </div>
+            </div>
+
+            <!-- Body -->
+            <div class="modal-body text-center py-4">
+                <div class="mb-3">
+                    <i class="ri-alert-line text-warning" style="font-size: 3rem;"></i>
+                </div>
+                <h6 class="mb-3">Are you sure you want to <span id="statusChangeText" class="fw-bold text-primary"></span> this job card?</h6>
+                <p class="text-muted small mb-0">This action will update the job card status and may affect stock reservations.</p>
+            </div>
+
+            <!-- Footer -->
+            <div class="modal-footer justify-content-center border-top">
+                <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">
+                    <i class="ri-close-line me-1"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-warning px-4" onclick="confirmStatusChange()">
+                    <i class="ri-check-line me-1"></i>Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Convert to Invoice Confirmation Modal -->
+<div class="modal fade" id="convertToInvoiceModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <!-- Header -->
+            <div class="modal-header bg-info text-white">
+                <div class="w-100 text-center">
+                    <h5 class="modal-title mb-0">
+                        <i class="ri-file-list-3-line me-2"></i>Convert to Invoice
+                    </h5>
+                </div>
+            </div>
+
+            <!-- Body -->
+            <div class="modal-body text-center py-4">
+                <div class="mb-3">
+                    <i class="ri-file-text-line text-info" style="font-size: 3rem;"></i>
+                </div>
+                <h6 class="mb-3">Are you sure you want to convert this job card to an invoice?</h6>
+                <p class="text-muted small mb-0">This will create a new invoice and consume reserved stock.</p>
+            </div>
+
+            <!-- Footer -->
+            <div class="modal-footer justify-content-center border-top">
+                <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">
+                    <i class="ri-close-line me-1"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-info px-4" onclick="confirmSimpleConvertToInvoice()">
+                    <i class="ri-check-line me-1"></i>Convert
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Job Card Post-Sale Modal (After Conversion) -->
+<div class="modal fade" id="jobCardPostSaleModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <!-- Header -->
+            <div class="modal-header bg-success text-white">
+                <div class="w-100 text-center">
+                    <h5 class="modal-title mb-0">
+                        <i class="ri-checkbox-circle-line me-2"></i>Invoice Created Successfully
+                    </h5>
+                </div>
+            </div>
+
+            <!-- Body -->
+            <div class="modal-body text-center py-4">
+                <!-- Invoice Info -->
+                <div class="card border-primary mb-3">
+                    <div class="card-body py-3">
+                        <div class="row">
+                            <div class="col-6 border-end">
+                                <small class="text-muted d-block mb-1">Invoice Number</small>
+                                <h5 id="jobCardPostSaleInvoiceNumber" class="text-primary mb-0 fw-bold"></h5>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted d-block mb-1">Total Amount</small>
+                                <h5 class="text-success mb-0 fw-bold">R <span id="jobCardPostSaleTotal">0.00</span></h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-primary" onclick="downloadJobCardInvoicePDF()">
+                        <i class="ri-file-pdf-line me-2"></i>Download PDF
+                    </button>
+                    <button type="button" class="btn btn-danger" onclick="printJobCardInvoiceInline()">
+                        <i class="ri-printer-line me-2"></i>Print Invoice
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="sendJobCardWhatsApp()">
+                        <i class="ri-whatsapp-line me-2"></i>Send via WhatsApp
+                    </button>
+                    <button type="button" class="btn btn-info" onclick="sendJobCardEmail()">
+                        <i class="ri-mail-line me-2"></i>Send via Email
+                    </button>
+                    <button type="button" class="btn btn-warning" onclick="downloadJobCardPickingList()">
+                        <i class="ri-file-list-3-line me-2"></i>Download Picking List
+                    </button>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="modal-footer justify-content-center border-top">
+                <button type="button" class="btn btn-secondary px-4" onclick="closeJobCardPostSaleModal()">
+                    <i class="ri-close-line me-1"></i>Close & Continue
+                </button>
+                <button type="button" class="btn btn-primary px-4" onclick="viewJobCardInvoice()">
+                    <i class="ri-eye-line me-1"></i>View Invoice
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden inputs for modals -->
+<input type="hidden" id="statusChangeJobCardId" value="">
+<input type="hidden" id="statusChangeStatus" value="">
+<input type="hidden" id="convertJobCardId" value="">
+
 @endsection

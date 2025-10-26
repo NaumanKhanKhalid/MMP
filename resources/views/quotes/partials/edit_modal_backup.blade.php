@@ -1,11 +1,10 @@
-<form action="<?php echo e(route('quotes.update', $quote)); ?>" method="POST" id="quoteEditForm">
-    <?php echo csrf_field(); ?>
-    <?php echo method_field('PUT'); ?>
+<form action="{{ route('quotes.update', $quote) }}" method="POST" id="quoteEditForm">
+    @csrf
+    @method('PUT')
     
     <div class="modal-header bg-warning-transparent">
         <h5 class="modal-title">
-            <i class="ri-pencil-line me-2"></i> Edit Quote #<?php echo e($quote->quote_number); ?>
-
+            <i class="ri-pencil-line me-2"></i> Edit Quote #{{ $quote->quote_number }}
         </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
     </div>
@@ -25,37 +24,36 @@
                         <label class="form-label fw-semibold">Customer <span class="text-danger">*</span></label>
                         <select name="customer_id" id="editCustomerSelect" class="form-select" required style="width: 100%;">
                             <option value="">-- Cash Sale / Manual Entry --</option>
-                            <?php $__currentLoopData = $customers; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $customer): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                <option value="<?php echo e($customer->id); ?>" 
-                                        data-email="<?php echo e($customer->email); ?>"
-                                        data-phone="<?php echo e($customer->phone); ?>"
-                                        data-address="<?php echo e($customer->address); ?>"
-                                        data-price-tier="<?php echo e($customer->price_tier); ?>"
-                                        <?php if($quote->customer_id == $customer->id): ?> selected <?php endif; ?>>
-                                    <?php echo e($customer->name); ?>
-
+                            @foreach($customers as $customer)
+                                <option value="{{ $customer->id }}" 
+                                        data-email="{{ $customer->email }}"
+                                        data-phone="{{ $customer->phone }}"
+                                        data-address="{{ $customer->address }}"
+                                        data-price-tier="{{ $customer->price_tier }}"
+                                        @if($quote->customer_id == $customer->id) selected @endif>
+                                    {{ $customer->name }}
                                 </option>
-                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                            @endforeach
                         </select>
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="form-label fw-semibold">Valid Until</label>
-                        <input type="date" name="valid_until" class="form-control form-control-sm" value="<?php echo e($quote->valid_until); ?>">
+                        <input type="date" name="valid_until" class="form-control form-control-sm" value="{{ $quote->valid_until }}">
                         <div class="form-text">Quote expiry date</div>
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="form-label fw-semibold">Quote Status</label>
                         <select name="status" class="form-select form-select-sm">
-                            <option value="draft" <?php if($quote->status=='draft'): ?> selected <?php endif; ?>>Draft</option>
-                            <option value="sent" <?php if($quote->status=='sent'): ?> selected <?php endif; ?>>Sent</option>
-                            <option value="accepted" <?php if($quote->status=='accepted'): ?> selected <?php endif; ?>>Accepted</option>
-                            <option value="declined" <?php if($quote->status=='declined'): ?> selected <?php endif; ?>>Declined</option>
-                            <option value="expired" <?php if($quote->status=='expired'): ?> selected <?php endif; ?>>Expired</option>
+                            <option value="draft" @if($quote->status=='draft') selected @endif>Draft</option>
+                            <option value="sent" @if($quote->status=='sent') selected @endif>Sent</option>
+                            <option value="accepted" @if($quote->status=='accepted') selected @endif>Accepted</option>
+                            <option value="declined" @if($quote->status=='declined') selected @endif>Declined</option>
+                            <option value="expired" @if($quote->status=='expired') selected @endif>Expired</option>
                         </select>
                     </div>
                     <div class="col-md-6 mb-3">
                         <label class="form-label fw-semibold">Notes (Optional)</label>
-                        <textarea name="notes" class="form-control form-control-sm" rows="2" placeholder="Any special notes..."><?php echo e($quote->notes); ?></textarea>
+                        <textarea name="notes" class="form-control form-control-sm" rows="2" placeholder="Any special notes...">{{ $quote->notes }}</textarea>
                     </div>
                     </div>
                 </div>
@@ -74,53 +72,50 @@
                         <label class="form-label fw-semibold">Make</label>
                         <select name="vehicle_make_id" class="form-select form-select-sm select2-vehicle-make-edit" style="width: 100%;">
                             <option value="">Select Make</option>
-                            <?php $__currentLoopData = $makes; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $make): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                <option value="<?php echo e($make->id); ?>" data-name="<?php echo e($make->name); ?>" <?php if($quote->vehicle_make_id == $make->id): ?> selected <?php endif; ?>>
-                                    <?php echo e($make->name); ?>
-
+                            @foreach($makes as $make)
+                                <option value="{{ $make->id }}" data-name="{{ $make->name }}" @if($quote->vehicle_make_id == $make->id) selected @endif>
+                                    {{ $make->name }}
                                 </option>
-                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                            @endforeach
                         </select>
                     </div>
                     <div class="col-md-4 mb-3">
                         <label class="form-label fw-semibold">Model</label>
                         <select name="vehicle_model_id" class="form-select form-select-sm select2-vehicle-model-edit" style="width: 100%;">
                             <option value="">Select Model</option>
-                            <?php $__currentLoopData = $models; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $model): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                <option value="<?php echo e($model->id); ?>" data-name="<?php echo e($model->name); ?>" data-make-id="<?php echo e($model->make_id ?? ''); ?>" <?php if($quote->vehicle_model_id == $model->id): ?> selected <?php endif; ?>>
-                                    <?php echo e($model->name); ?>
-
+                            @foreach($models as $model)
+                                <option value="{{ $model->id }}" data-name="{{ $model->name }}" data-make-id="{{ $model->make_id ?? '' }}" @if($quote->vehicle_model_id == $model->id) selected @endif>
+                                    {{ $model->name }}
                                 </option>
-                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                            @endforeach
                         </select>
                     </div>
                     <div class="col-md-4 mb-3">
                         <label class="form-label fw-semibold">Engine</label>
                         <select name="vehicle_engine_id" class="form-select form-select-sm select2-vehicle-engine-edit" style="width: 100%;">
                             <option value="">Optional</option>
-                            <?php $__currentLoopData = $engines; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $engine): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                <option value="<?php echo e($engine->id); ?>" data-code="<?php echo e($engine->code); ?>" <?php if($quote->vehicle_engine_id == $engine->id): ?> selected <?php endif; ?>>
-                                    <?php echo e($engine->code); ?>
-
+                            @foreach($engines as $engine)
+                                <option value="{{ $engine->id }}" data-code="{{ $engine->code }}" @if($quote->vehicle_engine_id == $engine->id) selected @endif>
+                                    {{ $engine->code }}
                                 </option>
-                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                            @endforeach
                         </select>
                     </div>
                     <div class="col-md-4 mb-3">
                         <label class="form-label fw-semibold">Year</label>
-                        <input type="number" name="vehicle_year" class="form-control form-control-sm" value="<?php echo e($quote->vehicle_year); ?>" placeholder="e.g., 2020">
+                        <input type="number" name="vehicle_year" class="form-control form-control-sm" value="{{ $quote->vehicle_year }}" placeholder="e.g., 2020">
                     </div>
                     <div class="col-md-4 mb-3">
                         <label class="form-label fw-semibold">VIN Number</label>
-                        <input type="text" name="vehicle_vin" class="form-control form-control-sm" value="<?php echo e($quote->vehicle_vin); ?>" placeholder="Vehicle Identification Number">
+                        <input type="text" name="vehicle_vin" class="form-control form-control-sm" value="{{ $quote->vehicle_vin }}" placeholder="Vehicle Identification Number">
                     </div>
                     <div class="col-md-4 mb-3">
                         <label class="form-label fw-semibold">Registration</label>
-                        <input type="text" name="vehicle_reg" class="form-control form-control-sm" value="<?php echo e($quote->vehicle_reg); ?>" placeholder="e.g., ABC123">
+                        <input type="text" name="vehicle_reg" class="form-control form-control-sm" value="{{ $quote->vehicle_reg }}" placeholder="e.g., ABC123">
                     </div>
                     <div class="col-md-4 mb-3">
                         <label class="form-label fw-semibold">Mileage</label>
-                        <input type="number" name="vehicle_mileage" class="form-control form-control-sm" value="<?php echo e($quote->vehicle_mileage); ?>" placeholder="e.g., 50000">
+                        <input type="number" name="vehicle_mileage" class="form-control form-control-sm" value="{{ $quote->vehicle_mileage }}" placeholder="e.g., 50000">
                     </div>
                     </div>
                     </div>
@@ -168,47 +163,47 @@
                         </tr>
                     </thead>
                         <tbody id="editQuoteItemsBody">
-                            <?php $__currentLoopData = $quote->items; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                <tr data-item-index="<?php echo e($index); ?>">
-                                    <td class="text-center"><?php echo e($index + 1); ?></td>
+                            @foreach($quote->items as $index => $item)
+                                <tr data-item-index="{{ $index }}">
+                                    <td class="text-center">{{ $index + 1 }}</td>
                                     <td>
-                                        <input type="hidden" name="items[<?php echo e($index); ?>][product_id]" value="<?php echo e($item->product_id); ?>">
-                                        <strong><?php echo e($item->product->name ?? 'Product #' . $item->product_id); ?></strong>
-                                        <?php if($item->product): ?>
-                                            <br><small class="text-muted">SKU: <?php echo e($item->product->sku); ?></small>
-                                        <?php endif; ?>
+                                        <input type="hidden" name="items[{{ $index }}][product_id]" value="{{ $item->product_id }}">
+                                        <strong>{{ $item->product->name ?? 'Product #' . $item->product_id }}</strong>
+                                        @if($item->product)
+                                            <br><small class="text-muted">SKU: {{ $item->product->sku }}</small>
+                                        @endif
                                     </td>
                                     <td>
-                                        <input type="number" name="items[<?php echo e($index); ?>][quantity]" class="form-control form-control-sm item-quantity" value="<?php echo e($item->quantity); ?>" min="1" step="1">
+                                        <input type="number" name="items[{{ $index }}][quantity]" class="form-control form-control-sm item-quantity" value="{{ $item->quantity }}" min="1" step="1">
                                     </td>
                                     <td>
-                                        <input type="number" name="items[<?php echo e($index); ?>][unit_price]" class="form-control form-control-sm item-unit-price" value="<?php echo e($item->unit_price); ?>" min="0" step="0.01">
+                                        <input type="number" name="items[{{ $index }}][unit_price]" class="form-control form-control-sm item-unit-price" value="{{ $item->unit_price }}" min="0" step="0.01">
                                     </td>
                                     <td>
-                                        <input type="number" name="items[<?php echo e($index); ?>][discount]" class="form-control form-control-sm item-discount" value="<?php echo e($item->discount); ?>" min="0" step="0.01" data-max-discount="<?php echo e(auth()->user()->max_discount_allowed); ?>">
+                                        <input type="number" name="items[{{ $index }}][discount]" class="form-control form-control-sm item-discount" value="{{ $item->discount }}" min="0" step="0.01" data-max-discount="{{ auth()->user()->max_discount_allowed }}">
                                     </td>
                                     <td>
-                                        <input type="number" name="items[<?php echo e($index); ?>][total]" class="form-control form-control-sm bg-light item-total" value="<?php echo e($item->total); ?>" step="0.01" readonly>
+                                        <input type="number" name="items[{{ $index }}][total]" class="form-control form-control-sm bg-light item-total" value="{{ $item->total }}" step="0.01" readonly>
                                     </td>
                                     <td class="text-center">
-                                        <?php if($item->product): ?>
-                                            <?php $stock = $item->product->stockBatches->sum('qty_left'); ?>
-                                            <?php if($stock > 0): ?>
-                                                <span class="badge bg-success-transparent"><?php echo e($stock); ?></span>
-                                            <?php elseif($stock < 0): ?>
-                                                <span class="badge bg-danger-transparent"><?php echo e($stock); ?></span>
-                                            <?php else: ?>
+                                        @if($item->product)
+                                            @php $stock = $item->product->stockBatches->sum('qty_left'); @endphp
+                                            @if($stock > 0)
+                                                <span class="badge bg-success-transparent">{{ $stock }}</span>
+                                            @elseif($stock < 0)
+                                                <span class="badge bg-danger-transparent">{{ $stock }}</span>
+                                            @else
                                                 <span class="badge bg-warning-transparent">0</span>
-                                            <?php endif; ?>
-                                        <?php endif; ?>
+                                            @endif
+                                        @endif
                                     </td>
                                     <td class="text-center">
-                                        <button type="button" class="btn btn-danger btn-sm remove-edit-item" data-index="<?php echo e($index); ?>">
+                                        <button type="button" class="btn btn-danger btn-sm remove-edit-item" data-index="{{ $index }}">
                                             <i class="ri-delete-bin-line"></i>
                                         </button>
                                 </td>
                             </tr>
-                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                        @endforeach
                     </tbody>
                 </table>
                 </div>
@@ -227,42 +222,42 @@
                 <div class="row">
                     <div class="col-md-3 mb-3">
                         <label class="form-label fw-semibold">Subtotal</label>
-                        <input type="number" name="subtotal" id="editSubtotal" class="form-control form-control-sm bg-light" value="<?php echo e($quote->items->sum('total')); ?>" step="0.01" readonly>
+                        <input type="number" name="subtotal" id="editSubtotal" class="form-control form-control-sm bg-light" value="{{ $quote->items->sum('total') }}" step="0.01" readonly>
                     </div>
                     <div class="col-md-3 mb-3">
                         <label class="form-label fw-semibold">Total Discount</label>
-                        <input type="number" name="total_discount" id="editTotalDiscount" class="form-control form-control-sm" value="<?php echo e($quote->total_discount ?? 0); ?>" step="0.01" min="0">
+                        <input type="number" name="total_discount" id="editTotalDiscount" class="form-control form-control-sm" value="{{ $quote->total_discount ?? 0 }}" step="0.01" min="0">
                     </div>
                     <div class="col-md-3 mb-3">
                         <label class="form-label fw-semibold">Shipping</label>
-                        <input type="number" name="shipping" id="editShipping" class="form-control form-control-sm" value="<?php echo e($quote->shipping ?? 0); ?>" step="0.01">
+                        <input type="number" name="shipping" id="editShipping" class="form-control form-control-sm" value="{{ $quote->shipping ?? 0 }}" step="0.01">
                     </div>
                     <div class="col-md-3 mb-3">
                         <label class="form-label fw-semibold">
-                            VAT (<?php echo e($vatSettings['rate']); ?>%)
-                            <?php if($vatSettings['inclusive']): ?>
+                            VAT ({{ $vatSettings['rate'] }}%)
+                            @if($vatSettings['inclusive'])
                                 <span class="badge bg-info text-white ms-1">Inclusive</span>
-                            <?php else: ?>
+                            @else
                                 <span class="badge bg-warning text-dark ms-1">Exclusive</span>
-                            <?php endif; ?>
+                            @endif
                         </label>
                         <div class="input-group input-group-sm">
                             <div class="input-group-text">
-                                <input type="checkbox" name="vat_enabled" id="editVatEnabled" class="form-check-input" <?php if(!empty($quote->vat)): ?> checked <?php endif; ?>>
+                                <input type="checkbox" name="vat_enabled" id="editVatEnabled" class="form-check-input" @if(!empty($quote->vat)) checked @endif>
                     </div>
-                            <input type="number" name="vat_amount" id="editVatAmount" class="form-control bg-light" value="<?php echo e($quote->vat ?? 0); ?>" step="0.01" readonly>
-                            <input type="hidden" id="editVatRate" value="<?php echo e($vatSettings['rate']); ?>">
-                            <input type="hidden" id="editVatInclusive" value="<?php echo e($vatSettings['inclusive'] ? 1 : 0); ?>">
+                            <input type="number" name="vat_amount" id="editVatAmount" class="form-control bg-light" value="{{ $quote->vat ?? 0 }}" step="0.01" readonly>
+                            <input type="hidden" id="editVatRate" value="{{ $vatSettings['rate'] }}">
+                            <input type="hidden" id="editVatInclusive" value="{{ $vatSettings['inclusive'] ? 1 : 0 }}">
                         </div>
                     </div>
                     <div class="col-md-12">
                         <hr>
                         <div class="row">
                             <div class="col-md-6">
-                                <h5 class="mb-0">Grand Total: <span class="text-primary" id="editGrandTotalDisplay">R <?php echo e(number_format($quote->grand_total ?? $quote->items->sum('total'), 2)); ?></span></h5>
+                                <h5 class="mb-0">Grand Total: <span class="text-primary" id="editGrandTotalDisplay">R {{ number_format($quote->grand_total ?? $quote->items->sum('total'), 2) }}</span></h5>
                             </div>
                             <div class="col-md-6 text-end">
-                                <input type="hidden" name="grand_total" id="editGrandTotal" value="<?php echo e($quote->grand_total ?? $quote->items->sum('total')); ?>">
+                                <input type="hidden" name="grand_total" id="editGrandTotal" value="{{ $quote->grand_total ?? $quote->items->sum('total') }}">
                                 <small class="text-muted">Including VAT and shipping</small>
                             </div>
                     </div>
@@ -339,7 +334,7 @@ $(document).ready(function() {
 
 $(document).ready(function() {
     let editSearchTimeout;
-    let editItemCounter = <?php echo e(count($quote->items)); ?>;
+    let editItemCounter = {{ count($quote->items) }};
 
     // Product search functionality with Enter key (same as create modal)
     $('#editProductSearch').on('keydown', function(e) {
@@ -435,7 +430,7 @@ $(document).ready(function() {
     // Search products function
     function editSearchProducts(query) {
         $.ajax({
-            url: '<?php echo e(route("quotes.search-products")); ?>',
+            url: '{{ route("quotes.search-products") }}',
             method: 'GET',
             data: { q: query },
             beforeSend: function() {
@@ -643,7 +638,7 @@ $(document).ready(function() {
                     <input type="number" name="items[${index}][unit_price]" class="form-control form-control-sm item-unit-price" value="${price}" min="0" step="0.01">
                 </td>
                 <td>
-                    <input type="number" name="items[${index}][discount]" class="form-control form-control-sm item-discount" value="0" min="0" step="0.01" data-max-discount="<?php echo e(auth()->user()->max_discount_allowed); ?>">
+                    <input type="number" name="items[${index}][discount]" class="form-control form-control-sm item-discount" value="0" min="0" step="0.01" data-max-discount="{{ auth()->user()->max_discount_allowed }}">
                 </td>
                 <td>
                     <input type="number" name="items[${index}][total]" class="form-control form-control-sm bg-light item-total" value="${price}" step="0.01" readonly>
@@ -710,4 +705,3 @@ function recalculateEditTotals() {
     $('#editGrandTotalDisplay').text('R ' + grandTotal.toLocaleString('en-ZA', {minimumFractionDigits: 2, maximumFractionDigits: 2}));
 }
 </script>
-<?php /**PATH C:\xampp\htdocs\MMP\resources\views/quotes/partials/edit_modal.blade.php ENDPATH**/ ?>

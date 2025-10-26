@@ -505,6 +505,12 @@ class ProductController extends Controller
             $defaultCategory = Category::whereNull('parent_id')->first();
 
             if (! $defaultBrand || ! $defaultCategory) {
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Please create at least one Brand and Category first.'
+                    ], 400);
+                }
                 return back()->withErrors(['error' => 'Please create at least one Brand and Category first.']);
             }
 

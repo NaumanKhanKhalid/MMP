@@ -86,12 +86,7 @@
                                     Sale History
                                 </a>
                             </li>
-                            <li>
-                                <a href="<?php echo e(route('returns.index')); ?>"
-                                    class="side-menu__item <?php echo e(request()->routeIs('returns.*') ? 'active' : ''); ?>">
-                                    Return & Credit Notes
-                                </a>
-                            </li>
+                            
                             <li>
                                 <a href="<?php echo e(route('payments.index')); ?>"
                                     class="side-menu__item <?php echo e(request()->routeIs('payments.*') ? 'active' : ''); ?>">
@@ -258,7 +253,7 @@
                                 'car-makes.*',
                                 'car-models.*',
                                 'engines.*',
-                                'users.*',
+                               
                             )
                                 ? 'active'
                                 : ''); ?>">

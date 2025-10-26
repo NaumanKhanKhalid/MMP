@@ -263,7 +263,7 @@
                                     </div>
 
                                     <div class="col-md-6">
-                                        <label class="form-label">VAT Rate (%)</label>
+                                        <label class="form-label fw-semibold">VAT Rate (%)</label>
                                         <input type="number" name="vat_rate" class="form-control" 
                                                value="{{ $vatSettings['vat_rate'] ?? 15.00 }}" 
                                                step="0.01" min="0" max="100">
@@ -271,17 +271,19 @@
                                     </div>
 
                                     <div class="col-md-6">
-                                        <div class="mt-4">
-                                            <div class="form-check form-switch">
-                                                <input class="form-check-input" type="checkbox" name="vat_inclusive" 
-                                                       id="vatInclusive" value="1" 
-                                                       {{ ($vatSettings['vat_inclusive'] ?? false) ? 'checked' : '' }}>
-                                                <label class="form-check-label" for="vatInclusive">
-                                                    VAT Inclusive Pricing
-                                                </label>
-                                            </div>
-                                            <small class="text-muted">If enabled, prices include VAT. If disabled, VAT is added on top.</small>
-                                        </div>
+                                        <label class="form-label fw-semibold">VAT Type</label>
+                                        <select name="vat_inclusive" class="form-select">
+                                            <option value="0" {{ !($vatSettings['vat_inclusive'] ?? false) ? 'selected' : '' }}>
+                                                VAT Exclusive (Add VAT on top of price)
+                                            </option>
+                                            <option value="1" {{ ($vatSettings['vat_inclusive'] ?? false) ? 'selected' : '' }}>
+                                                VAT Inclusive (Price includes VAT)
+                                            </option>
+                                        </select>
+                                        <small class="text-muted">
+                                            <strong>Exclusive:</strong> If price = R100, total = R100 + R15 VAT = R115<br>
+                                            <strong>Inclusive:</strong> If price = R100, VAT = R13.04 (already included), total = R100
+                                        </small>
                                     </div>
 
                                     <div class="col-md-12 text-end mt-4">
@@ -678,7 +680,7 @@ document.getElementById('vatForm').addEventListener('submit', function(e) {
     formData.append('_token', '{{ csrf_token() }}');
     formData.append('vat_enabled', document.getElementById('vatEnabled').checked ? 1 : 0);
     formData.append('vat_rate', this.vat_rate.value);
-    formData.append('vat_inclusive', document.getElementById('vatInclusive').checked ? 1 : 0);
+    formData.append('vat_inclusive', this.vat_inclusive.value); // Now it's a dropdown, not checkbox
     
     submitFormData(formData, '{{ route('settings.update-vat') }}', 'VAT');
 });

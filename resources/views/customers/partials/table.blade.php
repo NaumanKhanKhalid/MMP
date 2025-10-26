@@ -7,6 +7,11 @@
         <td>
             <div>
                 <strong>{{ $customer->display_name }}</strong>
+                @if($customer->is_walk_in)
+                    <span class="badge bg-info-transparent ms-1" title="Walk-in Customer">
+                        <i class="ri-walk-line me-1"></i>Walk-in
+                    </span>
+                @endif
                 @if($customer->isBusiness() && $customer->company_name)
                     <br><small class="text-muted">{{ $customer->name }}</small>
                 @endif
@@ -17,11 +22,11 @@
                 {{ ucfirst($customer->customer_category) }}
             </span>
             <br>
-            <small class="text-muted">
-                <span class="badge bg-{{ $customer->customer_type === 'credit' ? 'warning' : 'success' }}-transparent">
-                    {{ ucfirst($customer->customer_type) }}
-                </span>
-            </small>
+                {{-- <small class="text-muted">
+                    <span class="badge bg-{{ $customer->customer_type === 'credit' ? 'warning' : 'success' }}-transparent">
+                        {{ ucfirst($customer->customer_type) }}
+                    </span>
+                </small> --}}
         </td>
         <td>
             <div>

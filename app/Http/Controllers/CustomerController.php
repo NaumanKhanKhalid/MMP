@@ -42,6 +42,11 @@ class CustomerController extends Controller
             $query->where('customer_category', request('category'));
         }
 
+        // Filter by walk-in
+        if (request('walk_in') !== null && request('walk_in') !== '') {
+            $query->where('is_walk_in', request('walk_in'));
+        }
+
         $customers = $query->orderByDesc('id')->paginate(request('per_page', 10));
 
         // AJAX Request
@@ -75,7 +80,8 @@ class CustomerController extends Controller
                 'name' => 'required|string|max:255',
                 'email' => 'nullable|email|max:255|unique:customers,email',
                 'phone' => 'nullable|string|max:20',
-                'address' => 'nullable|string|max:500',
+                'ad
+                ' => 'nullable|string|max:500',
                 'terms' => 'nullable|in:cash,credit,mixed',
                 'credit_limit' => 'nullable|numeric|min:0',
                 'price_tier' => 'nullable|in:normal,online,workshop',
@@ -515,6 +521,7 @@ class CustomerController extends Controller
             'make_id' => 'nullable|exists:car_makes,id',
             'model_id' => 'nullable|exists:car_models,id',
             'engine_id' => 'nullable|exists:engines,id',
+            'engine' => 'nullable|string|max:255', // Accept engine as text
             'registration_number' => 'nullable|string|max:255',
             'vin_number' => 'nullable|string|max:255',
             'year' => 'nullable|string|max:4',
@@ -530,11 +537,25 @@ class CustomerController extends Controller
         }
 
         $vehicle = $customer->vehicles()->create($data);
+        $vehicle->load(['make', 'model']);  // ✅ Engine is text, not relationship
 
         return response()->json([
             'success' => true,
             'message' => 'Vehicle added successfully!',
-            'vehicle' => $vehicle->load(['make', 'model', 'engine']),
+            'vehicle' => [
+                'id' => $vehicle->id,
+                'make_id' => $vehicle->make_id,
+                'model_id' => $vehicle->model_id,
+                'make_name' => $vehicle->make->name ?? 'Unknown',
+                'model_name' => $vehicle->model->name ?? 'Unknown',
+                'engine_name' => $vehicle->engine ?? '',  // ✅ Engine is text field, not relationship
+                'registration' => $vehicle->registration_number ?? '',
+                'year' => $vehicle->year ?? '',
+                'color' => $vehicle->color ?? '',
+                'mileage' => $vehicle->mileage ?? '',
+                'vin' => $vehicle->vin_number ?? '',
+                'is_primary' => $vehicle->is_primary ?? false,
+            ],
         ]);
     }
 
@@ -563,7 +584,7 @@ class CustomerController extends Controller
      */
     public function getVehicles($id)
     {
-        $customer = Customer::with(['vehicles.make', 'vehicles.model', 'vehicles.engine'])->findOrFail($id);
+        $customer = Customer::with(['vehicles.make', 'vehicles.model'])->findOrFail($id);  // ✅ Removed engine relationship
         
         $vehicles = $customer->vehicles->map(function($vehicle) {
             return [
@@ -572,12 +593,12 @@ class CustomerController extends Controller
                 'model_id' => $vehicle->model_id,
                 'make_name' => $vehicle->make->name ?? 'Unknown',
                 'model_name' => $vehicle->model->name ?? 'Unknown',
-                'engine' => $vehicle->engine->code ?? $vehicle->engine ?? '',
-                'registration_number' => $vehicle->registration_number ?? '',
+                'engine_name' => $vehicle->engine ?? '',  // ✅ Direct text field
+                'registration' => $vehicle->registration_number ?? '',  // ✅ Changed key to match frontend
                 'year' => $vehicle->year ?? '',
                 'color' => $vehicle->color ?? '',
                 'mileage' => $vehicle->mileage ?? '',
-                'vin_number' => $vehicle->vin_number ?? '',
+                'vin' => $vehicle->vin_number ?? '',  // ✅ Changed key to match frontend
                 'is_primary' => $vehicle->is_primary ?? false,
                 'display_name' => sprintf('%s %s - %s', 
                     $vehicle->make->name ?? 'Unknown',
@@ -587,9 +608,19 @@ class CustomerController extends Controller
             ];
         });
         
-        return response()->json([
-            'success' => true,
-            'vehicles' => $vehicles
-        ]);
+        return response()->json($vehicles);
+    }
+    
+    /**
+     * Get models by make for vehicle selection
+     */
+    public function getModelsByMake($makeId)
+    {
+        $models = \App\Models\CarModel::where('make_id', $makeId)
+            ->where('status', 'active')
+            ->orderBy('name')
+            ->get(['id', 'name', 'make_id']);
+        
+        return response()->json($models);
     }
 }

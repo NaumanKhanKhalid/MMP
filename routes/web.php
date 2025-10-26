@@ -199,6 +199,12 @@ Route::middleware(['auth', 'security'])->group(function () {
         Route::get('/api/car-makes', [App\Http\Controllers\CustomerController::class, 'getMakes'])->name('api.car-makes');
         Route::get('/api/car-models', [App\Http\Controllers\CustomerController::class, 'getModels'])->name('api.car-models');
         Route::get('/api/engines', [App\Http\Controllers\CustomerController::class, 'getEngines'])->name('api.engines');
+        
+        // API-style customer vehicles routes
+        Route::get('/api/customers/{customer}/vehicles', [App\Http\Controllers\CustomerController::class, 'getVehicles'])->name('api.customers.vehicles');
+        Route::get('/api/vehicle-makes/{make}/models', [App\Http\Controllers\CustomerController::class, 'getModelsByMake'])->name('api.vehicle-makes.models');
+        
+        // Legacy routes (keep for backward compatibility)
         Route::get('/customers/{customer}/vehicles', [App\Http\Controllers\CustomerController::class, 'getVehicles'])->name('customers.vehicles.get');
         Route::post('/customers/{customer}/vehicles', [App\Http\Controllers\CustomerController::class, 'storeVehicle'])->name('customers.vehicles.store');
         Route::delete('/customers/{customer}/vehicles/{vehicle}', [App\Http\Controllers\CustomerController::class, 'deleteVehicle'])->name('customers.vehicles.delete');
@@ -262,6 +268,8 @@ Route::middleware(['auth', 'security'])->group(function () {
 // Quotes CRUD + modals
 // Print Quotation
 Route::get('/quotes/{quote}/print', [App\Http\Controllers\QuoteController::class, 'print'])->name('quotes.print');
+// PDF Quotation
+Route::get('/quotes/{quote}/pdf', [App\Http\Controllers\QuoteController::class, 'pdf'])->name('quotes.pdf');
 // Export Quotations
 Route::get('/quotes/export', [App\Http\Controllers\QuoteController::class, 'export'])->name('quotes.export');
 
@@ -299,6 +307,8 @@ Route::get('/quotes/search-products', [App\Http\Controllers\QuoteController::cla
 Route::get('/customers/search', [App\Http\Controllers\CustomerController::class, 'searchCustomers'])->name('customers.search');
 
 Route::resource('quotes', App\Http\Controllers\QuoteController::class)->except(['create']);
+Route::post('quotes/{quote}/send-whatsapp', [App\Http\Controllers\QuoteController::class, 'sendWhatsApp'])->name('quotes.send-whatsapp');
+Route::post('quotes/{quote}/send-email', [App\Http\Controllers\QuoteController::class, 'sendEmail'])->name('quotes.send-email');
 
 // Customers modals
 Route::get('/customers/create', function () {

@@ -460,7 +460,7 @@ class InvoiceController extends Controller
             $whatsappUrl = "whatsapp://send?phone={$phoneForDesktop}&text=" . urlencode($message);
         } else {
             // Web protocol (default)
-            $whatsappUrl = "https://wa.me/{$phone}?text=" . urlencode($message);
+        $whatsappUrl = "https://wa.me/{$phone}?text=" . urlencode($message);
         }
         
         return response()->json([

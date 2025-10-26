@@ -204,15 +204,16 @@
                         </div>
                         <div class="col-md-6">
                                 <label class="form-label small fw-bold mb-1">
-                                    <i class="ri-phone-line me-1 text-success"></i>Phone
+                                    <i class="ri-phone-line me-1 text-success"></i>Phone <span class="text-danger">*</span>
                                 </label>
                                 <input type="text" class="form-control form-control-sm shadow-sm" id="walkInPhone" placeholder="Enter phone...">
                     </div>
                         <div class="col-md-6">
                                 <label class="form-label small fw-bold mb-1">
-                                    <i class="ri-mail-line me-1 text-info"></i>Email
+                                    <i class="ri-mail-line me-1 text-info"></i>Email <span class="text-danger">*</span>
                                 </label>
-                                <input type="email" class="form-control form-control-sm shadow-sm" id="walkInEmail" placeholder="Optional">
+                                <input type="email" class="form-control form-control-sm shadow-sm" id="walkInEmail" placeholder="Enter email...">
+                               
                         </div>
                         <div class="col-md-6">
                                 <label class="form-label small fw-bold mb-1">
@@ -282,12 +283,16 @@
                         </div>
                         <div class="col-6">
                             <label class="form-label small mb-1">
-                                VAT (15%)
-                                <span class="badge bg-info badge-sm">Inc</span>
+                                VAT ({{ $vatSettings['rate'] }}%)
+                                <span class="badge {{ $vatSettings['inclusive'] ? 'bg-info' : 'bg-warning' }} badge-sm">
+                                    {{ $vatSettings['inclusive'] ? 'Inc' : 'Exc' }}
+                                </span>
                             </label>
                             <div class="input-group input-group-sm">
                                 <div class="input-group-text">
-                                    <input type="checkbox" class="form-check-input" id="vatEnabled" onchange="toggleVAT()">
+                                    <input type="checkbox" class="form-check-input" id="vatEnabled" 
+                                           {{ $vatSettings['enabled'] ? 'checked' : '' }} 
+                                           onchange="toggleVAT()">
                         </div>
                                 <input type="text" class="form-control bg-light" id="vatAmountDisplay" value="R 0.00" readonly>
                     </div>
@@ -454,8 +459,8 @@
                 <div class="w-100 text-center">
                     <h5 class="modal-title mb-0">
                         <i class="ri-checkbox-circle-line me-2"></i>Sale Completed Successfully
-                    </h5>
-                </div>
+                </h5>
+            </div>
             </div>
             
             <!-- Body -->
@@ -704,6 +709,7 @@ let currentCustomer = null;
 let currentVehicle = null;
 let vatEnabled = {{ $vatSettings['enabled'] ? 'true' : 'false' }};
 let vatRate = {{ $vatSettings['rate'] }};
+let vatInclusive = {{ $vatSettings['inclusive'] ? 'true' : 'false' }};
 let discountAmount = 0;
 let discountType = 'amount';
 let shippingAmount = 0;
@@ -741,8 +747,8 @@ let maxDiscountLimit = maxDiscountPercentage[userRole] || 10;
 
 // Initialize
 $(document).ready(function() {
-    // Initialize VAT checkbox from settings
-    $('#vatEnabled').prop('checked', vatEnabled);
+    // VAT already initialized via Blade (checked="{{ $vatSettings['enabled'] ? 'checked' : '' }}")
+    // No need to set again in JavaScript
     
     // Initialize all tooltips first
     const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
@@ -1602,11 +1608,22 @@ function updateCartTotals() {
     
     // Calculate VAT - ensure vatRate is valid
     let vatAmount = 0;
+    let grandTotal = 0;
+    
     if (vatEnabled && vatRate && !isNaN(vatRate)) {
+        if (vatInclusive) {
+            // VAT Inclusive: VAT is already in the price
+            // Extract VAT from total: VAT = Total × (Rate / (100 + Rate))
+            vatAmount = totalAfterDiscount * (vatRate / (100 + vatRate));
+            grandTotal = totalAfterDiscount; // Total stays same
+        } else {
+            // VAT Exclusive: Add VAT on top
         vatAmount = totalAfterDiscount * (vatRate / 100);
+            grandTotal = totalAfterDiscount + vatAmount;
+        }
+    } else {
+        grandTotal = totalAfterDiscount;
     }
-
-    const grandTotal = totalAfterDiscount + vatAmount;
     
     // Ensure all values are valid numbers
     const safeSubtotal = isNaN(subtotal) ? 0 : subtotal;
@@ -1617,6 +1634,19 @@ function updateCartTotals() {
     $('#subtotalDisplay').val('R ' + safeSubtotal.toFixed(2));
     $('#vatAmountDisplay').val('R ' + safeVatAmount.toFixed(2));
     $('#grandTotal').text('R ' + safeGrandTotal.toFixed(2));
+    
+    // Debug log for VAT calculation
+    console.log('VAT Calculation:', {
+        subtotal: safeSubtotal,
+        discount: discountAmount,
+        shipping: shippingAmount,
+        totalAfterDiscount: totalAfterDiscount,
+        vatEnabled: vatEnabled,
+        vatInclusive: vatInclusive,
+        vatRate: vatRate,
+        vatAmount: safeVatAmount,
+        grandTotal: safeGrandTotal
+    });
     // Amount Paid and Balance Due removed from summary
     // $('#amountPaidDisplay').text('R 0.00');
     // $('#balanceDue').text('R ' + safeGrandTotal.toFixed(2));
@@ -2503,8 +2533,20 @@ function updatePaymentFields() {
         const discount = getDiscountAmount(subtotal);
         const shipping = parseFloat($('#shippingInput').val()) || 0;
         const totalAfterDiscount = subtotal - discount + shipping;
-        const vatAmount = vatEnabled ? totalAfterDiscount * (vatRate / 100) : 0;
-        const grandTotal = totalAfterDiscount + vatAmount;
+        
+        // Calculate VAT based on type (Inclusive or Exclusive)
+        let vatAmount = 0;
+        let grandTotal = totalAfterDiscount;
+        
+        if (vatEnabled && vatRate && !isNaN(vatRate)) {
+            if (vatInclusive) {
+                vatAmount = totalAfterDiscount * (vatRate / (100 + vatRate));
+                grandTotal = totalAfterDiscount;
+            } else {
+                vatAmount = totalAfterDiscount * (vatRate / 100);
+                grandTotal = totalAfterDiscount + vatAmount;
+            }
+        }
         
         // Set amount paid to grand total
         $('#amountPaid').val(grandTotal.toFixed(2));
@@ -2533,6 +2575,17 @@ function processSale() {
         return;
     }
     
+    // VALIDATION: For walk-in customers, email OR phone is required
+    if (!currentCustomer) {
+        const walkInEmail = $('#walkInEmail').val().trim();
+        const walkInPhone = $('#walkInPhone').val().trim();
+        
+        if (!walkInEmail && !walkInPhone) {
+            toastr.error('Please provide either email or phone number for walk-in customer.');
+            return;
+        }
+    }
+    
     // Calculate subtotal with item discounts
     const subtotal = cart.reduce((sum, item) => {
         const itemTotal = (item.price * item.quantity) - (item.discount || 0);
@@ -2544,8 +2597,20 @@ function processSale() {
     const shipping = parseFloat($('#shippingInput').val()) || 0;
     
     const totalAfterDiscount = subtotal - discount + shipping;
-    const vatAmount = vatEnabled ? totalAfterDiscount * (vatRate / 100) : 0;
-    const grandTotal = totalAfterDiscount + vatAmount;
+    
+    // Calculate VAT based on type (Inclusive or Exclusive)
+    let vatAmount = 0;
+    let grandTotal = totalAfterDiscount;
+    
+    if (vatEnabled && vatRate && !isNaN(vatRate)) {
+        if (vatInclusive) {
+            vatAmount = totalAfterDiscount * (vatRate / (100 + vatRate));
+            grandTotal = totalAfterDiscount;
+        } else {
+            vatAmount = totalAfterDiscount * (vatRate / 100);
+            grandTotal = totalAfterDiscount + vatAmount;
+        }
+    }
     
     // Show payment modal for all customers (credit and cash)
     const paymentModal = new bootstrap.Modal(document.getElementById('paymentModal'));
@@ -2610,11 +2675,6 @@ function saveAsQuotation() {
         return;
     }
     
-    if (!currentCustomer) {
-        toastr.error('Please select a customer');
-        return;
-    }
-    
     // Calculate totals
     const subtotal = cart.reduce((sum, item) => {
         const itemTotal = (item.price * item.quantity) - (item.discount || 0);
@@ -2624,22 +2684,71 @@ function saveAsQuotation() {
     const discount = getDiscountAmount(subtotal);
     const shipping = parseFloat($('#shippingInput').val()) || 0;
     const totalAfterDiscount = subtotal - discount + shipping;
-    const vatAmount = vatEnabled ? totalAfterDiscount * (vatRate / 100) : 0;
-    const grandTotal = totalAfterDiscount + vatAmount;
+    
+    // Calculate VAT based on type (Inclusive or Exclusive)
+    let vatAmount = 0;
+    let grandTotal = totalAfterDiscount;
+    
+    if (vatEnabled && vatRate && !isNaN(vatRate)) {
+        if (vatInclusive) {
+            vatAmount = totalAfterDiscount * (vatRate / (100 + vatRate));
+            grandTotal = totalAfterDiscount;
+        } else {
+            vatAmount = totalAfterDiscount * (vatRate / 100);
+            grandTotal = totalAfterDiscount + vatAmount;
+        }
+    }
+    
+    // Get walk-in customer details if no customer selected
+    let customerData = {};
+    if (currentCustomer) {
+        customerData.customer_id = currentCustomer.id;
+    } else {
+        // Walk-in customer - get details from form
+        const walkInName = $('#walkInName').val() || 'Walk-in Customer';
+        const walkInEmail = $('#walkInEmail').val();
+        const walkInPhone = $('#walkInPhone').val();
+        const walkInAddress = $('#walkInAddress').val();
+        
+        // VALIDATION: Email OR Phone is required for walk-in customers
+        if (!walkInEmail && !walkInPhone) {
+            toastr.error('Please provide either email or phone number for walk-in customer.');
+            return;
+        }
+        
+        customerData.customer_name = walkInName;
+        customerData.customer_email = walkInEmail;
+        customerData.customer_phone = walkInPhone;
+        customerData.customer_address = walkInAddress;
+    }
+    
+    // Get vehicle details if selected
+    let vehicleData = {};
+    if (currentVehicle) {
+        vehicleData.vehicle_make_id = currentVehicle.make_id;
+        vehicleData.vehicle_model_id = currentVehicle.model_id;
+        vehicleData.vehicle_year = currentVehicle.year;
+        vehicleData.vehicle_engine = currentVehicle.engine;
+        vehicleData.vehicle_reg = currentVehicle.registration_number;
+        vehicleData.vehicle_vin = currentVehicle.vin_number;
+        vehicleData.vehicle_mileage = currentVehicle.mileage;
+    }
     
     // Prepare quote data
     const quoteData = {
-        customer_id: currentCustomer.id,
+        ...customerData,
+        ...vehicleData,
         quote_date: new Date().toISOString().split('T')[0],
         valid_until: new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0], // 30 days
         subtotal: subtotal,
-        discount: discount,
+        total_discount: discount,
         shipping: shipping,
+        vat_enabled: vatEnabled ? 1 : 0,
         vat_amount: vatAmount,
         grand_total: grandTotal,
         items: cart.map(item => ({
             product_id: item.id,
-            product_name: item.name,
+            description: item.name,
             quantity: item.quantity,
             unit_price: item.price,
             discount: item.discount || 0,
@@ -2664,19 +2773,82 @@ function saveAsQuotation() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            toastr.success('Quotation created successfully!');
+            const quoteNumber = data.quote_number || 'Quote';
             
-            // Clear cart
+            // Clear cart and reset POS screen
             cart = [];
+            discountAmount = 0;
+            shippingAmount = 0;
+            $('#discountInput').val('0.00');
+            $('#shippingInput').val('0.00');
+            $('#customerSelect').val('');
             currentCustomer = null;
-            updateCartDisplay();
-            $('#customerSelect').val('').trigger('change');
+            currentVehicle = null;
             $('#customerInfo').addClass('d-none');
+            $('#vehicleSection').hide();
+            $('#vehicleInfo').hide();
+            $('#vatEnabled').prop('checked', false);
+            vatEnabled = false;
             
-            // Redirect to quotes page
-            if (confirm('Quotation saved! Would you like to view it now?')) {
-                window.open('{{ route('quotes.index') }}', '_blank');
-            }
+            // Clear walk-in customer form
+            $('#walkInName').val('');
+            $('#walkInPhone').val('');
+            $('#walkInEmail').val('');
+            $('#walkInAddress').val('');
+            
+            // Clear product search
+            $('#productSearch').val('');
+            
+            updateCartDisplay();
+            
+            // Show success modal
+            const modalHtml = `
+                <div class="modal fade" id="quotationSuccessModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header bg-success text-white">
+                                <h5 class="modal-title">
+                                    <i class="ri-checkbox-circle-line me-2"></i>Quotation Created Successfully!
+                                </h5>
+                            </div>
+                            <div class="modal-body text-center py-4">
+                                <div class="mb-3">
+                                    <i class="ri-file-list-3-line text-success" style="font-size: 4rem;"></i>
+                                </div>
+                                <h5 class="mb-2">Quotation ${quoteNumber}</h5>
+                                <p class="text-muted mb-0">has been created successfully!</p>
+                            </div>
+                            <div class="modal-footer justify-content-center">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                    <i class="ri-close-line me-1"></i>Close
+                                </button>
+                                <button type="button" class="btn btn-primary" id="viewQuotationBtn">
+                                    <i class="ri-eye-line me-1"></i>View Quotation
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Remove existing modal if any
+            $('#quotationSuccessModal').remove();
+            
+            // Append and show modal
+            $('body').append(modalHtml);
+            const quotationModal = new bootstrap.Modal(document.getElementById('quotationSuccessModal'));
+            quotationModal.show();
+            
+            // View Quotation button click
+            $('#viewQuotationBtn').off('click').on('click', function() {
+                const url = '{{ route('quotes.index') }}?search=' + encodeURIComponent(quoteNumber);
+                window.location.href = url;
+            });
+            
+            // Clean up modal after close
+            $('#quotationSuccessModal').on('hidden.bs.modal', function() {
+                $(this).remove();
+            });
         } else {
             toastr.error(data.message || 'Failed to create quotation');
         }
@@ -2710,6 +2882,12 @@ function processSaleDirect(paymentMethod, amountPaid, paymentReference) {
         const walkInPhone = $('#walkInPhone').val().trim();
         const walkInEmail = $('#walkInEmail').val().trim();
         const walkInAddress = $('#walkInAddress').val().trim();
+        
+        // VALIDATION: Email OR Phone is required for walk-in customers
+        if (!walkInEmail && !walkInPhone) {
+            toastr.error('Please provide either email or phone number for walk-in customer.');
+            return;
+        }
         
         if (walkInName) {
             walkInCustomerDetails = {
@@ -2783,6 +2961,16 @@ function processSaleDirect(paymentMethod, amountPaid, paymentReference) {
             $('#vehicleInfo').hide();
                 $('#vatEnabled').prop('checked', false);
                 vatEnabled = false;
+            
+            // Clear walk-in customer form
+            $('#walkInName').val('');
+            $('#walkInPhone').val('');
+            $('#walkInEmail').val('');
+            $('#walkInAddress').val('');
+            
+            // Clear product search
+            $('#productSearch').val('');
+            
             updateCartDisplay();
             
             // Show post-sale actions modal
@@ -2820,8 +3008,22 @@ function confirmPayment() {
     const shipping = parseFloat($('#shippingInput').val()) || 0;
     
     const totalAfterDiscount = subtotal - discount + shipping;
-    const vatAmount = vatEnabled ? totalAfterDiscount * (vatRate / 100) : 0;
-    const grandTotal = totalAfterDiscount + vatAmount;
+    
+    // Calculate VAT based on type (Inclusive or Exclusive)
+    let vatAmount = 0;
+    let grandTotal = totalAfterDiscount;
+    
+    if (vatEnabled && vatRate && !isNaN(vatRate)) {
+        if (vatInclusive) {
+            // VAT Inclusive: VAT is already in the price
+            vatAmount = totalAfterDiscount * (vatRate / (100 + vatRate));
+            grandTotal = totalAfterDiscount; // Total stays same
+        } else {
+            // VAT Exclusive: Add VAT on top
+            vatAmount = totalAfterDiscount * (vatRate / 100);
+            grandTotal = totalAfterDiscount + vatAmount;
+        }
+    }
     
     // Validation for credit payment only
     if (paymentMethod === 'credit') {

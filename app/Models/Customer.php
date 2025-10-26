@@ -35,6 +35,7 @@ class Customer extends Model
         'balance',
         'tax_number',
         'date_of_birth',
+        'is_walk_in',
         'company_name',
         'contact_person',
         'customer_category',

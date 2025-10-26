@@ -305,38 +305,38 @@
                 <table style="width: 100%; border: none;">
                     <tr>
                         <td class="invoice-info" style="vertical-align: top; width: 50%;">
-                            <div class="info-label">Invoice Number:</div>
-                            <div class="info-value">{{ $invoice->invoice_number }}</div>
-                            <div class="info-label">Date:</div>
-                            <div class="info-value">{{ $invoice->created_at->format('d/m/Y') }}</div>
-                            <div class="info-label">Created by:</div>
-                            <div class="info-value">{{ $invoice->user->name }}</div>
-                            @if($invoice->quote_id)
-                            <div class="info-label">From Quote:</div>
-                            <div class="info-value">{{ $invoice->quote->quote_number }}</div>
-                            @endif
+                    <div class="info-label">Invoice Number:</div>
+                    <div class="info-value">{{ $invoice->invoice_number }}</div>
+                    <div class="info-label">Date:</div>
+                    <div class="info-value">{{ $invoice->created_at->format('d/m/Y') }}</div>
+                    <div class="info-label">Created by:</div>
+                    <div class="info-value">{{ $invoice->user->name }}</div>
+                    @if($invoice->quote_id)
+                    <div class="info-label">From Quote:</div>
+                    <div class="info-value">{{ $invoice->quote->quote_number }}</div>
+                    @endif
                         </td>
-                        
+                
                         <td class="customer-info" style="vertical-align: top; width: 50%; text-align: right;">
-                            <div class="info-label">Bill To:</div>
-                            <div class="info-value">
-                                @if($invoice->customer)
-                                    <strong>{{ $invoice->customer->name }}</strong><br>
-                                    @if($invoice->customer->email){{ $invoice->customer->email }}<br>@endif
-                                    @if($invoice->customer->phone){{ $invoice->customer->phone }}<br>@endif
-                                    @if($invoice->customer->address){{ $invoice->customer->address }}@endif
-                                @else
-                                    <strong>{{ $invoice->customer_name ?? 'Cash Sale' }}</strong><br>
-                                    @if($invoice->customer_email){{ $invoice->customer_email }}<br>@endif
-                                    @if($invoice->customer_phone){{ $invoice->customer_phone }}@endif
-                                @endif
-                            </div>
-                            <div class="info-label">Status:</div>
-                            <div class="info-value">
-                                <span class="status-badge status-{{ $invoice->payment_status }}">
-                                    {{ ucfirst($invoice->payment_status) }}
-                                </span>
-                            </div>
+                    <div class="info-label">Bill To:</div>
+                    <div class="info-value">
+                        @if($invoice->customer)
+                            <strong>{{ $invoice->customer->name }}</strong><br>
+                            @if($invoice->customer->email){{ $invoice->customer->email }}<br>@endif
+                            @if($invoice->customer->phone){{ $invoice->customer->phone }}<br>@endif
+                            @if($invoice->customer->address){{ $invoice->customer->address }}@endif
+                        @else
+                            <strong>{{ $invoice->customer_name ?? 'Cash Sale' }}</strong><br>
+                            @if($invoice->customer_email){{ $invoice->customer_email }}<br>@endif
+                            @if($invoice->customer_phone){{ $invoice->customer_phone }}@endif
+                        @endif
+                    </div>
+                    <div class="info-label">Status:</div>
+                    <div class="info-value">
+                        <span class="status-badge status-{{ $invoice->payment_status }}">
+                            {{ ucfirst($invoice->payment_status) }}
+                        </span>
+                    </div>
                             <div class="info-label">Payment Method:</div>
                             <div class="info-value">
                                 @switch($invoice->payment_method)
@@ -355,7 +355,7 @@
                                     @default
                                         {{ ucfirst($invoice->payment_method) }}
                                 @endswitch
-                            </div>
+                </div>
                         </td>
                     </tr>
                 </table>
@@ -478,11 +478,11 @@
             @endif
             <p style="font-weight: bold; margin-top: 10px;">Page 1/2</p>
         </div>
-    </div>
-    
+        </div>
+
     <!-- Page Break for Terms & Conditions -->
-    <div class="page-break"></div>
-    
+        <div class="page-break"></div>
+        
     <!-- Page 2: Terms & Conditions -->
     <div class="invoice-container">
         <div class="terms-page">
@@ -500,7 +500,7 @@
             <div class="terms-header">
                 <div class="terms-title">DELIVERY NOTE/ TERMS & CONDITIONS/ PURCHASE AGREEMENT</div>
                 <div class="terms-notice">
-                    UPON SIGNING THIS DOCUMENT, IT MEANS THAT THE CLIENT HAS READ AND AGREED TO ALL THE STIPULATED POINTS MENTIONED BELOW:
+                UPON SIGNING THIS DOCUMENT, IT MEANS THAT THE CLIENT HAS READ AND AGREED TO ALL THE STIPULATED POINTS MENTIONED BELOW:
                 </div>
             </div>
             
@@ -534,21 +534,21 @@
                     <li>THERE WILL BE A HANDLING FEE OF 5% FOR PARTS SUPPLIED CORRECTLY THAT ARE RETURNED/EXCHANGED DUE TO INCORRECT DIAGNOSIS. THIS STRICTLY EXCLUDES ALL ELECTRICAL PARTS.</li>
                 </ol>
             </div>
-            
+                
             <!-- Agreement Section -->
             <div class="agreement-section">
                 <div class="agreement-text">
-                    I, ______________________________________ (CLIENT NAME), UNDERSTAND AND AGREE TO THE ABOVE TERMS AND CONDITIONS.
-                </div>
+                        I, ______________________________________ (CLIENT NAME), UNDERSTAND AND AGREE TO THE ABOVE TERMS AND CONDITIONS.
+                        </div>
                 <div class="signature-grid">
                     <div class="signature-box">
                         <div class="signature-underline"></div>
                         <div class="signature-label">CLIENT'S SIGNATURE</div>
-                    </div>
+                        </div>
                     <div class="signature-box">
                         <div class="signature-underline"></div>
                         <div class="signature-label">INVOICE NUMBER</div>
-                    </div>
+                        </div>
                     <div class="signature-box">
                         <div class="signature-underline"></div>
                         <div class="signature-label">DATE</div>

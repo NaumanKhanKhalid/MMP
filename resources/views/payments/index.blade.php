@@ -9,12 +9,12 @@
             <p class="fs-13 text-muted mb-0">Manage customer and supplier payments</p>
         </div>
         <div class="d-flex gap-2">
-            <button type="button" class="btn btn-primary" onclick="openPaymentModal('customer')">
+            {{-- <button type="button" class="btn btn-primary" onclick="openPaymentModal('customer')">
                 <i class="ri-add-line me-1"></i> Customer Payment
             </button>
             <button type="button" class="btn btn-success" onclick="openPaymentModal('supplier')">
                 <i class="ri-add-line me-1"></i> Supplier Payment
-            </button>
+            </button> --}}
         </div>
     </div>
 
@@ -96,7 +96,7 @@
                                     <th>Allocated</th>
                                     <th>Unallocated</th>
                                     <th>Status</th>
-                                    <th>Actions</th>
+                                    {{-- <th>Actions</th> --}}
                                 </tr>
                             </thead>
                             <tbody>
@@ -140,7 +140,7 @@
                                             <span class="badge bg-secondary">{{ ucfirst($payment->status) }}</span>
                                         @endif
                                     </td>
-                                    <td>
+                                    {{-- <td>
                                         <div class="btn-group">
                                             <button type="button" class="btn btn-sm btn-info" onclick="viewPayment({{ $payment->id }})" title="View">
                                                 <i class="ri-eye-line"></i>
@@ -156,7 +156,7 @@
                                                 </button>
                                             @endif
                                         </div>
-                                    </td>
+                                    </td> --}}
                                 </tr>
                                 @empty
                                 <tr>

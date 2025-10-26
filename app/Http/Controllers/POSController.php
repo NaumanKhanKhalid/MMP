@@ -25,6 +25,7 @@ class POSController extends Controller
         $vatSettings = [
             'enabled' => Setting::vatEnabled(),
             'rate' => Setting::vatRate(),
+            'inclusive' => Setting::vatInclusive(),
         ];
         
         return view('pos.index', compact('vatSettings'));

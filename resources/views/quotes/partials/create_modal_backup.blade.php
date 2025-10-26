@@ -1,72 +1,95 @@
-<form action="<?php echo e(route('quotes.store')); ?>" method="POST" id="quoteCreateForm">
-    <?php echo csrf_field(); ?>
+<form action="{{ route('quotes.store') }}" method="POST" id="quoteCreateForm">
+    @csrf
     <div class="modal-header">
         <h5 class="modal-title">
             <i class="ri-file-add-line me-2"></i> Create New Quote
         </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
     </div>
-    <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
-
-        <!-- Customer & Vehicle Info - Combined in One Card -->
-        <div class="card mb-3">
-            <div class="card-header bg-primary-transparent py-2">
-                <div class="row align-items-center">
-                    <div class="col-md-6">
-                        <h6 class="card-title mb-0">
-                            <i class="ri-user-line me-2"></i>Customer Info
-                        </h6>
-                    </div>
-                    <div class="col-md-6 text-end">
-                        <h6 class="card-title mb-0">
-                            <i class="ri-car-line me-2"></i>Vehicle Info <small class="text-muted">(Optional)</small>
-                        </h6>
-                    </div>
-                </div>
-            </div>
-            <div class="card-body pb-2">
-                <div class="row">
-                    <!-- LEFT SIDE: Customer Fields -->
+    <div class="modal-body" style="max-height: 80vh; overflow: hidden; padding: 0;">
+        <!-- POS-Style Layout: Left = Products, Right = Customer/Vehicle/Totals -->
+        <div class="row g-0" style="height: 80vh;">
+            
+            <!-- LEFT SIDE: Product Search & Results (60%) -->
+            <div class="col-md-7 border-end" style="height: 100%; overflow-y: auto; background: #f8f9fa;">
+                <div class="p-3">
+                    <!-- LEFT SIDE: Customer Search (POS Style) -->
                     <div class="col-md-6">
                         <div class="mb-2">
-                            <label class="form-label fw-semibold mb-1 small">Customer <span
-                                    class="text-danger">*</span></label>
-                            <select name="customer_id" id="customerSelect" class="form-select form-select-sm" required>
-                                <option value="">-- Select Customer --</option>
-                                <option value="add_new" class="text-success fw-bold" style="background-color: #e8f5e9;">
-                                    ➕ Add New Customer
-                                </option>
-                                <?php $__currentLoopData = $customers; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $customer): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                    <option value="<?php echo e($customer->id); ?>" data-name="<?php echo e($customer->name); ?>"
-                                        data-email="<?php echo e($customer->email); ?>" data-phone="<?php echo e($customer->phone); ?>"
-                                        data-address="<?php echo e($customer->address); ?>"
-                                        data-price-tier="<?php echo e($customer->price_tier ?? 'normal'); ?>">
-                                        <?php echo e($customer->name); ?> - <?php echo e($customer->email); ?>
-
-                                    </option>
-                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                            </select>
+                            <label class="form-label fw-semibold mb-1 small">
+                                <i class="ri-user-line me-1"></i>Customer
+                            </label>
+                            <div class="input-group input-group-sm">
+                                <input type="text" class="form-control" id="quoteCustomerSearch" 
+                                    placeholder="Search by name, phone, email..." autocomplete="off">
+                                <button class="btn btn-warning" type="button" id="quoteClearCustomerBtn" 
+                                    style="display: none;" title="Switch to Walk-in">
+                                    <i class="ri-close-line"></i>
+                                </button>
+                                <button class="btn btn-success" type="button" onclick="openAddCustomerModal()" title="Add Customer">
+                                    <i class="ri-user-add-line"></i>
+                                </button>
+                            </div>
+                            <div id="quoteCustomerSearchResults" class="list-group mt-2 shadow-sm" 
+                                style="display: none; max-height: 200px; overflow-y: auto; position: absolute; z-index: 1050; width: calc(50% - 30px);"></div>
+                            <small class="text-muted d-block mt-1">
+                                <i class="ri-information-line"></i> Leave empty for Walk-in Customer
+                            </small>
                         </div>
 
-                        <!-- Customer Details Display (for selected customer) -->
-                        <div id="customerDetails" class="alert alert-light py-2 mb-0 mt-2" style="display: none;">
-                            <div class="small">
-                                <div class="mb-1"><i class="ri-mail-line me-1 text-primary"></i><span
-                                        id="customerEmail"></span></div>
-                                <div class="mb-1"><i class="ri-phone-line me-1 text-success"></i><span
-                                        id="customerPhone"></span></div>
-                                <div class="mb-1"><i class="ri-map-pin-line me-1 text-danger"></i><span
-                                        id="customerAddress"></span></div>
-                                <div><i class="ri-price-tag-3-line me-1 text-info"></i><span
-                                        class="badge bg-info-transparent" id="customerPriceTier"></span></div>
+                        <!-- Selected Customer Info -->
+                        <div id="quoteCustomerInfo" class="card border-primary shadow-sm mb-2" style="display: none;">
+                            <div class="card-body p-2">
+                                <div class="d-flex align-items-center">
+                                    <i class="ri-user-fill fs-4 me-2 text-primary"></i>
+                                    <div class="flex-grow-1">
+                                        <p class="fw-bold mb-0" id="quoteSelectedCustomerName"></p>
+                                        <p class="fs-11 text-muted mb-0">
+                                            <span id="quoteSelectedCustomerContact"></span>
+                                        </p>
+                                        <span class="badge badge-sm" id="quoteSelectedCustomerType"></span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
+
+                        <!-- Walk-in Customer Form (POS Style) -->
+                        <div id="quoteWalkInCustomerForm" class="mb-2">
+                            <div class="card border-info shadow-sm">
+                                <div class="card-body p-2">
+                                    <h6 class="card-title mb-2 small">
+                                        <i class="ri-walk-line me-1"></i>
+                                        <strong class="text-info">Walk-in Customer</strong>
+                                    </h6>
+                                    <div class="row g-2">
+                                        <div class="col-6">
+                                            <label class="form-label small mb-1">Name (Optional)</label>
+                                            <input type="text" class="form-control form-control-sm" 
+                                                id="quoteWalkInName" name="customer_name" placeholder="Enter name...">
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label small mb-1">Phone (Optional)</label>
+                                            <input type="text" class="form-control form-control-sm" 
+                                                id="quoteWalkInPhone" name="customer_phone" placeholder="Enter phone...">
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label small mb-1">Email (Optional)</label>
+                                            <input type="email" class="form-control form-control-sm" 
+                                                id="quoteWalkInEmail" name="customer_email" placeholder="Optional">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Hidden field for selected customer ID -->
+                        <input type="hidden" name="customer_id" id="quoteCustomerId" value="">
 
                         <div class="row mt-2">
                             <div class="col-6 mb-2">
                                 <label class="form-label mb-1 small">Valid Until</label>
                                 <input type="date" name="valid_until" class="form-control form-control-sm"
-                                    value="<?php echo e(date('Y-m-d', strtotime('+30 days'))); ?>">
+                                    value="{{ date('Y-m-d', strtotime('+30 days')) }}">
                             </div>
                             <div class="col-6 mb-2">
                                 <label class="form-label mb-1 small">Status</label>
@@ -78,61 +101,84 @@
                         </div>
                     </div>
 
-                    <!-- RIGHT SIDE: Vehicle Fields -->
+                    <!-- RIGHT SIDE: Vehicle Selection -->
                     <div class="col-md-6">
-                        <div class="row">
-                            <div class="col-6 mb-2">
-                                <label class="form-label mb-1 small">Make</label>
-                                <select name="vehicle_make_id" id="vehicleMakeSelect"
-                                    class="form-select form-select-sm select2-vehicle-make">
-                                    <option value="">Select Make</option>
-                                    <?php $__currentLoopData = $makes; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $make): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                        <option value="<?php echo e($make->id); ?>" data-name="<?php echo e($make->name); ?>">
-                                            <?php echo e($make->name); ?></option>
-                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                        <!-- Registered Customer Vehicle Selection -->
+                        <div id="vehicleSection" style="display: none;">
+                            <label class="form-label fw-semibold mb-1 small">
+                                <i class="ri-car-line me-1"></i>Vehicle
+                            </label>
+                            <div class="input-group input-group-sm mb-2">
+                                <select class="form-select form-select-sm" id="vehicleSelect" name="vehicle_id" onchange="selectQuoteVehicle()">
+                                    <option value="">Select Vehicle</option>
                                 </select>
+                                <button type="button" class="btn btn-success btn-sm" onclick="showAddQuoteVehicleModal()" title="Add Vehicle">
+                                    <i class="ri-add-line"></i>
+                                </button>
                             </div>
-                            <div class="col-6 mb-2">
-                                <label class="form-label mb-1 small">Model</label>
-                                <select name="vehicle_model_id" id="vehicleModelSelect"
-                                    class="form-select form-select-sm select2-vehicle-model">
-                                    <option value="">Select Model</option>
-                                    <?php $__currentLoopData = $models; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $model): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                        <option value="<?php echo e($model->id); ?>" data-name="<?php echo e($model->name); ?>"
-                                            data-make-id="<?php echo e($model->make_id); ?>"><?php echo e($model->name); ?></option>
-                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                                </select>
+                            <div id="vehicleInfo" style="display: none;">
+                                <!-- Vehicle details shown here -->
                             </div>
-                            <div class="col-6 mb-2">
-                                <label class="form-label mb-1 small">Engine</label>
-                                <select name="vehicle_engine_id" id="vehicleEngineSelect"
-                                    class="form-select form-select-sm select2-vehicle-engine">
-                                    <option value="">Select Engine</option>
-                                    <?php $__currentLoopData = $engines; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $engine): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                        <option value="<?php echo e($engine->id); ?>" data-code="<?php echo e($engine->code); ?>">
-                                            <?php echo e($engine->code); ?></option>
-                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                                </select>
-                            </div>
-                            <div class="col-6 mb-2">
-                                <label class="form-label mb-1 small">Year</label>
-                                <input type="number" name="vehicle_year" class="form-control form-control-sm"
-                                    placeholder="e.g., 2020">
-                            </div>
-                            <div class="col-12 mb-2">
-                                <label class="form-label mb-1 small">VIN Number</label>
-                                <input type="text" name="vehicle_vin" class="form-control form-control-sm"
-                                    placeholder="Vehicle Identification Number">
-                            </div>
-                            <div class="col-6 mb-2">
-                                <label class="form-label mb-1 small">Registration</label>
-                                <input type="text" name="vehicle_reg" class="form-control form-control-sm"
-                                    placeholder="e.g., ABC123GP">
-                            </div>
-                            <div class="col-6 mb-2">
-                                <label class="form-label mb-1 small">Mileage</label>
-                                <input type="number" name="vehicle_mileage" class="form-control form-control-sm"
-                                    placeholder="e.g., 50000">
+                        </div>
+                        
+                        <!-- Walk-in Customer Vehicle (Manual Entry) -->
+                        <div id="quoteWalkInVehicleForm" class="mb-2">
+                            <label class="form-label fw-semibold mb-1 small">
+                                <i class="ri-car-line me-1"></i>Vehicle Info <small class="text-muted">(Optional)</small>
+                            </label>
+                            <div class="card border-info shadow-sm">
+                                <div class="card-body p-2">
+                                    <div class="row g-2">
+                                        <div class="col-6">
+                                            <label class="form-label small mb-1 fw-semibold">
+                                                <i class="ri-car-line text-primary me-1"></i>Make
+                                            </label>
+                                            <select class="form-select form-select-sm select2-walk-in-make" id="quoteWalkInVehicleMake" name="vehicle_make_id">
+                                                <option value="">Select Make</option>
+                                                @foreach($makes as $make)
+                                                    <option value="{{ $make->id }}">{{ $make->name }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label small mb-1 fw-semibold">
+                                                <i class="ri-car-line text-success me-1"></i>Model
+                                            </label>
+                                            <select class="form-select form-select-sm select2-walk-in-model" id="quoteWalkInVehicleModel" name="vehicle_model_id">
+                                                <option value="">Select Model</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label small mb-1 fw-semibold">
+                                                <i class="ri-calendar-line text-info me-1"></i>Year
+                                            </label>
+                                            <select class="form-select form-select-sm select2-walk-in-year" id="quoteWalkInVehicleYear" name="vehicle_year">
+                                                <option value="">Select Year</option>
+                                                @for($year = date('Y') + 1; $year >= 1980; $year--)
+                                                    <option value="{{ $year }}">{{ $year }}</option>
+                                                @endfor
+                                            </select>
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label small mb-1 fw-semibold">
+                                                <i class="ri-road-map-line text-danger me-1"></i>Registration
+                                            </label>
+                                            <input type="text" class="form-control form-control-sm shadow-sm" name="vehicle_reg" placeholder="e.g., ABC123GP">
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label small mb-1 fw-semibold">
+                                                <i class="ri-speed-line text-warning me-1"></i>Mileage
+                                            </label>
+                                            <input type="number" class="form-control form-control-sm shadow-sm" name="vehicle_mileage" placeholder="km">
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label small mb-1 fw-semibold">
+                                                <i class="ri-barcode-line text-secondary me-1"></i>VIN
+                                            </label>
+                                            <input type="text" class="form-control form-control-sm shadow-sm" name="vehicle_vin" placeholder="Optional">
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -190,11 +236,13 @@
                                 <th class="border-0 py-2" style="width: 10%;">
                                     Discount
                                     <i class="ri-information-line text-warning ms-1" data-bs-toggle="tooltip"
-                                        title="Max <?php echo e(auth()->user()->max_discount_allowed ?? 10); ?>% per line for your role"></i>
+                                        title="Max {{ auth()->user()->max_discount_allowed ?? 10 }}% per line for your role"></i>
                                 </th>
                                 <th class="border-0 py-2" style="width: 12%;">Total</th>
                                 <th class="border-0 py-2" style="width: 8%;">Stock</th>
-                                
+                                {{-- @if (auth()->user()->canSeeCosts())
+                                    <th class="border-0 py-2" style="width: 10%;">Cost</th>
+                                @endif --}}
                                 <th class="border-0 py-2" style="width: 7%;"></th>
                             </tr>
                         </thead>
@@ -258,20 +306,20 @@
                     </div>
                     <div class="col-md-4 mb-2">
                         <label class="form-label mb-1 small">
-                            VAT (<?php echo e($vatSettings['rate']); ?>%)
+                            VAT ({{ $vatSettings['rate'] }}%)
                             <span
-                                class="badge <?php echo e($vatSettings['inclusive'] ? 'bg-info' : 'bg-warning'); ?> badge-sm"><?php echo e($vatSettings['inclusive'] ? 'Inc' : 'Exc'); ?></span>
+                                class="badge {{ $vatSettings['inclusive'] ? 'bg-info' : 'bg-warning' }} badge-sm">{{ $vatSettings['inclusive'] ? 'Inc' : 'Exc' }}</span>
                         </label>
                         <div class="input-group input-group-sm">
                             <div class="input-group-text">
                                 <input type="checkbox" name="vat_enabled" id="vatEnabled" class="form-check-input"
-                                    <?php echo e($vatSettings['enabled'] ? 'checked' : ''); ?>>
+                                    {{ $vatSettings['enabled'] ? 'checked' : '' }}>
                             </div>
                             <input type="number" name="vat_amount" id="vatAmount" class="form-control bg-light"
                                 value="0.00" step="0.01" readonly>
-                            <input type="hidden" id="vatRate" value="<?php echo e($vatSettings['rate']); ?>">
+                            <input type="hidden" id="vatRate" value="{{ $vatSettings['rate'] }}">
                             <input type="hidden" id="vatInclusive"
-                                value="<?php echo e($vatSettings['inclusive'] ? '1' : '0'); ?>">
+                                value="{{ $vatSettings['inclusive'] ? '1' : '0' }}">
                         </div>
                     </div>
 
@@ -301,11 +349,66 @@
         let quoteItemIndex = 0;
         let searchTimeout;
 
-        // Initialize Select2 for customer dropdown
-        $('#customerSelect').select2({
-            placeholder: 'Select Customer',
-            allowClear: true,
-            dropdownParent: $('#quoteModal')
+        // POS-Style Customer Search
+        let quoteCustomerSearchTimeout;
+        let quoteSelectedCustomer = null;
+        let quoteCustomers = []; // Local customers array (same as POS)
+        
+        // Show walk-in form by default
+        $('#quoteWalkInCustomerForm').show();
+        $('#quoteWalkInVehicleForm').show();
+        $('#quoteCustomerInfo').hide();
+        $('#vehicleSection').hide();
+        
+        // Load customers on page load (same as POS)
+        loadQuoteCustomers();
+        
+        // Initialize Select2 for Walk-in Vehicle Fields (POS Style)
+        function initWalkInVehicleSelect2() {
+            $('.select2-walk-in-make').select2({
+                placeholder: 'Select Make',
+                allowClear: true,
+                dropdownParent: $('#quoteModal'),
+                width: '100%'
+            });
+            
+            $('.select2-walk-in-model').select2({
+                placeholder: 'Select Model',
+                allowClear: true,
+                dropdownParent: $('#quoteModal'),
+                width: '100%'
+            });
+            
+            $('.select2-walk-in-year').select2({
+                placeholder: 'Select Year',
+                allowClear: true,
+                dropdownParent: $('#quoteModal'),
+                width: '100%'
+            });
+        }
+        
+        // Initialize after modal opens
+        setTimeout(function() {
+            initWalkInVehicleSelect2();
+        }, 200);
+        
+        // Walk-in Vehicle: Cascading Make → Model
+        $('#quoteWalkInVehicleMake').on('change', function() {
+            const makeId = $(this).val();
+            const modelSelect = $('#quoteWalkInVehicleModel');
+            
+            if (makeId) {
+                const url = "{{ route('api.vehicle-makes.models', ':makeId') }}".replace(':makeId', makeId);
+                $.get(url, function(models) {
+                    let html = '<option value="">Select Model</option>';
+                    models.forEach(model => {
+                        html += `<option value="${model.id}">${model.name}</option>`;
+                    });
+                    modelSelect.html(html).trigger('change'); // Trigger to update Select2
+                });
+            } else {
+                modelSelect.html('<option value="">Select Model</option>').trigger('change');
+            }
         });
 
         // Handle "Add New Customer" option selection
@@ -367,29 +470,24 @@
                 '<span class="spinner-border spinner-border-sm me-1"></span>Creating...');
 
             $.ajax({
-                url: '<?php echo e(route('customers.store')); ?>',
+                url: '{{ route('customers.store') }}',
                 method: 'POST',
                 data: formData,
                 success: function(response) {
                     if (response.success) {
                         toastr.success('Customer created successfully!');
 
-                        // Add new customer to dropdown
-                        const newOption = new Option(
-                            response.customer.name + ' - ' + response.customer.email,
-                            response.customer.id,
-                            true,
-                            true
-                        );
-
-                        // Set data attributes
-                        $(newOption).attr('data-name', response.customer.name);
-                        $(newOption).attr('data-email', response.customer.email);
-                        $(newOption).attr('data-phone', response.customer.phone);
-                        $(newOption).attr('data-address', response.customer.address);
-                        $(newOption).attr('data-price-tier', response.customer.price_tier);
-
-                        $('#customerSelect').append(newOption).trigger('change');
+                        // Auto-select the new customer (POS style)
+                        const customer = {
+                            id: response.customer.id,
+                            name: response.customer.name,
+                            email: response.customer.email,
+                            phone: response.customer.phone,
+                            terms: response.customer.terms || 'cash',
+                            price_tier: response.customer.price_tier || 'normal'
+                        };
+                        
+                        selectQuoteCustomer(customer);
 
                         // Close modal and reset form
                         const addCustomerModal = bootstrap.Modal.getInstance(document
@@ -414,41 +512,171 @@
             });
         });
 
-        // Customer selection handler
-        $('#customerSelect').on('change', function() {
-            const selectedOption = $(this).find('option:selected');
-            const customerId = selectedOption.val();
-
-            // Check if "Add New Customer" was selected
-            if (customerId === 'add_new') {
-                // Open add customer modal
-                openAddCustomerModal();
-
-                // Reset select to empty
-                $(this).val('').trigger('change.select2');
+        // Customer Search Input Handler (POS Style)
+        $('#quoteCustomerSearch').on('input', function() {
+            const searchTerm = $(this).val().trim();
+            
+            clearTimeout(quoteCustomerSearchTimeout);
+            
+            if (searchTerm.length === 0) {
+                // Walk-in customer (no customer selected)
+                $('#quoteCustomerSearchResults').hide();
+                $('#quoteClearCustomerBtn').hide();
+                $('#quoteCustomerInfo').hide();
+                $('#quoteWalkInCustomerForm').show();
+                $('#quoteWalkInVehicleForm').show(); // Show walk-in vehicle form
+                $('#vehicleSection').hide(); // Hide registered customer vehicle section
+                $('#quoteCustomerId').val('');
+                quoteSelectedCustomer = null;
+                $('#priceTierIndicator').text('(Normal)');
                 return;
             }
 
-            if (customerId && customerId !== '') {
-                // Customer selected - show details
-                $('#customerEmail').text(selectedOption.data('email'));
-                $('#customerPhone').text(selectedOption.data('phone'));
-                $('#customerAddress').text(selectedOption.data('address'));
-                $('#customerPriceTier').text(selectedOption.data('price-tier'));
-                $('#customerDetails').show();
-
-                // Update price tier indicator
-                $('#priceTierIndicator').text('(' + selectedOption.data('price-tier') + ')');
-
-                // Update prices for existing items based on new customer's price tier
-                updatePricesForCustomerTier(selectedOption.data('price-tier'));
-            } else {
-                // No customer selected - hide details
-                $('#customerDetails').hide();
-
-                // Reset price tier to normal
+            if (searchTerm.length < 2) {
+                $('#quoteCustomerSearchResults').hide();
+                return;
+            }
+            
+            quoteCustomerSearchTimeout = setTimeout(() => {
+                searchQuoteCustomers(searchTerm);
+            }, 300);
+        });
+        
+        // Load Customers (Same as POS)
+        function loadQuoteCustomers() {
+            fetch('{{ route('pos.customers') }}')
+                .then(response => response.json())
+                .then(data => {
+                    quoteCustomers = data;
+                    console.log('Loaded ' + quoteCustomers.length + ' customers for quotation');
+                })
+                .catch(error => {
+                    console.error('Error loading customers:', error);
+                });
+        }
+        
+        // Search Customers Function (Local Search - Same as POS)
+        function searchQuoteCustomers(searchTerm) {
+            const searchLower = searchTerm.toLowerCase();
+            
+            // Filter customers locally (faster than API)
+            const results = quoteCustomers.filter(customer => {
+                return customer.name.toLowerCase().includes(searchLower) ||
+                       (customer.customer_code && customer.customer_code.toLowerCase().includes(searchLower)) ||
+                       (customer.phone && customer.phone.includes(searchTerm)) ||
+                       (customer.email && customer.email.toLowerCase().includes(searchLower));
+            });
+            
+            displayQuoteCustomerResults(results);
+        }
+        
+        // Display Customer Results
+        function displayQuoteCustomerResults(results) {
+            const resultsDiv = $('#quoteCustomerSearchResults');
+            
+            if (results.length === 0) {
+                resultsDiv.html('<div class="list-group-item text-muted small">No customers found</div>').show();
+                return;
+            }
+            
+            let html = '';
+            results.forEach(customer => {
+                const termsLabel = customer.terms === 'credit' ? 
+                    '<span class="badge bg-warning-transparent text-warning ms-1">Credit</span>' : 
+                    '<span class="badge bg-success-transparent text-success ms-1">Cash</span>';
+                
+                html += `
+                    <a href="javascript:void(0)" class="list-group-item list-group-item-action quote-customer-result" 
+                       data-id="${customer.id}"
+                       data-name="${customer.name}"
+                       data-email="${customer.email || ''}"
+                       data-phone="${customer.phone || ''}"
+                       data-terms="${customer.terms}"
+                       data-price-tier="${customer.price_tier || 'normal'}">
+                        <div class="d-flex align-items-center">
+                            <i class="ri-user-line me-2 text-primary"></i>
+                            <div class="flex-grow-1">
+                                <div class="fw-bold small">${customer.name} ${termsLabel}</div>
+                                <div class="text-muted" style="font-size: 11px;">
+                                    ${customer.phone || ''} ${customer.email ? '• ' + customer.email : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                `;
+            });
+            
+            resultsDiv.html(html).show();
+        }
+        
+        // Select Customer from Search Results
+        $(document).on('click', '.quote-customer-result', function() {
+            const customer = {
+                id: $(this).data('id'),
+                name: $(this).data('name'),
+                email: $(this).data('email'),
+                phone: $(this).data('phone'),
+                terms: $(this).data('terms'),
+                price_tier: $(this).data('price-tier')
+            };
+            
+            selectQuoteCustomer(customer);
+        });
+        
+        // Select Customer Function
+        function selectQuoteCustomer(customer) {
+            quoteSelectedCustomer = customer;
+            
+            // Update UI
+            $('#quoteCustomerSearch').val(customer.name);
+            $('#quoteCustomerSearchResults').hide();
+            $('#quoteClearCustomerBtn').show();
+            $('#quoteCustomerId').val(customer.id);
+            
+            // Hide walk-in forms, show customer info
+            $('#quoteWalkInCustomerForm').hide();
+            $('#quoteWalkInVehicleForm').hide(); // Hide walk-in vehicle form
+            $('#quoteCustomerInfo').show();
+            
+            // Display customer details
+            $('#quoteSelectedCustomerName').text(customer.name);
+            $('#quoteSelectedCustomerContact').text(
+                (customer.phone || '') + (customer.phone && customer.email ? ' • ' : '') + (customer.email || '')
+            );
+            
+            // Customer type badge
+            const typeHtml = customer.terms === 'credit' ?
+                '<span class="badge bg-warning">Credit Customer</span>' :
+                '<span class="badge bg-success">Cash Customer</span>';
+            $('#quoteSelectedCustomerType').html(typeHtml);
+            
+            // Update price tier
+            $('#priceTierIndicator').text(`(${customer.price_tier || 'normal'})`);
+            updatePricesForCustomerTier(customer.price_tier || 'normal');
+            
+            // Load customer vehicles (registered customer)
+            loadQuoteCustomerVehicles(customer.id);
+        }
+        
+        // Clear Customer (Back to Walk-in)
+        $('#quoteClearCustomerBtn').on('click', function() {
+            $('#quoteCustomerSearch').val('');
+            $('#quoteClearCustomerBtn').hide();
+            $('#quoteCustomerInfo').hide();
+            $('#quoteWalkInCustomerForm').show();
+            $('#quoteWalkInVehicleForm').show(); // Show walk-in vehicle form
+            $('#vehicleSection').hide(); // Hide registered customer vehicle section
+            $('#quoteCustomerId').val('');
+            $('#quoteCustomerSearchResults').hide();
+            quoteSelectedCustomer = null;
                 $('#priceTierIndicator').text('(Normal)');
                 updatePricesForCustomerTier('normal');
+        });
+        
+        // Hide search results when clicking outside
+        $(document).on('click', function(e) {
+            if (!$(e.target).closest('#quoteCustomerSearch, #quoteCustomerSearchResults').length) {
+                $('#quoteCustomerSearchResults').hide();
             }
         });
 
@@ -507,7 +735,7 @@
         // Product search function
         function searchProducts(query) {
             $.ajax({
-                url: '<?php echo e(route('quotes.search-products')); ?>',
+                url: '{{ route('quotes.search-products') }}',
                 method: 'GET',
                 data: {
                     q: query
@@ -520,11 +748,16 @@
                 success: function(response) {
                     if (response.products.length > 0) {
                         let html = `
-                            <div class="bg-light px-3 py-2">
-                                <small class="text-muted fw-semibold">
-                                    <i class="ri-search-line me-1"></i>
-                                    ${response.products.length} Result${response.products.length > 1 ? 's' : ''}
-                                </small>
+                            <div class="bg-success-transparent px-3 py-2 border-bottom border-success">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <span class="fw-bold text-success">
+                                        <i class="ri-search-line me-1"></i>
+                                        ${response.products.length} Result${response.products.length > 1 ? 's' : ''}
+                                    </span>
+                                    <small class="text-muted">
+                                        <i class="ri-information-line"></i> Click to add to quote
+                                    </small>
+                                </div>
                             </div>
                         `;
 
@@ -532,13 +765,13 @@
                             let stockBadge;
                             if (product.current_stock > 0) {
                                 stockBadge =
-                                    `<span class="badge bg-success">${product.current_stock} ${product.unit}</span>`;
+                                    `<span class="badge bg-success text-white fw-bold">${product.current_stock} ${product.unit}</span>`;
                             } else if (product.current_stock < 0) {
                                 stockBadge =
-                                    `<span class="badge bg-danger">${product.current_stock} NEG</span>`;
+                                    `<span class="badge bg-danger text-white fw-bold">${product.current_stock} NEG</span>`;
                             } else {
                                 stockBadge =
-                                    `<span class="badge bg-warning text-dark">Out of Stock</span>`;
+                                    `<span class="badge bg-warning text-dark fw-bold">0 OUT</span>`;
                             }
 
                             const priceTier = getPriceTier();
@@ -553,7 +786,7 @@
                                             <img src="${product.image_url}" class="rounded-3" 
                                                  style="width: 70px; height: 70px; object-fit: cover; border: 2px solid #e0e0e0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" 
                                                  onerror="this.src='/assets/images/pos-system/1.jpg'">
-                                            <div class="position-absolute top-0 end-0 translate-middle">
+                                            <div class="position-absolute top-0 start-0" style="margin: -8px 0 0 -8px;">
                                                 ${stockBadge}
                                             </div>
                                         </div>
@@ -771,7 +1004,7 @@
             let discount = parseFloat(row.find('.discount').val()) || 0;
 
             // Validate discount limits
-            const maxDiscountAllowed = <?php echo e(auth()->user()->max_discount_allowed ?? 10); ?>;
+            const maxDiscountAllowed = {{ auth()->user()->max_discount_allowed ?? 10 }};
             const lineTotal = quantity * unitPrice;
             const maxDiscountAmount = (lineTotal * maxDiscountAllowed) / 100;
 
@@ -828,7 +1061,7 @@
             $('#grandTotal').val(grandTotal.toFixed(2));
             $('#grandTotalDisplay').text('R ' + grandTotal.toFixed(2));
 
-            <?php if(auth()->user()->canSeeCosts()): ?>
+            @if (auth()->user()->canSeeCosts())
                 // Calculate total FIFO cost for Owner
                 let totalCost = 0;
                 let totalQty = 0;
@@ -848,7 +1081,7 @@
                     .removeClass('bg-success-transparent bg-warning-transparent bg-danger-transparent')
                     .addClass(profitMargin > 30 ? 'bg-success-transparent' : profitMargin > 15 ?
                         'bg-warning-transparent' : 'bg-danger-transparent');
-            <?php endif; ?>
+            @endif
         }
 
         // VAT toggle
@@ -861,7 +1094,7 @@
             const unitPrice = parseFloat(row.find('.unit-price').val()) || 0;
             let discount = parseFloat($(this).val()) || 0;
 
-            const maxDiscountAllowed = <?php echo e(auth()->user()->max_discount_allowed ?? 10); ?>;
+            const maxDiscountAllowed = {{ auth()->user()->max_discount_allowed ?? 10 }};
             const lineTotal = quantity * unitPrice;
             const maxDiscountAmount = (lineTotal * maxDiscountAllowed) / 100;
 
@@ -950,7 +1183,7 @@
         });
 
         // Debug: Log max discount on page load
-        console.log('User Max Discount Allowed:', <?php echo e(auth()->user()->max_discount_allowed ?? 10); ?>, '%');
+        console.log('User Max Discount Allowed:', {{ auth()->user()->max_discount_allowed ?? 10 }}, '%');
 
         // Initialize Select2 for fitment dropdowns
         function initFitmentSelect2() {
@@ -981,11 +1214,11 @@
 
                             // Determine endpoint based on field type
                             if ($select.hasClass('select2-fitment-make')) {
-                                endpoint = '<?php echo e(route('car-makes.quick-add')); ?>';
+                                endpoint = '{{ route('car-makes.quick-add') }}';
                             } else if ($select.hasClass('select2-fitment-model')) {
-                                endpoint = '<?php echo e(route('car-models.quick-add')); ?>';
+                                endpoint = '{{ route('car-models.quick-add') }}';
                             } else if ($select.hasClass('select2-fitment-engine')) {
-                                endpoint = '<?php echo e(route('car-engines.quick-add')); ?>';
+                                endpoint = '{{ route('car-engines.quick-add') }}';
                             }
 
                             // AJAX call to save
@@ -994,7 +1227,7 @@
                                 method: 'POST',
                                 data: {
                                     name: newName,
-                                    _token: '<?php echo e(csrf_token()); ?>'
+                                    _token: '{{ csrf_token() }}'
                                 },
                                 success: function(response) {
                                     if (response.success) {
@@ -1051,11 +1284,11 @@
 
                             // Determine endpoint based on field type
                             if ($select.hasClass('select2-vehicle-make')) {
-                                endpoint = '<?php echo e(route('car-makes.quick-add')); ?>';
+                                endpoint = '{{ route('car-makes.quick-add') }}';
                             } else if ($select.hasClass('select2-vehicle-model')) {
-                                endpoint = '<?php echo e(route('car-models.quick-add')); ?>';
+                                endpoint = '{{ route('car-models.quick-add') }}';
                             } else if ($select.hasClass('select2-vehicle-engine')) {
-                                endpoint = '<?php echo e(route('car-engines.quick-add')); ?>';
+                                endpoint = '{{ route('car-engines.quick-add') }}';
                             }
 
                             // AJAX call to save
@@ -1064,7 +1297,7 @@
                                 method: 'POST',
                                 data: {
                                     name: newName,
-                                    _token: '<?php echo e(csrf_token()); ?>'
+                                    _token: '{{ csrf_token() }}'
                                 },
                                 success: function(response) {
                                     if (response.success) {
@@ -1179,27 +1412,27 @@
                      <label class="form-label mb-1 small text-muted">Make</label>
                      <select class="form-select form-select-sm select2-fitment-make">
                          <option value="">Select Make</option>
-                         <?php $__currentLoopData = $makes; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $make): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                             <option value="<?php echo e($make->id); ?>" data-name="<?php echo e($make->name); ?>"><?php echo e($make->name); ?></option>
-                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                         @foreach ($makes as $make)
+                             <option value="{{ $make->id }}" data-name="{{ $make->name }}">{{ $make->name }}</option>
+                         @endforeach
                      </select>
                  </div>
                  <div class="col-md-2">
                      <label class="form-label mb-1 small text-muted">Model</label>
                      <select class="form-select form-select-sm select2-fitment-model">
                          <option value="">Select Model</option>
-                         <?php $__currentLoopData = $models; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $model): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                             <option value="<?php echo e($model->id); ?>" data-name="<?php echo e($model->name); ?>" data-make-id="<?php echo e($model->make_id); ?>"><?php echo e($model->name); ?></option>
-                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                         @foreach ($models as $model)
+                             <option value="{{ $model->id }}" data-name="{{ $model->name }}" data-make-id="{{ $model->make_id }}">{{ $model->name }}</option>
+                         @endforeach
                      </select>
                  </div>
                  <div class="col-md-2">
                      <label class="form-label mb-1 small text-muted">Engine</label>
                      <select class="form-select form-select-sm select2-fitment-engine">
                          <option value="">Optional</option>
-                         <?php $__currentLoopData = $engines; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $engine): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                             <option value="<?php echo e($engine->id); ?>" data-code="<?php echo e($engine->code); ?>"><?php echo e($engine->code); ?></option>
-                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                         @foreach ($engines as $engine)
+                             <option value="{{ $engine->id }}" data-code="{{ $engine->code }}">{{ $engine->code }}</option>
+                         @endforeach
                      </select>
                  </div>
                  <div class="col-md-2">
@@ -1260,15 +1493,15 @@
                                     // Determine endpoint based on field type
                                     if ($select.hasClass('select2-fitment-make')) {
                                         endpoint =
-                                            '<?php echo e(route('car-makes.quick-add')); ?>';
+                                            '{{ route('car-makes.quick-add') }}';
                                     } else if ($select.hasClass(
                                             'select2-fitment-model')) {
                                         endpoint =
-                                            '<?php echo e(route('car-models.quick-add')); ?>';
+                                            '{{ route('car-models.quick-add') }}';
                                     } else if ($select.hasClass(
                                             'select2-fitment-engine')) {
                                         endpoint =
-                                            '<?php echo e(route('car-engines.quick-add')); ?>';
+                                            '{{ route('car-engines.quick-add') }}';
                                     }
 
                                     // AJAX call to save
@@ -1277,7 +1510,7 @@
                                         method: 'POST',
                                         data: {
                                             name: newName,
-                                            _token: '<?php echo e(csrf_token()); ?>'
+                                            _token: '{{ csrf_token() }}'
                                         },
                                         success: function(response) {
                                             if (response.success) {
@@ -1386,7 +1619,7 @@
                 '<span class="spinner-border spinner-border-sm me-1"></span>Creating...');
 
             $.ajax({
-                url: '<?php echo e(route('products.quickAdd')); ?>',
+                url: '{{ route('products.quickAdd') }}',
                 method: 'POST',
                 data: formData,
                 success: function(response) {
@@ -1543,7 +1776,7 @@
                                 <small>Draft Preview</small>
                             </div>
                             <div class="col-md-6 text-end">
-                                <h5 class="mb-0"><?php echo e(auth()->user()->company_name ?? 'Your Company'); ?></h5>
+                                <h5 class="mb-0">{{ auth()->user()->company_name ?? 'Your Company' }}</h5>
                                 <small>Date: ${new Date().toLocaleDateString()}</small>
                             </div>
                         </div>
@@ -1644,6 +1877,130 @@
 
         // Don't initialize with empty row - let user search/add products
         // addQuoteItemRow(); // Commented out - no manual row on load
+        
+        // POS Style: Vehicle Management Functions
+        let quoteCustomerVehicles = [];
+        let quoteCurrentVehicle = null;
+        let quoteCurrentCustomer = null;
+        
+        // Load Customer Vehicles (Same as POS)
+        function loadQuoteCustomerVehicles(customerId) {
+            quoteCurrentCustomer = customerId;
+            
+            // Clear previous vehicle selection and details
+            quoteCurrentVehicle = null;
+            $('#vehicleSelect').val('');
+            $('#vehicleInfo').hide().html('');
+            
+            const url = "{{ route('api.customers.vehicles', ':id') }}".replace(':id', customerId);
+            
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    quoteCustomerVehicles = data;
+                    if (data.length > 0) {
+                        $('#vehicleSection').show();
+                        $('#noVehicleMessage').hide();
+                        populateQuoteVehicleDropdown();
+                        
+                        // Auto-select primary vehicle if exists
+                        const primaryVehicle = data.find(v => v.is_primary);
+                        if (primaryVehicle) {
+                            $('#vehicleSelect').val(primaryVehicle.id);
+                            selectQuoteVehicle();
+                        }
+                    } else {
+                        // No vehicles - clear everything and show message
+                        $('#vehicleSection').show();
+                        $('#noVehicleMessage').hide();
+                        $('#vehicleSelect').html('<option value="">No vehicles - Click + to add</option>');
+                        $('#vehicleInfo').hide().html(''); // Clear vehicle details
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading vehicles:', error);
+                    $('#vehicleSection').show();
+                    $('#noVehicleMessage').show();
+                    $('#vehicleInfo').hide().html(''); // Clear on error too
+                });
+        }
+        
+        // Populate Vehicle Dropdown
+        function populateQuoteVehicleDropdown() {
+            const select = $('#vehicleSelect');
+            select.html('<option value="">Select Vehicle</option>');
+            
+            quoteCustomerVehicles.forEach(vehicle => {
+                select.append(`<option value="${vehicle.id}" 
+                    data-make="${vehicle.make_name}" 
+                    data-model="${vehicle.model_name}"
+                    data-reg="${vehicle.registration_number}"
+                    data-mileage="${vehicle.mileage}">
+                    ${vehicle.display_name}
+                </option>`);
+            });
+        }
+        
+        // Select Vehicle (Show Details)
+        window.selectQuoteVehicle = function() {
+            const vehicleId = $('#vehicleSelect').val();
+            
+            if (vehicleId) {
+                quoteCurrentVehicle = quoteCustomerVehicles.find(v => v.id == vehicleId);
+                
+                if (quoteCurrentVehicle) {
+                    const html = `
+                        <div class="alert alert-light py-2 small mb-0 mt-1">
+                            <div class="row g-1">
+                                <div class="col-6">
+                                    <span class="text-muted">Make:</span><br>
+                                    <strong>${quoteCurrentVehicle.make_name}</strong>
+                                </div>
+                                <div class="col-6">
+                                    <span class="text-muted">Model:</span><br>
+                                    <strong>${quoteCurrentVehicle.model_name}</strong>
+                                </div>
+                                ${quoteCurrentVehicle.engine ? `
+                                <div class="col-6">
+                                    <span class="text-muted">Engine:</span><br>
+                                    <strong>${quoteCurrentVehicle.engine}</strong>
+                                </div>
+                                ` : ''}
+                                <div class="col-6">
+                                    <span class="text-muted">Reg:</span><br>
+                                    <strong>${quoteCurrentVehicle.registration_number || 'N/A'}</strong>
+                                </div>
+                                ${quoteCurrentVehicle.mileage ? `
+                                <div class="col-6">
+                                    <span class="text-muted">Mileage:</span><br>
+                                    <strong>${quoteCurrentVehicle.mileage} km</strong>
+                                </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                    $('#vehicleInfo').html(html).show();
+                }
+            } else {
+                quoteCurrentVehicle = null;
+                $('#vehicleInfo').hide();
+            }
+        };
+        
+        // Show Add Vehicle Modal
+        window.showAddQuoteVehicleModal = function() {
+            if (!quoteCurrentCustomer) {
+                toastr.error('Please select a customer first');
+                return;
+            }
+            
+            // Open POS add vehicle modal (we'll create this)
+            const addVehicleModal = new bootstrap.Modal(document.getElementById('addQuoteVehicleModal'), {
+                backdrop: false,
+                keyboard: true
+            });
+            addVehicleModal.show();
+        };
     });
 </script>
 
@@ -1653,7 +2010,7 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-warning" style="border-width: 3px;">
             <form id="quickAddProductForm">
-                <?php echo csrf_field(); ?>
+                @csrf
                 <div class="modal-header bg-warning-transparent">
                     <h5 class="modal-title">
                         <i class="ri-flashlight-line text-warning me-2"></i>⚡ Quick Add Product
@@ -1726,7 +2083,7 @@
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-success" style="border-width: 3px;">
             <form id="addCustomerForm">
-                <?php echo csrf_field(); ?>
+                @csrf
                 <div class="modal-header bg-success-transparent">
                     <h5 class="modal-title">
                         <i class="ri-user-add-line text-success me-2"></i>⚡ Quick 
@@ -1783,7 +2140,104 @@
     </div>
 </div>
 
-<?php $__env->startPush('styles'); ?>
+<!-- Add Vehicle Modal (Same as POS) -->
+<div class="modal fade" id="addQuoteVehicleModal" tabindex="-1" data-bs-backdrop="false" data-bs-keyboard="true" style="z-index: 1070;">
+    <div class="modal-dialog">
+        <div class="modal-content border-primary" style="border-width: 3px;">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="ri-car-line me-2"></i>Add New Vehicle</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addQuoteVehicleForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Registration Number <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="newQuoteVehicleReg" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Make <span class="text-danger">*</span></label>
+                        <select class="form-select" id="newQuoteVehicleMake" required>
+                            <option value="">Select Make</option>
+                            @foreach($makes as $make)
+                                <option value="{{ $make->id }}">{{ $make->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Model <span class="text-danger">*</span></label>
+                        <select class="form-select" id="newQuoteVehicleModel" required>
+                            <option value="">Select Model</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Engine (Optional)</label>
+                        <input type="text" class="form-control" id="newQuoteVehicleEngine" placeholder="e.g., 2.0L Turbo">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">VIN Number (Optional)</label>
+                        <input type="text" class="form-control" id="newQuoteVehicleVin">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Mileage (Optional)</label>
+                        <input type="number" class="form-control" id="newQuoteVehicleMileage" placeholder="km">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="ri-save-line me-1"></i>Save Vehicle
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Load models when make is selected (for add vehicle modal)
+$('#newQuoteVehicleMake').on('change', function() {
+    const makeId = $(this).val();
+    if (makeId) {
+        const url = "{{ route('api.vehicle-makes.models', ':makeId') }}".replace(':makeId', makeId);
+        $.get(url, function(models) {
+            let html = '<option value="">Select Model</option>';
+            models.forEach(model => {
+                html += `<option value="${model.id}">${model.name}</option>`;
+            });
+            $('#newQuoteVehicleModel').html(html);
+        });
+    }
+});
+
+// Add Vehicle Form Submit (Same as POS)
+$('#addQuoteVehicleForm').on('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = {
+        customer_id: quoteCurrentCustomer,
+        registration_number: $('#newQuoteVehicleReg').val(),
+        make_id: $('#newQuoteVehicleMake').val(),
+        model_id: $('#newQuoteVehicleModel').val(),
+        engine: $('#newQuoteVehicleEngine').val(),
+        vin_number: $('#newQuoteVehicleVin').val(),
+        mileage: $('#newQuoteVehicleMileage').val(),
+        _token: '{{ csrf_token() }}'
+    };
+    
+    $.post('/vehicles', formData, function(response) {
+        if (response.success) {
+            toastr.success('Vehicle added successfully');
+            $('#addQuoteVehicleModal .btn-close').click();
+            $('#addQuoteVehicleForm')[0].reset();
+            loadQuoteCustomerVehicles(quoteCurrentCustomer);
+        }
+    }).fail(function(xhr) {
+        toastr.error(xhr.responseJSON?.message || 'Error adding vehicle');
+    });
+});
+</script>
+
+@push('styles')
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <style>
         /* Fix Select2 in input-group to work properly with button */
@@ -1829,7 +2283,7 @@
             transform: scale(1.05);
         }
     </style>
-<?php $__env->stopPush(); ?>
+@endpush
 
 <!-- Quote Preview Modal -->
 <div class="modal fade" id="quotePreviewModal" tabindex="-1" aria-hidden="true">
@@ -1853,7 +2307,7 @@
     </div>
 </div>
 
-<?php $__env->startPush('scripts'); ?>
+@push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
         $(document).ready(function() {
@@ -1882,5 +2336,4 @@
             });
         });
     </script>
-<?php $__env->stopPush(); ?>
-<?php /**PATH C:\xampp\htdocs\MMP\resources\views/quotes/partials/create_modal.blade.php ENDPATH**/ ?>
+@endpush

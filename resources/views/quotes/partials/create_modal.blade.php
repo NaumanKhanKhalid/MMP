@@ -6,107 +6,242 @@
         </h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
     </div>
-    <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+    <div class="modal-body p-0" style="max-height: 80vh; overflow: hidden;">
+        <div class="row g-0" style="height: 80vh;">
 
-        <!-- Customer & Vehicle Info - Combined in One Card -->
-        <div class="card mb-3">
-            <div class="card-header bg-primary-transparent py-2">
-                <div class="row align-items-center">
-                    <div class="col-md-6">
+            <!-- Customer Column (Will show on RIGHT via order-2) -->
+            <div class="col-md-5 order-2" style="background: #f8f9fa; overflow-y: auto; height: 100%;">
+                <div class="p-3">
+
+                    <!-- Customer Section -->
+                    <div class="card mb-3 shadow-sm">
+                        <div class="card-header py-2">
                         <h6 class="card-title mb-0">
-                            <i class="ri-user-line me-2"></i>Customer Info
+                                <i class="ri-user-line me-2"></i>Customer & Vehicle
                         </h6>
-                    </div>
-                    <div class="col-md-6 text-end">
-                        <h6 class="card-title mb-0">
-                            <i class="ri-car-line me-2"></i>Vehicle Info <small class="text-muted">(Optional)</small>
-                        </h6>
-                    </div>
-                </div>
             </div>
             <div class="card-body pb-2">
-                <div class="row">
-                    <!-- LEFT SIDE: Customer Fields -->
-                    <div class="col-md-6">
+                            <!-- Customer Search (POS Style) -->
                         <div class="mb-2">
-                            <label class="form-label fw-semibold mb-1 small">Customer <span
-                                    class="text-danger">*</span></label>
-                            <select name="customer_id" id="customerSelect" class="form-select form-select-sm" required>
-                                <option value="">-- Select Customer --</option>
-                                <option value="add_new" class="text-success fw-bold" style="background-color: #e8f5e9;">
-                                    ➕ Add New Customer
-                                </option>
-                                @foreach ($customers as $customer)
-                                    <option value="{{ $customer->id }}" data-name="{{ $customer->name }}"
-                                        data-email="{{ $customer->email }}" data-phone="{{ $customer->phone }}"
-                                        data-address="{{ $customer->address }}"
-                                        data-price-tier="{{ $customer->price_tier ?? 'normal' }}">
-                                        {{ $customer->name }} - {{ $customer->email }}
-                                    </option>
-                                @endforeach
-                            </select>
+                                <label class="form-label fw-semibold mb-1 small">
+                                    <i class="ri-user-line me-1"></i>Customer
+                                </label>
+                                <div class="input-group input-group-sm">
+                                    <input type="text" class="form-control" id="quoteCustomerSearch"
+                                        placeholder="Search by name, phone, email..." autocomplete="off">
+                                    <button class="btn btn-warning" type="button" id="quoteClearCustomerBtn"
+                                        style="display: none;" title="Switch to Walk-in">
+                                        <i class="ri-close-line"></i>
+                                    </button>
+                                    <button class="btn btn-success" type="button" onclick="openAddCustomerModal()"
+                                        title="Add Customer">
+                                        <i class="ri-user-add-line"></i>
+                                    </button>
+                                </div>
+                                <div id="quoteCustomerSearchResults" class="list-group mt-2 shadow-sm"
+                                    style="display: none; max-height: 200px; overflow-y: auto; position: absolute; z-index: 1050; width: calc(50% - 30px);">
+                                </div>
+                                <small class="text-muted d-block mt-1">
+                                    <i class="ri-information-line"></i> Leave empty for Walk-in Customer
+                                </small>
                         </div>
 
-                        <!-- Customer Details Display (for selected customer) -->
-                        <div id="customerDetails" class="alert alert-light py-2 mb-0 mt-2" style="display: none;">
-                            <div class="small">
-                                <div class="mb-1"><i class="ri-mail-line me-1 text-primary"></i><span
-                                        id="customerEmail"></span></div>
-                                <div class="mb-1"><i class="ri-phone-line me-1 text-success"></i><span
-                                        id="customerPhone"></span></div>
-                                <div class="mb-1"><i class="ri-map-pin-line me-1 text-danger"></i><span
-                                        id="customerAddress"></span></div>
-                                <div><i class="ri-price-tag-3-line me-1 text-info"></i><span
-                                        class="badge bg-info-transparent" id="customerPriceTier"></span></div>
+                            <!-- Selected Customer Info -->
+                            <div id="quoteCustomerInfo" class="card  shadow-sm mb-2"
+                                style="display: none;">
+                                <div class="card-body p-2">
+                                    <div class="d-flex align-items-center">
+                                        <i class="ri-user-fill fs-4 me-2 text-primary"></i>
+                                        <div class="flex-grow-1">
+                                            <p class="fw-bold mb-0" id="quoteSelectedCustomerName"></p>
+                                            <p class="fs-11 text-muted mb-0">
+                                                <span id="quoteSelectedCustomerContact"></span>
+                                            </p>
+                                            <span class="badge badge-sm" id="quoteSelectedCustomerType"></span>
+                                        </div>
+                                    </div>
                             </div>
                         </div>
 
-                        <div class="row mt-2">
-                            <div class="col-6 mb-2">
-                                <label class="form-label mb-1 small">Valid Until</label>
-                                <input type="date" name="valid_until" class="form-control form-control-sm"
-                                    value="{{ date('Y-m-d', strtotime('+30 days')) }}">
+                            <!-- Walk-in Customer Form (POS Style) -->
+                            <div id="quoteWalkInCustomerForm" class="mb-2">
+                                <div class="card  shadow-sm">
+                                    <div class="card-body p-2">
+                                        <h6 class="card-title mb-2 small">
+                                            <i class="ri-walk-line me-1"></i>
+                                            <strong class="text-info">Walk-in Customer</strong>
+                                        </h6>
+                                        <div class="row g-2">
+                                            <div class="col-6">
+                                                <label class="form-label small mb-1">Name (Optional)</label>
+                                                <input type="text" class="form-control form-control-sm"
+                                                    id="quoteWalkInName" name="customer_name"
+                                                    placeholder="Enter name...">
                             </div>
-                            <div class="col-6 mb-2">
-                                <label class="form-label mb-1 small">Status</label>
-                                <select name="status" class="form-select form-select-sm">
-                                    <option value="draft">Draft</option>
-                                    <option value="sent">Sent</option>
+                                            <div class="col-6">
+                                                <label class="form-label small mb-1">
+                                                    Phone <span class="text-danger">*</span>
+                                                    <small class="text-muted">(Required if no email)</small>
+                                                </label>
+                                                <input type="text" class="form-control form-control-sm"
+                                                    id="quoteWalkInPhone" name="customer_phone"
+                                                    placeholder="Enter phone...">
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="form-label small mb-1">
+                                                    Email <span class="text-danger">*</span>
+                                                    <small class="text-muted">(Required if no phone)</small>
+                                                </label>
+                                                <input type="email" class="form-control form-control-sm"
+                                                    id="quoteWalkInEmail" name="customer_email" 
+                                                    placeholder="Enter email...">
+                                                <small class="text-warning">
+                                                    <i class="ri-information-line me-1"></i>
+                                                    Please provide either email or phone number
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Hidden field for selected customer ID -->
+                            <input type="hidden" name="customer_id" id="quoteCustomerId" value="">
+
+                            <!-- Registered Customer Vehicle Selection -->
+                            <div id="vehicleSection" style="display: none;">
+                                <label class="form-label fw-semibold mb-1 small">
+                                    <i class="ri-car-line me-1"></i>Vehicle
+                                </label>
+                                <div class="input-group input-group-sm mb-2">
+                                    <select class="form-select form-select-sm" id="vehicleSelect" name="vehicle_id"
+                                        onchange="selectQuoteVehicle()">
+                                        <option value="">Select Vehicle</option>
                                 </select>
+                                    <button type="button" class="btn btn-success btn-sm"
+                                        onclick="showAddQuoteVehicleModal()" title="Add Vehicle">
+                                        <i class="ri-add-line"></i>
+                                    </button>
                             </div>
+                                <div id="vehicleInfo" style="display: none;">
+                                    <!-- Vehicle details shown here -->
                         </div>
                     </div>
 
-                    <!-- RIGHT SIDE: Vehicle Selection (POS Style) -->
-                    <div class="col-md-6">
-                        <div id="vehicleSection" style="display: none;">
-                            <label class="form-label fw-semibold mb-1 small">
-                                <i class="ri-car-line me-1"></i>Vehicle
-                            </label>
-                            <div class="input-group input-group-sm mb-2">
-                                <select class="form-select form-select-sm" id="vehicleSelect" name="vehicle_id" onchange="selectQuoteVehicle()">
-                                    <option value="">Select Vehicle</option>
+                            <!-- Walk-in Customer Vehicle (Manual Entry) -->
+                            <div id="quoteWalkInVehicleForm" class="mb-2">
+                                <label class="form-label fw-semibold mb-1 small">
+                                    <i class="ri-car-line me-1"></i>Vehicle Info <small
+                                        class="text-muted">(Optional)</small>
+                                </label>
+                                <div class="card  shadow-sm">
+                                    <div class="card-body p-2">
+                                        <div class="row g-2">
+                                            <div class="col-12">
+                                                <label class="form-label small mb-1 fw-semibold">
+                                                    <i class="ri-road-map-line text-danger me-1"></i>Registration
+                                                </label>
+                                                <input type="text" class="form-control form-control-sm shadow-sm"
+                                                    name="vehicle_reg" placeholder="e.g., ABC123GP">
+                                            </div>
+                                            <div class="col-6">
+                                                <label class="form-label small mb-1 fw-semibold">
+                                                    <i class="ri-car-line text-primary me-1"></i>Make
+                                                </label>
+                                                <select class="form-select form-select-sm select2-walk-in-make"
+                                                    id="quoteWalkInVehicleMake" name="vehicle_make_id">
+                                    <option value="">Select Make</option>
+                                    @foreach ($makes as $make)
+                                                        <option value="{{ $make->id }}">{{ $make->name }}
+                                                        </option>
+                                    @endforeach
                                 </select>
-                                <button type="button" class="btn btn-success btn-sm" onclick="showAddQuoteVehicleModal()" title="Add Vehicle">
-                                    <i class="ri-add-line"></i>
-                                </button>
                             </div>
-                            <div id="vehicleInfo" style="display: none;">
-                                <!-- Vehicle details shown here (POS style) -->
+                                            <div class="col-6">
+                                                <label class="form-label small mb-1 fw-semibold">
+                                                    <i class="ri-car-line text-success me-1"></i>Model
+                                                </label>
+                                                <select class="form-select form-select-sm select2-walk-in-model"
+                                                    id="quoteWalkInVehicleModel" name="vehicle_model_id">
+                                    <option value="">Select Model</option>
+                                </select>
                             </div>
-                        </div>
-                        <div id="noVehicleMessage" class="alert alert-light py-2 mb-0" style="display: none;">
-                            <small class="text-muted">
-                                <i class="ri-car-line me-1"></i>Vehicle info optional - Select customer to load vehicles
-                            </small>
+                                            <div class="col-6">
+                                                <label class="form-label small mb-1 fw-semibold">
+                                                    <i class="ri-calendar-line text-info me-1"></i>Year
+                                                </label>
+                                                <select class="form-select form-select-sm select2-walk-in-year"
+                                                    id="quoteWalkInVehicleYear" name="vehicle_year">
+                                                    <option value="">Select Year</option>
+                                                    @for ($year = date('Y') + 1; $year >= 1980; $year--)
+                                                        <option value="{{ $year }}">{{ $year }}
+                                                        </option>
+                                                    @endfor
+                                </select>
+                            </div>
+                                            <div class="col-6">
+                                                <label class="form-label small mb-1 fw-semibold">
+                                                    <i class="ri-settings-3-line text-warning me-1"></i>Engine
+                                                </label>
+                                                <input type="text" class="form-control form-control-sm shadow-sm"
+                                                    name="vehicle_engine" placeholder="e.g., 2.0L Turbo">
+                            </div>
+                                           
+                                            <div class="col-6">
+                                                <label class="form-label small mb-1 fw-semibold">
+                                                    <i class="ri-speed-line text-warning me-1"></i>Mileage
+                                                </label>
+                                                <input type="number" class="form-control form-control-sm shadow-sm"
+                                                    name="vehicle_mileage" placeholder="km">
+                            </div>
+                                            <div class="col-6">
+                                                <label class="form-label small mb-1 fw-semibold">
+                                                    <i class="ri-barcode-line text-secondary me-1"></i>VIN
+                                                </label>
+                                                <input type="text" class="form-control form-control-sm shadow-sm"
+                                                    name="vehicle_vin" placeholder="Optional">
+                            </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
+                    <!-- Quote Details -->
+                    <div class="card mb-3 shadow-sm">
+                        <div class="card-header bg-info text-white py-2">
+                            <h6 class="card-title mb-0">
+                                <i class="ri-file-list-line me-2"></i>Quote Details
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <label class="form-label small mb-1">Valid Until</label>
+                                    <input type="date" name="valid_until" class="form-control form-control-sm"
+                                        value="{{ date('Y-m-d', strtotime('+30 days')) }}">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small mb-1">Status</label>
+                                    <select name="status" class="form-select form-select-sm">
+                                        <option value="draft">Draft</option>
+                                        <option value="sent">Sent</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Products Column (Will show on LEFT via order-1) -->
+            <div class="col-md-7 order-1 border-end" style="background: white; overflow-y: auto; height: 100%;">
+                <div class="p-3">
+
         <!-- Products & Items Section -->
-        <div class="card mb-3">
+                    <div class="card mb-3 shadow-sm">
             <div class="card-header bg-success-transparent py-2">
                 <div class="row align-items-center">
                     <div class="col-md-2">
@@ -122,12 +257,12 @@
                             </span>
                             <input type="text" id="productSearch" class="form-control form-control-sm"
                                 placeholder="SKU, Barcode, or Name..." autofocus>
-                            <button type="button" class="btn btn-warning btn-sm" id="quickAddProduct"
+                            {{-- <button type="button" class="btn btn-warning btn-sm" id="quickAddProduct"
                                 title="Quick Add (F2)">
                                 <i class="ri-flashlight-line"></i>
-                            </button>
-                            <button type="button" class="btn btn-outline-secondary btn-sm" id="barcodeScanBtn"
-                                title="Barcode">
+                            </button> --}}
+                                        <button type="button" class="btn btn-outline-secondary btn-sm"
+                                            id="barcodeScanBtn" title="Barcode">
                                 <i class="ri-barcode-line"></i>
                             </button>
                         </div>
@@ -154,7 +289,8 @@
                                 </th>
                                 <th class="border-0 py-2" style="width: 10%;">
                                     Discount
-                                    <i class="ri-information-line text-warning ms-1" data-bs-toggle="tooltip"
+                                                <i class="ri-information-line text-warning ms-1"
+                                                    data-bs-toggle="tooltip"
                                         title="Max {{ auth()->user()->max_discount_allowed ?? 10 }}% per line for your role"></i>
                                 </th>
                                 <th class="border-0 py-2" style="width: 12%;">Total</th>
@@ -180,33 +316,29 @@
                     <p class="text-muted small mb-0">
                         <i class="ri-search-line me-1"></i>Search above to add products
                         <span class="mx-2">|</span>
-                        <i class="ri-flashlight-line me-1"></i>Press <kbd>F2</kbd> for Quick Add
+                        {{-- <i class="ri-flashlight-line me-1"></i>Press <kbd>F2</kbd> for Quick Add --}}
                     </p>
                 </div>
             </div>
         </div>
 
-        <!-- Totals & Calculations Section - Compact -->
-        <div class="card mb-2">
-            <div class="card-header bg-warning-transparent py-2">
-                <div class="row align-items-center">
-                    <div class="col-md-6">
+                    <!-- Totals & Calculations Section (POS Style - Bottom of Right Column) -->
+                    <div class="card shadow-sm " style="position: sticky; bottom: 0; z-index: 10;">
+                        <div class="card-header py-2">
+                            <div class="d-flex align-items-center justify-content-between">
                         <h6 class="card-title mb-0">
                             <i class="ri-calculator-line me-2"></i>Quote Totals
                         </h6>
-                    </div>
-                    <div class="col-md-6 text-end">
-                        <h5 class="mb-0 text-primary" id="grandTotalDisplay">R 0.00</h5>
+                                <h4 class="mb-0" id="grandTotalDisplay">R 0.00</h4>
                         <input type="hidden" name="grand_total" id="grandTotal" value="0.00">
                     </div>
                 </div>
-            </div>
-            <div class="card-body py-2">
+                        <div class="card-body py-2 bg-light">
                 <div class="row">
                     <div class="col-md-3 mb-2">
                         <label class="form-label mb-1 small">Subtotal</label>
                         <input type="number" name="subtotal" id="subtotal"
-                            class="form-control form-control-sm bg-light" value="0.00" step="0.01" readonly>
+                                        class="form-control form-control-sm bg-light" value="1"                                        readonly>
                     </div>
                     <div class="col-md-3 mb-2">
                         <label class="form-label mb-1 small">
@@ -215,13 +347,13 @@
                                 title="Additional discount on entire quote"></i>
                         </label>
                         <input type="number" name="total_discount" id="totalDiscount"
-                            class="form-control form-control-sm" value="0.00" step="0.01" min="0"
-                            max="999999.99">
+                                        class="form-control form-control-sm" value="0.00" step="0.01"
+                                        min="0" max="999999.99">
                     </div>
                     <div class="col-md-2 mb-2">
                         <label class="form-label mb-1 small">Shipping</label>
-                        <input type="number" name="shipping" id="shipping" class="form-control form-control-sm"
-                            value="0.00" step="0.01">
+                                    <input type="number" name="shipping" id="shipping"
+                                        class="form-control form-control-sm" value="0.00" step="0.01">
                     </div>
                     <div class="col-md-4 mb-2">
                         <label class="form-label mb-1 small">
@@ -231,11 +363,12 @@
                         </label>
                         <div class="input-group input-group-sm">
                             <div class="input-group-text">
-                                <input type="checkbox" name="vat_enabled" id="vatEnabled" class="form-check-input"
+                                            <input type="checkbox" name="vat_enabled" id="vatEnabled"
+                                                class="form-check-input"
                                     {{ $vatSettings['enabled'] ? 'checked' : '' }}>
                             </div>
-                            <input type="number" name="vat_amount" id="vatAmount" class="form-control bg-light"
-                                value="0.00" step="0.01" readonly>
+                                        <input type="number" name="vat_amount" id="vatAmount"
+                                            class="form-control bg-light" value="0.00" step="0.01" readonly>
                             <input type="hidden" id="vatRate" value="{{ $vatSettings['rate'] }}">
                             <input type="hidden" id="vatInclusive"
                                 value="{{ $vatSettings['inclusive'] ? '1' : '0' }}">
@@ -245,12 +378,17 @@
                 </div>
             </div>
         </div>
-    </div>
-
-
 
     </div>
-    <div class="modal-footer py-2">
+            </div>
+            <!-- End Right Column -->
+
+    </div>
+        <!-- End Row -->
+    </div>
+    <!-- End Modal Body -->
+
+    <div class="modal-footer py-2 bg-light border-top">
         <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">
             <i class="ri-close-line"></i> Cancel
         </button>
@@ -268,15 +406,71 @@
         let quoteItemIndex = 0;
         let searchTimeout;
 
-        // Initialize Select2 for customer dropdown
-        $('#customerSelect').select2({
-            placeholder: 'Select Customer',
+        // POS-Style Customer Search
+        let quoteCustomerSearchTimeout;
+        let quoteSelectedCustomer = null;
+        let quoteCustomers = []; // Local customers array (same as POS)
+
+        // Show walk-in form by default
+        $('#quoteWalkInCustomerForm').show();
+        $('#quoteWalkInVehicleForm').show();
+        $('#quoteCustomerInfo').hide();
+        $('#vehicleSection').hide();
+
+        // Load customers on page load (same as POS)
+        loadQuoteCustomers();
+
+        // Initialize Select2 for Walk-in Vehicle Fields (POS Style)
+        function initWalkInVehicleSelect2() {
+            $('.select2-walk-in-make').select2({
+                placeholder: 'Select Make',
             allowClear: true,
-            dropdownParent: $('#quoteModal')
+                dropdownParent: $('#quoteModal'),
+                width: '100%'
+            });
+
+            $('.select2-walk-in-model').select2({
+                placeholder: 'Select Model',
+                allowClear: true,
+                dropdownParent: $('#quoteModal'),
+                width: '100%'
+            });
+
+            $('.select2-walk-in-year').select2({
+                placeholder: 'Select Year',
+                allowClear: true,
+                dropdownParent: $('#quoteModal'),
+                width: '100%'
+            });
+        }
+
+        // Initialize after modal opens
+        setTimeout(function() {
+            initWalkInVehicleSelect2();
+        }, 200);
+
+        // Walk-in Vehicle: Cascading Make → Model
+        $('#quoteWalkInVehicleMake').on('change', function() {
+            const makeId = $(this).val();
+            const modelSelect = $('#quoteWalkInVehicleModel');
+
+            if (makeId) {
+                const url = "{{ route('api.vehicle-makes.models', ':makeId') }}".replace(':makeId',
+                    makeId);
+                $.get(url, function(models) {
+                    let html = '<option value="">Select Model</option>';
+                    models.forEach(model => {
+                        html += `<option value="${model.id}">${model.name}</option>`;
+                    });
+                    modelSelect.html(html).trigger('change'); // Trigger to update Select2
+                });
+            } else {
+                modelSelect.html('<option value="">Select Model</option>').trigger('change');
+            }
         });
 
         // Handle "Add New Customer" option selection
-        function openAddCustomerModal() {
+        window.openAddCustomerModal = function() {
             const addCustomerModal = new bootstrap.Modal(document.getElementById('addCustomerModal'), {
                 backdrop: false,
                 keyboard: true
@@ -287,7 +481,7 @@
             setTimeout(function() {
                 $('#customerName').focus();
             }, 300);
-        }
+        };
 
         // Close customer modal when clicking outside
         $(document).on('click', function(e) {
@@ -341,22 +535,17 @@
                     if (response.success) {
                         toastr.success('Customer created successfully!');
 
-                        // Add new customer to dropdown
-                        const newOption = new Option(
-                            response.customer.name + ' - ' + response.customer.email,
-                            response.customer.id,
-                            true,
-                            true
-                        );
+                        // Auto-select the new customer (POS style)
+                        const customer = {
+                            id: response.customer.id,
+                            name: response.customer.name,
+                            email: response.customer.email,
+                            phone: response.customer.phone,
+                            terms: response.customer.terms || 'cash',
+                            price_tier: response.customer.price_tier || 'normal'
+                        };
 
-                        // Set data attributes
-                        $(newOption).attr('data-name', response.customer.name);
-                        $(newOption).attr('data-email', response.customer.email);
-                        $(newOption).attr('data-phone', response.customer.phone);
-                        $(newOption).attr('data-address', response.customer.address);
-                        $(newOption).attr('data-price-tier', response.customer.price_tier);
-
-                        $('#customerSelect').append(newOption).trigger('change');
+                        selectQuoteCustomer(customer);
 
                         // Close modal and reset form
                         const addCustomerModal = bootstrap.Modal.getInstance(document
@@ -381,62 +570,194 @@
             });
         });
 
-        // Customer selection handler
-        $('#customerSelect').on('change', function() {
-            const selectedOption = $(this).find('option:selected');
-            const customerId = selectedOption.val();
+        // Customer Search Input Handler (POS Style)
+        $('#quoteCustomerSearch').on('input', function() {
+            const searchTerm = $(this).val().trim();
 
-            // Check if "Add New Customer" was selected
-            if (customerId === 'add_new') {
-                // Open add customer modal
-                openAddCustomerModal();
+            clearTimeout(quoteCustomerSearchTimeout);
 
-                // Reset select to empty
-                $(this).val('').trigger('change.select2');
+            if (searchTerm.length === 0) {
+                // Walk-in customer (no customer selected)
+                $('#quoteCustomerSearchResults').hide();
+                $('#quoteClearCustomerBtn').hide();
+                $('#quoteCustomerInfo').hide();
+                $('#quoteWalkInCustomerForm').show();
+                $('#quoteWalkInVehicleForm').show(); // Show walk-in vehicle form
+                $('#vehicleSection').hide(); // Hide registered customer vehicle section
+                $('#quoteCustomerId').val('');
+                quoteSelectedCustomer = null;
+                $('#priceTierIndicator').text('(Normal)');
                 return;
             }
 
-            if (customerId && customerId !== '') {
-                // Customer selected - show details
-                $('#customerEmail').text(selectedOption.data('email'));
-                $('#customerPhone').text(selectedOption.data('phone'));
-                $('#customerAddress').text(selectedOption.data('address'));
-                $('#customerPriceTier').text(selectedOption.data('price-tier'));
-                $('#customerDetails').show();
+            if (searchTerm.length < 2) {
+                $('#quoteCustomerSearchResults').hide();
+                return;
+            }
 
-                // Update price tier indicator
-                $('#priceTierIndicator').text('(' + selectedOption.data('price-tier') + ')');
+            quoteCustomerSearchTimeout = setTimeout(() => {
+                searchQuoteCustomers(searchTerm);
+            }, 300);
+        });
 
-                // Update prices for existing items based on new customer's price tier
-                updatePricesForCustomerTier(selectedOption.data('price-tier'));
-                
-                // Load customer vehicles (POS style)
-                loadQuoteCustomerVehicles(customerId);
-            } else {
-                // No customer selected - hide details
-                $('#customerDetails').hide();
-                $('#vehicleSection').hide();
-                $('#noVehicleMessage').hide();
+        // Load Customers (Same as POS)
+        function loadQuoteCustomers() {
+            fetch('{{ route('pos.customers') }}')
+                .then(response => response.json())
+                .then(data => {
+                    quoteCustomers = data;
+                    console.log('Loaded ' + quoteCustomers.length + ' customers for quotation');
+                })
+                .catch(error => {
+                    console.error('Error loading customers:', error);
+                });
+        }
 
-                // Reset price tier to normal
+        // Search Customers Function (Local Search - Same as POS)
+        function searchQuoteCustomers(searchTerm) {
+            const searchLower = searchTerm.toLowerCase();
+
+            // Filter customers locally (faster than API)
+            const results = quoteCustomers.filter(customer => {
+                return customer.name.toLowerCase().includes(searchLower) ||
+                    (customer.customer_code && customer.customer_code.toLowerCase().includes(
+                        searchLower)) ||
+                    (customer.phone && customer.phone.includes(searchTerm)) ||
+                    (customer.email && customer.email.toLowerCase().includes(searchLower));
+            });
+
+            displayQuoteCustomerResults(results);
+        }
+
+        // Display Customer Results
+        function displayQuoteCustomerResults(results) {
+            const resultsDiv = $('#quoteCustomerSearchResults');
+
+            if (results.length === 0) {
+                resultsDiv.html('<div class="list-group-item text-muted small">No customers found</div>')
+                    .show();
+                return;
+            }
+
+            let html = '';
+            results.forEach(customer => {
+                const termsLabel = customer.terms === 'credit' ?
+                    '<span class="badge bg-warning-transparent text-warning ms-1">Credit</span>' :
+                    '<span class="badge bg-success-transparent text-success ms-1">Cash</span>';
+
+                html += `
+                    <a href="javascript:void(0)" class="list-group-item list-group-item-action quote-customer-result" 
+                       data-id="${customer.id}"
+                       data-name="${customer.name}"
+                       data-email="${customer.email || ''}"
+                       data-phone="${customer.phone || ''}"
+                       data-terms="${customer.terms}"
+                       data-price-tier="${customer.price_tier || 'normal'}">
+                        <div class="d-flex align-items-center">
+                            <i class="ri-user-line me-2 text-primary"></i>
+                            <div class="flex-grow-1">
+                                <div class="fw-bold small">${customer.name} ${termsLabel}</div>
+                                <div class="text-muted" style="font-size: 11px;">
+                                    ${customer.phone || ''} ${customer.email ? '• ' + customer.email : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </a>
+                `;
+            });
+
+            resultsDiv.html(html).show();
+        }
+
+        // Select Customer from Search Results
+        $(document).on('click', '.quote-customer-result', function() {
+            const customer = {
+                id: $(this).data('id'),
+                name: $(this).data('name'),
+                email: $(this).data('email'),
+                phone: $(this).data('phone'),
+                terms: $(this).data('terms'),
+                price_tier: $(this).data('price-tier')
+            };
+
+            selectQuoteCustomer(customer);
+        });
+
+        // Select Customer Function
+        function selectQuoteCustomer(customer) {
+            quoteSelectedCustomer = customer;
+
+            // Update UI
+            $('#quoteCustomerSearch').val(customer.name);
+            $('#quoteCustomerSearchResults').hide();
+            $('#quoteClearCustomerBtn').show();
+            $('#quoteCustomerId').val(customer.id);
+
+            // Hide walk-in forms, show customer info
+            $('#quoteWalkInCustomerForm').hide();
+            $('#quoteWalkInVehicleForm').hide(); // Hide walk-in vehicle form
+            $('#quoteCustomerInfo').show();
+
+            // Display customer details
+            $('#quoteSelectedCustomerName').text(customer.name);
+            $('#quoteSelectedCustomerContact').text(
+                (customer.phone || '') + (customer.phone && customer.email ? ' • ' : '') + (customer
+                    .email || '')
+            );
+
+            // Customer type badge
+            const typeHtml = customer.terms === 'credit' ?
+                '<span class="badge bg-warning">Credit Customer</span>' :
+                '<span class="badge bg-success">Cash Customer</span>';
+            $('#quoteSelectedCustomerType').html(typeHtml);
+
+            // Update price tier
+            $('#priceTierIndicator').text(`(${customer.price_tier || 'normal'})`);
+            updatePricesForCustomerTier(customer.price_tier || 'normal');
+
+            // Load customer vehicles (registered customer)
+            loadQuoteCustomerVehicles(customer.id);
+        }
+
+        // Clear Customer (Back to Walk-in)
+        $('#quoteClearCustomerBtn').on('click', function() {
+            $('#quoteCustomerSearch').val('');
+            $('#quoteClearCustomerBtn').hide();
+            $('#quoteCustomerInfo').hide();
+            $('#quoteWalkInCustomerForm').show();
+            $('#quoteWalkInVehicleForm').show(); // Show walk-in vehicle form
+            $('#vehicleSection').hide(); // Hide registered customer vehicle section
+            $('#quoteCustomerId').val('');
+            $('#quoteCustomerSearchResults').hide();
+            quoteSelectedCustomer = null;
                 $('#priceTierIndicator').text('(Normal)');
                 updatePricesForCustomerTier('normal');
+        });
+
+        // Hide search results when clicking outside
+        $(document).on('click', function(e) {
+            if (!$(e.target).closest('#quoteCustomerSearch, #quoteCustomerSearchResults').length) {
+                $('#quoteCustomerSearchResults').hide();
             }
         });
 
         // Update prices for all items based on customer price tier
         function updatePricesForCustomerTier(priceTier) {
+            let hasProducts = false;
             $('.unit-price').each(function() {
                 const row = $(this).closest('tr');
                 const productId = row.find('input[name*="[product_id]"]').val();
 
                 if (productId) {
-                    // Get the product data from the search results or make an AJAX call
-                    // For now, we'll show a message to the user
+                    hasProducts = true;
+                }
+            });
+            
+            // Show message only once if there are products
+            if (hasProducts) {
                     toastr.info('Price tier changed to ' + priceTier +
                         '. You may need to update prices manually or re-add products.');
                 }
-            });
         }
 
 
@@ -492,11 +813,16 @@
                 success: function(response) {
                     if (response.products.length > 0) {
                         let html = `
-                            <div class="bg-light px-3 py-2">
-                                <small class="text-muted fw-semibold">
+                            <div class="bg-success-transparent px-3 py-2 border-bottom border-success">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <span class="fw-bold text-success">
                                     <i class="ri-search-line me-1"></i>
                                     ${response.products.length} Result${response.products.length > 1 ? 's' : ''}
+                                    </span>
+                                    <small class="text-muted">
+                                        <i class="ri-information-line"></i> Click to add to quote
                                 </small>
+                                </div>
                             </div>
                         `;
 
@@ -504,74 +830,53 @@
                             let stockBadge;
                             if (product.current_stock > 0) {
                                 stockBadge =
-                                    `<span class="badge bg-success">${product.current_stock} ${product.unit}</span>`;
+                                    `<span class="badge bg-success text-white fw-bold">${product.current_stock} ${product.unit}</span>`;
                             } else if (product.current_stock < 0) {
                                 stockBadge =
-                                    `<span class="badge bg-danger">${product.current_stock} NEG</span>`;
+                                    `<span class="badge bg-danger text-white fw-bold">${product.current_stock} NEG</span>`;
                             } else {
                                 stockBadge =
-                                    `<span class="badge bg-warning text-dark">Out of Stock</span>`;
+                                    `<span class="badge bg-warning text-dark fw-bold">0 OUT</span>`;
                             }
 
                             const priceTier = getPriceTier();
                             const price = product['price_' + priceTier];
 
                             html += `
-                            <div class="product-search-item p-3 mb-2 mx-2 rounded-3 shadow-sm border" data-product='${JSON.stringify(product)}' 
-                                 style="background: linear-gradient(to right, #ffffff 0%, #f8f9fa 100%); transition: all 0.3s ease; cursor: pointer;">
-                                <div class="row align-items-center g-3">
-                                    <div class="col-auto">
-                                        <div style="position: relative;">
-                                            <img src="${product.image_url}" class="rounded-3" 
-                                                 style="width: 70px; height: 70px; object-fit: cover; border: 2px solid #e0e0e0; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" 
+                            <div class="product-search-item add-product-btn p-2 mb-2 rounded-3 shadow-sm border bg-white" data-product='${JSON.stringify(product)}' 
+                                 style="transition: all 0.2s ease; cursor: pointer;">
+                                <div class="d-flex align-items-center gap-2">
+                                    <!-- Image with Stock Badge -->
+                                    <div style="position: relative; flex-shrink: 0;">
+                                        <img src="${product.image_url}" class="rounded-2" 
+                                             style="width: 50px; height: 50px; object-fit: cover; border: 1px solid #dee2e6;" 
                                                  onerror="this.src='/assets/images/pos-system/1.jpg'">
-                                            <div class="position-absolute top-0 end-0 translate-middle">
-                                                ${stockBadge}
+                                        <div class="position-absolute top-0 start-0" style="margin: -6px 0 0 -6px;">
+                                               
                                             </div>
                                         </div>
-                                    </div>
-                                    <div class="col">
-                                        <div class="row align-items-center">
-                                            <div class="col-md-4">
-                                                <h6 class="mb-1 fw-bold text-dark">${product.name}</h6>
-                                                <div class="d-flex align-items-center gap-2 mb-1">
-                                                    <span class="badge bg-light text-dark border">SKU: ${product.sku}</span>
-                                                    ${product.brand ? `<span class="badge bg-primary"><i class="ri-bookmark-fill"></i> ${product.brand}</span>` : ''}
-                                                </div>
-                                            </div>
-                                            <div class="col-md-2 text-center">
-                                                <div class="bg-white rounded-2 p-2 border">
-                                                    <div class="small text-muted mb-1">Price</div>
-                                                    <div class="h5 mb-0 text-success fw-bold">R ${parseFloat(price).toFixed(2)}</div>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <div class="small">
-                                                    ${product.oe_numbers.length > 0 ? `
+                                    
+                                    <!-- Product Details -->
+                                    <div class="flex-grow-1" style="min-width: 0;">
+                                        <div class="fw-bold text-dark mb-1" style="font-size: 14px;">${product.name}</div>
                                                         <div class="mb-1">
-                                                            <span class="badge bg-primary-transparent">
-                                                                <i class="ri-tools-fill"></i> OE: ${product.oe_numbers.slice(0, 2).join(', ')}
-                                                            </span>
-                                                        </div>` : ''}
-                                                    ${product.cross_refs.length > 0 ? `
-                                                        <div>
-                                                            <span class="badge bg-info-transparent">
-                                                                <i class="ri-links-fill"></i> Cross: ${product.cross_refs.slice(0, 2).join(', ')}
-                                                            </span>
-                                                        </div>` : ''}
+                                            <span class="badge bg-light text-dark border small">SKU: ${product.sku}</span>
                                                 </div>
+                                        ${product.supplier ? `<div class="mb-1"><span class="badge bg-info-transparent small"><i class="ri-store-line"></i> Supplier: ${product.supplier}</span></div>` : ''}
+                                        ${product.bin_location ? `<div><span class="badge bg-primary-transparent small"><i class="ri-inbox-line"></i> Bin: ${product.bin_location}</span></div>` : ''}
                                             </div>
-                                            <div class="col-md-2 text-end">
-                                                <button type="button" class="btn btn-success add-product-btn w-100 fw-bold" style="box-shadow: 0 4px 12px rgba(25, 135, 84, 0.3);">
-                                                    <i class="ri-add-circle-fill me-1"></i>Add
-                                                </button>
+                                    
+                                    <!-- Price & Action -->
+                                    <div class="text-end" style="flex-shrink: 0; min-width: 120px;">
+                                        <div class="fw-bold text-primary mb-2" style="font-size: 16px;">R ${parseFloat(price).toFixed(2)}</div>
+                                        
                                                 ${product.current_stock <= 0 && !product.allow_negative ? 
-                                                    '<div class="badge bg-danger w-100 mt-1"><i class="ri-close-circle-fill"></i> Unavailable</div>' : 
+                                            '<div class="badge bg-danger w-100 small">Unavailable</div>' : 
                                                     product.current_stock < 0 ? 
-                                                    '<div class="badge bg-warning text-dark w-100 mt-1"><i class="ri-error-warning-fill"></i> Low Stock</div>' : 
-                                                    '<div class="badge bg-success-transparent w-100 mt-1"><i class="ri-checkbox-circle-fill"></i> Available</div>'}
-                                            </div>
-                                        </div>
+                                            '<div class="badge bg-warning text-dark w-100 small">Low: ' + Math.abs(product.current_stock) + '</div>' : 
+                                            product.current_stock <= 10 ?
+                                            '<div class="badge bg-warning text-dark w-100 small">Low: ' + product.current_stock + '</div>' :
+                                            '<div class="badge bg-success-transparent w-100 small">Available: ' + product.current_stock + '</div>'}
                                     </div>
                                 </div>
                             </div>
@@ -580,17 +885,42 @@
 
                         $('#productSearchResults').html(html).show();
                     } else {
-                        // No results - show create option
+                        // No results - show Quick Add (POS Style)
                         const searchQuery = query;
                         $('#productSearchResults').html(`
-                            <div class="card border-warning">
-                                <div class="card-body text-center py-4">
-                                    <i class="ri-search-line ri-3x text-muted mb-3"></i>
-                                    <h6>No products found matching "${searchQuery}"</h6>
-                                    <p class="text-muted mb-3">Would you like to create this product?</p>
-                                    <button type="button" class="btn btn-warning" id="createProductFromSearch" data-name="${searchQuery}">
-                                        <i class="ri-add-line me-1"></i>Create "${searchQuery}" Now
+                            <div class="p-3 mx-2">
+                                <div class="card border-success shadow-sm">
+                                    <div class="card-body p-3">
+                                        <div class="row g-2 mb-3">
+                                            <div class="col-md-5">
+                                                <label class="form-label small fw-bold mb-1">
+                                                    <i class="ri-product-hunt-line text-primary me-1"></i>Product Name <span class="text-danger">*</span>
+                                                </label>
+                                                <input type="text" class="form-control form-control-sm" id="quickProductName" value="${searchQuery}">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="form-label small fw-bold mb-1">
+                                                    <i class="ri-price-tag-3-line text-success me-1"></i>Price <span class="text-danger">*</span>
+                                                </label>
+                                                <input type="number" class="form-control form-control-sm" id="quickProductPrice" value="0.00" step="0.01">
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label class="form-label small fw-bold mb-1">
+                                                    <i class="ri-stack-line text-warning me-1"></i>Qty <span class="text-danger">*</span>
+                                                </label>
+                                                <input type="number" class="form-control form-control-sm" id="quickProductQty" value="1" min="1">
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="d-flex gap-2">
+                                            <button type="button" class="btn btn-success flex-grow-1" id="quickAddProductBtn">
+                                                <i class="ri-check-line me-1"></i>Create & Add to Quote
+                                            </button>
+                                            <button type="button" class="btn btn-outline-danger" onclick="$('#productSearchResults').hide(); $('#productSearch').val('').focus();">
+                                                <i class="ri-close-line me-1"></i>Cancel
                                     </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         `).show();
@@ -604,13 +934,61 @@
             });
         }
 
+        // Quick Add Product Button (Inline - POS Style)
+        $(document).on('click', '#quickAddProductBtn', function() {
+            const productName = $('#quickProductName').val().trim();
+            const productPrice = parseFloat($('#quickProductPrice').val()) || 0;
+            const productQty = parseInt($('#quickProductQty').val()) || 1;
+
+            if (!productName || productPrice <= 0) {
+                toastr.error('Please enter product name and valid price');
+                return;
+            }
+
+            // Create product via AJAX
+            const formData = {
+                name: productName,
+                price_normal: productPrice,
+                qty: productQty,
+                _token: '{{ csrf_token() }}'
+            };
+
+            $(this).prop('disabled', true).html(
+                '<i class="ri-loader-4-line ri-spin me-1"></i>Creating...');
+
+            $.post('{{ route('products.quickAdd') }}', formData, function(response) {
+                if (response.success) {
+                    toastr.success('Product created & added to quote!');
+
+                    const product = response.product;
+                    const priceTier = getPriceTier();
+                    const unitPrice = product['price_' + priceTier] || product.price_normal;
+
+                    // Add to quote
+                    addQuoteItemRow(
+                        product.id,
+                        product.name,
+                        unitPrice,
+                        product.on_hand || productQty,
+                        0
+                    );
+
+                    // Clear search and hide results
+                    $('#productSearchResults').hide();
+                    $('#productSearch').val('').focus();
+                }
+            }).fail(function(xhr) {
+                toastr.error(xhr.responseJSON?.message || 'Failed to create product');
+                $('#quickAddProductBtn').prop('disabled', false).html(
+                    '<i class="ri-check-line me-1"></i>Create & Add to Quote');
+            });
+        });
+
         // Get current price tier based on customer
         function getPriceTier() {
-            const selectedCustomer = $('#customerSelect option:selected');
-            if (selectedCustomer.val() && selectedCustomer.val() !== '') {
-                return selectedCustomer.data('price-tier') || 'normal';
+            if (quoteSelectedCustomer) {
+                return quoteSelectedCustomer.price_tier || 'normal';
             } else {
-                // Cash Sale / Manual Entry - use normal pricing
                 return 'normal';
             }
         }
@@ -779,15 +1157,15 @@
             let grandTotal = 0;
 
             if (vatEnabled) {
-                if (vatInclusive) {
-                    // VAT Inclusive: The prices already include VAT, so we need to show the VAT breakdown
-                    // For display purposes, we'll show VAT as if it's exclusive (more common business practice)
                     const vatBase = subtotal - totalDiscount + shipping;
-                    vatAmount = vatBase * (vatRate / 100);
-                    grandTotal = vatBase + vatAmount;
+
+                if (vatInclusive) {
+                    // VAT Inclusive: VAT is already in the price
+                    // Extract VAT: VAT = Total × (Rate / (100 + Rate))
+                    vatAmount = vatBase * (vatRate / (100 + vatRate));
+                    grandTotal = vatBase; // Total stays same (VAT already included)
                 } else {
                     // VAT Exclusive: Add VAT on top
-                    const vatBase = subtotal - totalDiscount + shipping;
                     vatAmount = vatBase * (vatRate / 100);
                     grandTotal = vatBase + vatAmount;
                 }
@@ -1462,18 +1840,50 @@
             }
 
             // Get form data
-            const customerSelect = $('#customerSelect');
-            const selectedCustomer = customerSelect.find('option:selected');
-            const customerName = selectedCustomer.data('name') || 'Cash Sale';
-            const customerEmail = selectedCustomer.data('email') || '-';
-            const customerPhone = selectedCustomer.data('phone') || '-';
-            const customerAddress = selectedCustomer.data('address') || '-';
+            const isWalkIn = $('#quoteWalkInName').val();
+            let customerName, customerEmail, customerPhone, customerAddress;
+            
+            if (isWalkIn) {
+                // Walk-in customer
+                customerName = $('#quoteWalkInName').val() || 'Walk-in Customer';
+                customerEmail = $('#quoteWalkInEmail').val() || '-';
+                customerPhone = $('#quoteWalkInPhone').val() || '-';
+                customerAddress = $('#quoteWalkInAddress').val() || '-';
+            } else if (quoteSelectedCustomer) {
+                // Selected customer
+                customerName = quoteSelectedCustomer.name || '-';
+                customerEmail = quoteSelectedCustomer.email || '-';
+                customerPhone = quoteSelectedCustomer.phone || '-';
+                customerAddress = quoteSelectedCustomer.address || '-';
+            } else {
+                customerName = 'Walk-in Customer';
+                customerEmail = '-';
+                customerPhone = '-';
+                customerAddress = '-';
+            }
 
-            // Get vehicle info
-            const vehicleMake = $('select[name="vehicle_make"] option:selected').text() || '-';
-            const vehicleModel = $('select[name="vehicle_model"] option:selected').text() || '-';
-            const vehicleYear = $('input[name="vehicle_year"]').val() || '-';
-            const vehicleReg = $('input[name="vehicle_reg"]').val() || '-';
+            // Get vehicle info (check both walk-in and selected vehicle)
+            let vehicleMake, vehicleModel, vehicleYear, vehicleEngine, vehicleReg, vehicleVin, vehicleMileage;
+            
+            if (quoteCurrentVehicle) {
+                // Selected vehicle from customer
+                vehicleMake = quoteCurrentVehicle.make_name || '-';
+                vehicleModel = quoteCurrentVehicle.model_name || '-';
+                vehicleYear = quoteCurrentVehicle.year || '-';
+                vehicleEngine = quoteCurrentVehicle.engine || '-';
+                vehicleReg = quoteCurrentVehicle.registration_number || '-';
+                vehicleVin = quoteCurrentVehicle.vin_number || '-';
+                vehicleMileage = quoteCurrentVehicle.mileage ? quoteCurrentVehicle.mileage + ' km' : '-';
+            } else {
+                // Walk-in vehicle (manual entry)
+                vehicleMake = $('#quoteWalkInVehicleMake option:selected').text() || '-';
+                vehicleModel = $('#quoteWalkInVehicleModel option:selected').text() || '-';
+                vehicleYear = $('#quoteWalkInVehicleYear').val() || '-';
+                vehicleEngine = $('input[name="vehicle_engine"]').val() || '-';
+                vehicleReg = $('input[name="vehicle_reg"]').val() || '-';
+                vehicleVin = $('input[name="vehicle_vin"]').val() || '-';
+                vehicleMileage = $('input[name="vehicle_mileage"]').val() ? $('input[name="vehicle_mileage"]').val() + ' km' : '-';
+            }
 
             // Get quote items
             let itemsHtml = '';
@@ -1535,10 +1945,12 @@
                             <div class="col-md-6">
                                 <h6 class="text-info mb-2"><i class="ri-car-line me-1"></i>Vehicle Details</h6>
                                 <table class="table table-sm table-borderless">
-                                    <tr><td class="fw-semibold" width="80">Make:</td><td>${vehicleMake}</td></tr>
-                                    <tr><td class="fw-semibold">Model:</td><td>${vehicleModel}</td></tr>
+                                    <tr><td class="fw-semibold" width="110">Registration:</td><td>${vehicleReg}</td></tr>
+                                    <tr><td class="fw-semibold">Make & Model:</td><td>${vehicleMake} ${vehicleModel}</td></tr>
                                     <tr><td class="fw-semibold">Year:</td><td>${vehicleYear}</td></tr>
-                                    <tr><td class="fw-semibold">Reg:</td><td>${vehicleReg}</td></tr>
+                                    ${vehicleEngine !== '-' ? `<tr><td class="fw-semibold">Engine:</td><td>${vehicleEngine}</td></tr>` : ''}
+                                    ${vehicleVin !== '-' ? `<tr><td class="fw-semibold">VIN:</td><td>${vehicleVin}</td></tr>` : ''}
+                                    ${vehicleMileage !== '-' ? `<tr><td class="fw-semibold">Mileage:</td><td>${vehicleMileage}</td></tr>` : ''}
                                 </table>
                             </div>
                         </div>
@@ -1616,17 +2028,24 @@
 
         // Don't initialize with empty row - let user search/add products
         // addQuoteItemRow(); // Commented out - no manual row on load
-        
+
         // POS Style: Vehicle Management Functions
         let quoteCustomerVehicles = [];
         let quoteCurrentVehicle = null;
         let quoteCurrentCustomer = null;
-        
+
         // Load Customer Vehicles (Same as POS)
         function loadQuoteCustomerVehicles(customerId) {
             quoteCurrentCustomer = customerId;
-            
-            fetch(`/api/customers/${customerId}/vehicles`)
+
+            // Clear previous vehicle selection and details
+            quoteCurrentVehicle = null;
+            $('#vehicleSelect').val('');
+            $('#vehicleInfo').hide().html('');
+
+            const url = "{{ route('api.customers.vehicles', ':id') }}".replace(':id', customerId);
+
+            fetch(url)
                 .then(response => response.json())
                 .then(data => {
                     quoteCustomerVehicles = data;
@@ -1634,7 +2053,7 @@
                         $('#vehicleSection').show();
                         $('#noVehicleMessage').hide();
                         populateQuoteVehicleDropdown();
-                        
+
                         // Auto-select primary vehicle if exists
                         const primaryVehicle = data.find(v => v.is_primary);
                         if (primaryVehicle) {
@@ -1642,23 +2061,26 @@
                             selectQuoteVehicle();
                         }
                     } else {
+                        // No vehicles - clear everything and show message
                         $('#vehicleSection').show();
                         $('#noVehicleMessage').hide();
                         $('#vehicleSelect').html('<option value="">No vehicles - Click + to add</option>');
+                        $('#vehicleInfo').hide().html(''); // Clear vehicle details
                     }
                 })
                 .catch(error => {
                     console.error('Error loading vehicles:', error);
                     $('#vehicleSection').show();
                     $('#noVehicleMessage').show();
+                    $('#vehicleInfo').hide().html(''); // Clear on error too
                 });
         }
-        
+
         // Populate Vehicle Dropdown
         function populateQuoteVehicleDropdown() {
             const select = $('#vehicleSelect');
             select.html('<option value="">Select Vehicle</option>');
-            
+
             quoteCustomerVehicles.forEach(vehicle => {
                 select.append(`<option value="${vehicle.id}" 
                     data-make="${vehicle.make_name}" 
@@ -1669,42 +2091,70 @@
                 </option>`);
             });
         }
-        
+
         // Select Vehicle (Show Details)
         window.selectQuoteVehicle = function() {
             const vehicleId = $('#vehicleSelect').val();
-            
+
             if (vehicleId) {
                 quoteCurrentVehicle = quoteCustomerVehicles.find(v => v.id == vehicleId);
-                
+
                 if (quoteCurrentVehicle) {
                     const html = `
-                        <div class="alert alert-light py-2 small mb-0 mt-1">
-                            <div class="row g-1">
-                                <div class="col-6">
-                                    <span class="text-muted">Make:</span><br>
-                                    <strong>${quoteCurrentVehicle.make_name}</strong>
+                        <div class="card  shadow-sm mt-2">
+                            <div class="card-body p-2">
+                                <div class="row g-2">
+                                       <div class="col-12">
+                                        <label class="form-label small mb-1 fw-semibold">
+                                            <i class="ri-road-map-line text-danger me-1"></i>Registration
+                                        </label>
+                                        <input type="text" class="form-control form-control-sm shadow-sm" 
+                                               value="${quoteCurrentVehicle.registration_number || 'N/A'}" disabled>
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label small mb-1 fw-semibold">
+                                            <i class="ri-car-line text-primary me-1"></i>Make
+                                        </label>
+                                        <input type="text" class="form-control form-control-sm shadow-sm" 
+                                               value="${quoteCurrentVehicle.make_name}" disabled>
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label small mb-1 fw-semibold">
+                                            <i class="ri-car-line text-success me-1"></i>Model
+                                        </label>
+                                        <input type="text" class="form-control form-control-sm shadow-sm" 
+                                               value="${quoteCurrentVehicle.model_name}" disabled>
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label small mb-1 fw-semibold">
+                                            <i class="ri-calendar-line text-info me-1"></i>Year
+                                        </label>
+                                        <input type="text" class="form-control form-control-sm shadow-sm" 
+                                               value="${quoteCurrentVehicle.year || 'N/A'}" disabled>
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label small mb-1 fw-semibold">
+                                            <i class="ri-settings-3-line text-warning me-1"></i>Engine
+                                        </label>
+                                        <input type="text" class="form-control form-control-sm shadow-sm" 
+                                               value="${quoteCurrentVehicle.engine || 'N/A'}" disabled>
+                                    </div>
+                                 
+                                    <div class="col-6">
+                                        <label class="form-label small mb-1 fw-semibold">
+                                            <i class="ri-barcode-line text-secondary me-1"></i>VIN
+                                        </label>
+                                        <input type="text" class="form-control form-control-sm shadow-sm" 
+                                               value="${quoteCurrentVehicle.vin_number || 'N/A'}" disabled>
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label small mb-1 fw-semibold">
+                                            <i class="ri-speed-line text-warning me-1"></i>Mileage
+                                        </label>
+                                        <input type="text" class="form-control form-control-sm shadow-sm" 
+                                               value="${quoteCurrentVehicle.mileage ? quoteCurrentVehicle.mileage + ' km' : 'N/A'}" disabled>
+                                    </div>
                                 </div>
-                                <div class="col-6">
-                                    <span class="text-muted">Model:</span><br>
-                                    <strong>${quoteCurrentVehicle.model_name}</strong>
-                                </div>
-                                ${quoteCurrentVehicle.engine ? `
-                                <div class="col-6">
-                                    <span class="text-muted">Engine:</span><br>
-                                    <strong>${quoteCurrentVehicle.engine}</strong>
-                                </div>
-                                ` : ''}
-                                <div class="col-6">
-                                    <span class="text-muted">Reg:</span><br>
-                                    <strong>${quoteCurrentVehicle.registration_number || 'N/A'}</strong>
-                                </div>
-                                ${quoteCurrentVehicle.mileage ? `
-                                <div class="col-6">
-                                    <span class="text-muted">Mileage:</span><br>
-                                    <strong>${quoteCurrentVehicle.mileage} km</strong>
-                                </div>
-                                ` : ''}
                             </div>
                         </div>
                     `;
@@ -1715,14 +2165,14 @@
                 $('#vehicleInfo').hide();
             }
         };
-        
+
         // Show Add Vehicle Modal
         window.showAddQuoteVehicleModal = function() {
             if (!quoteCurrentCustomer) {
                 toastr.error('Please select a customer first');
                 return;
             }
-            
+
             // Open POS add vehicle modal (we'll create this)
             const addVehicleModal = new bootstrap.Modal(document.getElementById('addQuoteVehicleModal'), {
                 backdrop: false,
@@ -1870,45 +2320,82 @@
 </div>
 
 <!-- Add Vehicle Modal (Same as POS) -->
-<div class="modal fade" id="addQuoteVehicleModal" tabindex="-1" data-bs-backdrop="false" data-bs-keyboard="true" style="z-index: 1070;">
+<div class="modal fade" id="addQuoteVehicleModal" tabindex="-1" data-bs-backdrop="false" data-bs-keyboard="true"
+    style="z-index: 1070;">
     <div class="modal-dialog">
-        <div class="modal-content border-primary" style="border-width: 3px;">
+        <div class="modal-content " style="border-width: 3px;">
             <div class="modal-header bg-primary text-white">
                 <h5 class="modal-title"><i class="ri-car-line me-2"></i>Add New Vehicle</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <form id="addQuoteVehicleForm">
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Registration Number <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="newQuoteVehicleReg" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Make <span class="text-danger">*</span></label>
-                        <select class="form-select" id="newQuoteVehicleMake" required>
-                            <option value="">Select Make</option>
-                            @foreach(\App\Models\VehicleMake::orderBy('name')->get() as $make)
-                                <option value="{{ $make->id }}">{{ $make->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Model <span class="text-danger">*</span></label>
-                        <select class="form-select" id="newQuoteVehicleModel" required>
-                            <option value="">Select Model</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Engine (Optional)</label>
-                        <input type="text" class="form-control" id="newQuoteVehicleEngine" placeholder="e.g., 2.0L Turbo">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">VIN Number (Optional)</label>
-                        <input type="text" class="form-control" id="newQuoteVehicleVin">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Mileage (Optional)</label>
-                        <input type="number" class="form-control" id="newQuoteVehicleMileage" placeholder="km">
+                    <div class="row g-2">
+                        <div class="col-12">
+                            <label class="form-label small mb-1 fw-semibold">
+                                <i class="ri-road-map-line text-danger me-1"></i>Registration Number
+                                <span class="text-danger">*</span>
+                            </label>
+                            <input type="text"
+                                class="form-control form-control-sm shadow-sm select2-add-vehicle-reg"
+                                id="newQuoteVehicleReg" placeholder="e.g., ABC123GP" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small mb-1 fw-semibold">
+                                <i class="ri-car-line text-primary me-1"></i>Make
+                                <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select form-select-sm shadow-sm select2-add-vehicle-make"
+                                id="newQuoteVehicleMake" required>
+                                <option value="">Select Make</option>
+                                @foreach ($makes as $make)
+                                    <option value="{{ $make->id }}">{{ $make->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small mb-1 fw-semibold">
+                                <i class="ri-car-line text-success me-1"></i>Model
+                                <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select form-select-sm shadow-sm select2-add-vehicle-model"
+                                id="newQuoteVehicleModel" required>
+                                <option value="">Select Model</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small mb-1 fw-semibold">
+                                <i class="ri-calendar-line text-info me-1"></i>Year
+                            </label>
+                            <select class="form-select form-select-sm shadow-sm select2-add-vehicle-year"
+                                id="newQuoteVehicleYear">
+                                <option value="">Select Year</option>
+                                @for ($year = date('Y') + 1; $year >= 1980; $year--)
+                                    <option value="{{ $year }}">{{ $year }}</option>
+                                @endfor
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small mb-1 fw-semibold">
+                                <i class="ri-settings-3-line text-warning me-1"></i>Engine
+                            </label>
+                            <input type="text" class="form-control form-control-sm shadow-sm"
+                                id="newQuoteVehicleEngine" placeholder="e.g., 2.0L Turbo">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small mb-1 fw-semibold">
+                                <i class="ri-barcode-line text-secondary me-1"></i>VIN Number
+                            </label>
+                            <input type="text" class="form-control form-control-sm shadow-sm"
+                                id="newQuoteVehicleVin" placeholder="Optional">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small mb-1 fw-semibold">
+                                <i class="ri-speed-line text-warning me-1"></i>Mileage
+                            </label>
+                            <input type="number" class="form-control form-control-sm shadow-sm"
+                                id="newQuoteVehicleMileage" placeholder="km">
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -1923,46 +2410,94 @@
 </div>
 
 <script>
-// Load models when make is selected (for add vehicle modal)
-$('#newQuoteVehicleMake').on('change', function() {
-    const makeId = $(this).val();
-    if (makeId) {
-        $.get(`/api/vehicle-makes/${makeId}/models`, function(models) {
-            let html = '<option value="">Select Model</option>';
-            models.forEach(model => {
-                html += `<option value="${model.id}">${model.name}</option>`;
-            });
-            $('#newQuoteVehicleModel').html(html);
-        });
-    }
-});
+    // Initialize Select2 for Add Vehicle Modal
+    $(document).ready(function() {
+        // Initialize Select2 on modal show
+        $('#addQuoteVehicleModal').on('shown.bs.modal', function() {
+            if (!$('.select2-add-vehicle-make').hasClass('select2-hidden-accessible')) {
+                $('.select2-add-vehicle-make').select2({
+                    dropdownParent: $('#addQuoteVehicleModal'),
+                    placeholder: 'Select Make',
+                    allowClear: true,
+                    width: '100%'
+                });
+            }
 
-// Add Vehicle Form Submit (Same as POS)
-$('#addQuoteVehicleForm').on('submit', function(e) {
-    e.preventDefault();
-    
-    const formData = {
-        customer_id: quoteCurrentCustomer,
-        registration_number: $('#newQuoteVehicleReg').val(),
-        make_id: $('#newQuoteVehicleMake').val(),
-        model_id: $('#newQuoteVehicleModel').val(),
-        engine: $('#newQuoteVehicleEngine').val(),
-        vin_number: $('#newQuoteVehicleVin').val(),
-        mileage: $('#newQuoteVehicleMileage').val(),
-        _token: '{{ csrf_token() }}'
-    };
-    
-    $.post('/vehicles', formData, function(response) {
-        if (response.success) {
-            toastr.success('Vehicle added successfully');
-            $('#addQuoteVehicleModal .btn-close').click();
-            $('#addQuoteVehicleForm')[0].reset();
-            loadQuoteCustomerVehicles(quoteCurrentCustomer);
-        }
-    }).fail(function(xhr) {
-        toastr.error(xhr.responseJSON?.message || 'Error adding vehicle');
+            if (!$('.select2-add-vehicle-model').hasClass('select2-hidden-accessible')) {
+                $('.select2-add-vehicle-model').select2({
+                    dropdownParent: $('#addQuoteVehicleModal'),
+                    placeholder: 'Select Model',
+                    allowClear: true,
+                    width: '100%'
+                });
+            }
+
+            if (!$('.select2-add-vehicle-year').hasClass('select2-hidden-accessible')) {
+                $('.select2-add-vehicle-year').select2({
+                    dropdownParent: $('#addQuoteVehicleModal'),
+                    placeholder: 'Select Year',
+                    allowClear: true,
+                    width: '100%'
+                });
+            }
+        });
+
+        // Clean up on modal hide
+        $('#addQuoteVehicleModal').on('hidden.bs.modal', function() {
+            if ($('.select2-add-vehicle-make').hasClass('select2-hidden-accessible')) {
+                $('.select2-add-vehicle-make').select2('destroy');
+            }
+            if ($('.select2-add-vehicle-model').hasClass('select2-hidden-accessible')) {
+                $('.select2-add-vehicle-model').select2('destroy');
+            }
+            if ($('.select2-add-vehicle-year').hasClass('select2-hidden-accessible')) {
+                $('.select2-add-vehicle-year').select2('destroy');
+            }
+        });
     });
-});
+
+    // Load models when make is selected (for add vehicle modal)
+    $('#newQuoteVehicleMake').on('change', function() {
+        const makeId = $(this).val();
+        if (makeId) {
+            const url = "{{ route('api.vehicle-makes.models', ':makeId') }}".replace(':makeId', makeId);
+            $.get(url, function(models) {
+                let html = '<option value="">Select Model</option>';
+                models.forEach(model => {
+                    html += `<option value="${model.id}">${model.name}</option>`;
+                });
+                $('#newQuoteVehicleModel').html(html);
+            });
+        }
+    });
+
+    // Add Vehicle Form Submit (Same as POS)
+    $('#addQuoteVehicleForm').on('submit', function(e) {
+        e.preventDefault();
+
+        const formData = {
+            customer_id: quoteCurrentCustomer,
+            registration_number: $('#newQuoteVehicleReg').val(),
+            make_id: $('#newQuoteVehicleMake').val(),
+            model_id: $('#newQuoteVehicleModel').val(),
+            year: $('#newQuoteVehicleYear').val(),
+            engine: $('#newQuoteVehicleEngine').val(),
+            vin_number: $('#newQuoteVehicleVin').val(),
+            mileage: $('#newQuoteVehicleMileage').val(),
+            _token: '{{ csrf_token() }}'
+        };
+
+        $.post('/vehicles', formData, function(response) {
+            if (response.success) {
+                toastr.success('Vehicle added successfully');
+                $('#addQuoteVehicleModal .btn-close').click();
+                $('#addQuoteVehicleForm')[0].reset();
+                loadQuoteCustomerVehicles(quoteCurrentCustomer);
+            }
+        }).fail(function(xhr) {
+            toastr.error(xhr.responseJSON?.message || 'Error adding vehicle');
+        });
+    });
 </script>
 
 @push('styles')
@@ -1995,20 +2530,14 @@ $('#addQuoteVehicleForm').on('submit', function(e) {
         }
 
         .product-search-item:hover {
-            background: linear-gradient(to right, #f0f7ff 0%, #e8f4f8 100%) !important;
-            border-color: #4dabf7 !important;
-            transform: translateX(5px);
-            box-shadow: 0 6px 20px rgba(77, 171, 247, 0.2) !important;
+            background: #f8f9fa !important;
+            border-color: #28a745 !important;
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.15) !important;
         }
 
         .product-search-item:hover .add-product-btn {
-            transform: scale(1.1);
-            box-shadow: 0 6px 16px rgba(25, 135, 84, 0.4) !important;
-        }
-
-        .product-search-item:hover img {
-            border-color: #4dabf7 !important;
             transform: scale(1.05);
+            box-shadow: 0 4px 10px rgba(25, 135, 84, 0.3) !important;
         }
     </style>
 @endpush

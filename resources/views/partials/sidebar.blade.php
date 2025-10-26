@@ -86,12 +86,12 @@
                                     Sale History
                                 </a>
                             </li>
-                            <li>
+                            {{-- <li>
                                 <a href="{{ route('returns.index') }}"
                                     class="side-menu__item {{ request()->routeIs('returns.*') ? 'active' : '' }}">
                                     Return & Credit Notes
                                 </a>
-                            </li>
+                            </li> --}}
                             <li>
                                 <a href="{{ route('payments.index') }}"
                                     class="side-menu__item {{ request()->routeIs('payments.*') ? 'active' : '' }}">
@@ -269,7 +269,7 @@
                                 'car-makes.*',
                                 'car-models.*',
                                 'engines.*',
-                                'users.*',
+                               
                             )
                                 ? 'active'
                                 : '' }}">

@@ -52,7 +52,7 @@ class QuoteController extends Controller
             $query->whereDate('created_at', '<=', $request->date_to);
         }
 
-        $quotes = $query->latest()->paginate(20);
+        $quotes = $query->latest()->paginate(10);
         $customers = Customer::orderBy('name')->get();
 
         return view('quotes.index', compact('quotes', 'customers'));
@@ -83,12 +83,19 @@ class QuoteController extends Controller
 
         $data = $request->validate([
             'customer_id' => 'nullable|integer',
+            // Walk-in customer fields
+            'customer_name' => 'nullable|string|max:255',
+            'customer_email' => 'nullable|email|max:255',
+            'customer_phone' => 'nullable|string|max:20',
+            'customer_address' => 'nullable|string|max:500',
+            // Vehicle fields
                 'vehicle_make_id' => 'nullable|integer',
                 'vehicle_model_id' => 'nullable|integer',
                 'vehicle_engine_id' => 'nullable|integer',
                 'vehicle_year' => 'nullable|integer',
             'vehicle_vin' => 'nullable|string',
             'vehicle_reg' => 'nullable|string',
+            'vehicle_engine' => 'nullable|string',
                 'vehicle_mileage' => 'nullable|integer',
             'valid_until' => 'nullable|date',
                 'status' => 'nullable|string|in:draft,sent,accepted,declined,converted,expired,cancelled',
@@ -107,6 +114,67 @@ class QuoteController extends Controller
                 'items.*.total' => 'required|numeric|min:0',
             ]);
 
+            // Handle Walk-in Customer (Create temporary customer if needed)
+            if (empty($data['customer_id'])) {
+                $walkInName = $request->customer_name ?: 'Walk-in Customer';
+                $walkInEmail = $request->customer_email;
+                $walkInPhone = $request->customer_phone;
+                $walkInAddress = $request->customer_address;
+                
+                // VALIDATION: Email OR Phone is required for walk-in customers
+                if (empty($walkInEmail) && empty($walkInPhone)) {
+                    if ($request->ajax() || $request->wantsJson()) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Please provide either email or phone number for walk-in customer.',
+                        ], 400);
+                    }
+                    return redirect()->back()->with('error', 'Please provide either email or phone number for walk-in customer.');
+                }
+                
+                // Check if a walk-in customer already exists with this email/phone
+                $existingCustomer = null;
+                if ($walkInEmail) {
+                    $existingCustomer = Customer::where('email', $walkInEmail)->first();
+                } elseif ($walkInPhone) {
+                    $existingCustomer = Customer::where('phone', $walkInPhone)->first();
+                }
+                
+                if ($existingCustomer) {
+                    $data['customer_id'] = $existingCustomer->id;
+                } else {
+                    // Create temporary walk-in customer
+                    $walkInCustomer = Customer::create([
+                        'name' => $walkInName,
+                        'email' => $walkInEmail,
+                        'phone' => $walkInPhone,
+                        'address' => $walkInAddress,
+                        'terms' => 'cash',
+                        'is_walk_in' => true,
+                    ]);
+                    
+                    $data['customer_id'] = $walkInCustomer->id;
+                }
+            }
+            
+            // Handle Walk-in Vehicle - Convert IDs to names if provided
+            if (!empty($data['vehicle_make_id'])) {
+                $make = CarMake::find($data['vehicle_make_id']);
+                if ($make) {
+                    $data['vehicle_make'] = $make->name;
+                }
+            }
+            
+            if (!empty($data['vehicle_model_id'])) {
+                $model = CarModel::find($data['vehicle_model_id']);
+                if ($model) {
+                    $data['vehicle_model'] = $model->name;
+                }
+            }
+            
+            // vehicle_engine is already a text field
+            // vehicle_year, vehicle_vin, vehicle_reg, vehicle_mileage are already in $data
+            
             // Generate quote number
             $data['quote_number'] = 'QT'.(10000 + (Quote::max('id') ?? 0) + 1);
             $data['user_id'] = auth()->id();
@@ -506,7 +574,10 @@ class QuoteController extends Controller
                 $paymentStatus = 'paid';
             }
             
-            $invoice->payment_method = $paymentMethod;
+            // Map 'credit' to 'on_account' for database enum
+            $dbPaymentMethod = $paymentMethod === 'credit' ? 'on_account' : $paymentMethod;
+            
+            $invoice->payment_method = $dbPaymentMethod;
             $invoice->payment_status = $paymentStatus;
             $invoice->amount_paid = (float) $amountPaid;
             $invoice->balance_due = (float) ($invoice->grand_total - $amountPaid);
@@ -778,6 +849,16 @@ class QuoteController extends Controller
 
         return view('quotes.print', compact('quote'));
     }
+    
+    // Generate PDF for Quote
+    public function pdf(Quote $quote)
+    {
+        $quote->load(['customer', 'user', 'vehicleMake', 'vehicleModel', 'vehicleEngine', 'items.product']);
+
+        $pdf = \PDF::loadView('quotes.pdf', compact('quote'));
+        
+        return $pdf->download('Quote_' . $quote->quote_number . '.pdf');
+    }
 
     // Export Quotations
     public function export(Request $request)
@@ -930,5 +1011,141 @@ class QuoteController extends Controller
                 ];
             }),
         ]);
+    }
+    
+    // Send Quote via WhatsApp
+    public function sendWhatsApp(Quote $quote)
+    {
+        try {
+            $quote->load('customer');
+            
+            if (!$quote->customer) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No customer found for this quotation.',
+                ], 400);
+            }
+            
+            $phone = $quote->customer->phone;
+            
+            if (!$phone) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Customer has no phone number.',
+                ], 400);
+            }
+            
+            // Format phone number
+            $phone = preg_replace('/[^0-9+]/', '', $phone);
+            
+            // Smart phone number formatting
+            if (substr($phone, 0, 1) === '0') {
+                // South African number starting with 0
+                $phone = '27' . substr($phone, 1);
+            } elseif (substr($phone, 0, 1) !== '+' && strlen($phone) === 10) {
+                // 10-digit number without country code
+                $phone = '27' . $phone;
+            } elseif (substr($phone, 0, 1) === '+') {
+                // Already has +, remove it for wa.me
+                $phone = substr($phone, 1);
+            }
+            
+            // Get WhatsApp share type setting
+            $whatsappShareType = Setting::get('whatsapp_share_type', 'web');
+            
+            // Prepare message
+            $message = "Hello {$quote->customer->name},\n\n";
+            $message .= "Here is your quotation from " . (Setting::get('company_name') ?: 'MMP Auto-Meister') . "\n\n";
+            $message .= "📄 Quote Number: {$quote->quote_number}\n";
+            $message .= "💰 Total: R " . number_format($quote->grand_total, 2) . "\n";
+            $message .= "📅 Valid Until: " . ($quote->valid_until ? \Carbon\Carbon::parse($quote->valid_until)->format('d M Y') : 'N/A') . "\n\n";
+            
+            if ($quote->vehicle_make) {
+                $message .= "🚗 Vehicle: {$quote->vehicle_make} {$quote->vehicle_model}";
+                if ($quote->vehicle_reg) {
+                    $message .= " ({$quote->vehicle_reg})";
+                }
+                $message .= "\n\n";
+            }
+            
+            $message .= "Thank you for your business!\n";
+            $message .= "View quote: " . route('quotes.pdf', $quote->id);
+            
+            $encodedMessage = urlencode($message);
+            
+            if ($whatsappShareType === 'desktop') {
+                // Desktop app - copy message to clipboard
+                $whatsappUrl = "whatsapp://send?phone={$phone}";
+                
+                return response()->json([
+                    'success' => true,
+                    'whatsapp_url' => $whatsappUrl,
+                    'copy_message' => $message,
+                    'message' => 'Message copied to clipboard. Opening WhatsApp...',
+                ]);
+            } else {
+                // Web (default) - message prefill works
+                $whatsappUrl = "https://wa.me/{$phone}?text={$encodedMessage}";
+                
+                return response()->json([
+                    'success' => true,
+                    'whatsapp_url' => $whatsappUrl,
+                ]);
+            }
+            
+        } catch (\Exception $e) {
+            \Log::error('Quote WhatsApp Error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to send WhatsApp: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+    
+    // Send Quote via Email
+    public function sendEmail(Quote $quote)
+    {
+        try {
+            $quote->load(['customer', 'items.product']);
+            
+            if (!$quote->customer) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No customer found for this quotation.',
+                ], 400);
+            }
+            
+            if (!$quote->customer->email) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Customer has no email address.',
+                ], 400);
+            }
+            
+            // Generate PDF
+            $pdf = \PDF::loadView('quotes.pdf', compact('quote'));
+            $pdfOutput = $pdf->output();
+            
+            // Send email
+            \Mail::send('emails.quote', ['quote' => $quote], function ($message) use ($quote, $pdfOutput) {
+                $message->to($quote->customer->email, $quote->customer->name)
+                    ->subject('Quotation ' . $quote->quote_number . ' from ' . (Setting::get('company_name') ?: 'MMP Auto-Meister'))
+                    ->attachData($pdfOutput, 'Quote_' . $quote->quote_number . '.pdf', [
+                        'mime' => 'application/pdf',
+                    ]);
+            });
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Email sent successfully to ' . $quote->customer->email,
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Quote Email Error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to send email: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }
