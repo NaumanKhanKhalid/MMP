@@ -370,7 +370,7 @@
                 </button>
                 @endif
                 @if($jobCard->final_invoice_id)
-                <a href="{{ route('invoices.show', $jobCard->final_invoice_id) }}" class="btn btn-success">
+                <a href="{{ route('invoices.index') }}?search={{ $jobCard->finalInvoice->invoice_number ?? '' }}" class="btn btn-success" target="_blank">
                     <i class="ri-file-list-3-line me-1"></i>View Invoice
                 </a>
                 @endif

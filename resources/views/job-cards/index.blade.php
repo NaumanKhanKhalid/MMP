@@ -196,7 +196,7 @@
                     </thead>
                     <tbody>
                         @forelse($jobCards as $jobCard)
-                        <tr class="clickable-row" onclick="viewJobCard({{ $jobCard->id }})"  style="cursor: pointer;">
+                        <tr class="clickable-row" data-job-card-id="{{ $jobCard->id }}" style="cursor: pointer;">
                             <td>{{ $loop->iteration + ($jobCards->currentPage() - 1) * $jobCards->perPage() }}</td>
                             
                             {{-- Job Card Number --}}
@@ -260,53 +260,92 @@
                                     
                                     <!-- Edit Button -->
                                     @if($jobCard->status !== 'completed' && $jobCard->status !== 'cancelled')
-                                    <button type="button" class="btn btn-sm btn-success-light btn-icon" onclick="editJobCard({{ $jobCard->id }})" title="Edit">
+                                    <button type="button" class="btn btn-sm btn-success-light btn-icon" onclick="event.stopPropagation(); editJobCard({{ $jobCard->id }})" title="Edit">
                                         <i class="ri-pencil-line"></i>
                                     </button>
                                     @endif
                                     
                                     <!-- Status Action Buttons -->
                                     @if($jobCard->status === 'pending')
-                                    <button type="button" class="btn btn-sm btn-primary" onclick="changeStatus({{ $jobCard->id }}, 'booked')" title="Book In">
+                                    <button type="button" class="btn btn-sm btn-primary" onclick="event.stopPropagation(); changeStatus({{ $jobCard->id }}, 'booked')" title="Book In">
                                         <i class="ri-calendar-check-line me-1"></i>Book In
                                     </button>
                                     @endif
                                     
                                     @if($jobCard->status === 'booked')
-                                    <button type="button" class="btn btn-sm btn-primary" onclick="changeStatus({{ $jobCard->id }}, 'in_progress')" title="Start Work">
+                                    <button type="button" class="btn btn-sm btn-primary" onclick="event.stopPropagation(); changeStatus({{ $jobCard->id }}, 'in_progress')" title="Start Work">
                                         <i class="ri-play-circle-line me-1"></i>Start Work
                                     </button>
                                     @endif
                                     
                                     @if($jobCard->status === 'in_progress')
-                                    <button type="button" class="btn btn-sm btn-success" onclick="changeStatus({{ $jobCard->id }}, 'completed')" title="Mark Complete">
+                                    <button type="button" class="btn btn-sm btn-success" onclick="event.stopPropagation(); changeStatus({{ $jobCard->id }}, 'completed')" title="Mark Complete">
                                         <i class="ri-checkbox-circle-line me-1"></i>Complete
                                     </button>
                                     @endif
                                     
                                     @if($jobCard->status === 'completed' && !$jobCard->final_invoice_id)
-                                    <button type="button" class="btn btn-sm btn-warning" onclick="convertToInvoice({{ $jobCard->id }})" title="Convert to Invoice">
+                                    <button type="button" class="btn btn-sm btn-warning" onclick="event.stopPropagation(); convertToInvoice({{ $jobCard->id }})" title="Convert to Invoice">
                                         <i class="ri-receipt-line me-1"></i>Invoice
                                     </button>
                                     @endif
                                     
                                     @if($jobCard->final_invoice_id)
-                                    <button type="button" class="btn btn-sm btn-success-light btn-icon" onclick="viewJobInvoice({{ $jobCard->final_invoice_id }})" title="View Invoice">
+                                    <button type="button" class="btn btn-sm btn-success-light btn-icon" onclick="event.stopPropagation(); viewJobInvoice('{{ $jobCard->finalInvoice->invoice_number ?? '' }}')" title="View Invoice">
                                         <i class="ri-receipt-line"></i>
                                     </button>
                                     @endif
                                     
-                                    <!-- PDF Download -->
-                                    <button type="button" class="btn btn-sm btn-primary-light btn-icon" onclick="downloadPDF({{ $jobCard->id }})" title="Download PDF">
-                                        <i class="ri-printer-line"></i>
-                                    </button>
-                                    
-                                    <!-- Delete Button -->
-                                    @if($jobCard->status !== 'completed' && $jobCard->status !== 'cancelled')
-                                    <button type="button" class="btn btn-sm btn-danger-light btn-icon" onclick="deleteJobCard({{ $jobCard->id }})" title="Delete">
-                                        <i class="ri-delete-bin-line"></i>
-                                    </button>
-                                    @endif
+                                    <!-- More Actions Dropdown -->
+                                        <button type="button" class="btn btn-sm btn-purple-light btn-icon" data-bs-toggle="dropdown" aria-expanded="false" title="More Actions">
+                                            <i class="ri-more-fill"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            <li>
+                                                <a class="dropdown-item" href="javascript:void(0);" onclick="downloadPDF({{ $jobCard->id }})">
+                                                    <i class="ri-printer-line me-2"></i>Print Job Card
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item" href="javascript:void(0);" onclick="downloadPDF({{ $jobCard->id }})">
+                                                    <i class="ri-file-pdf-line me-2"></i>Download PDF
+                                                </a>
+                                            </li>
+                                            @if($jobCard->final_invoice_id)
+                                            <li>
+                                                <a class="dropdown-item" href="javascript:void(0);" onclick="downloadInvoicePDF({{ $jobCard->final_invoice_id }})">
+                                                    <i class="ri-file-pdf-line me-2"></i>Download Invoice PDF
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item" href="javascript:void(0);" onclick="printInvoice({{ $jobCard->final_invoice_id }})">
+                                                    <i class="ri-printer-line me-2"></i>Print Invoice
+                                                </a>
+                                            </li>
+                                            {{-- <li>
+                                                <a class="dropdown-item" href="javascript:void(0);" onclick="sendInvoiceWhatsApp({{ $jobCard->final_invoice_id }})">
+                                                    <i class="ri-whatsapp-line me-2 text-success"></i>Send Invoice via WhatsApp
+                                                </a>
+                                            </li>
+                                            <li>
+                                                <a class="dropdown-item" href="javascript:void(0);" onclick="sendInvoiceEmail({{ $jobCard->final_invoice_id }})">
+                                                    <i class="ri-mail-line me-2 text-primary"></i>Send Invoice via Email
+                                                </a>
+                                            </li> --}}
+                                            {{-- <li>
+                                                <a class="dropdown-item" href="javascript:void(0);" onclick="downloadPickingList({{ $jobCard->final_invoice_id }})">
+                                                    <i class="ri-file-list-3-line me-2 text-warning"></i>Download Picking List
+                                                </a>
+                                            </li> --}}
+                                            @endif
+                                            @if($jobCard->status !== 'completed' && $jobCard->status !== 'cancelled')
+                                            <li>
+                                                <a class="dropdown-item text-danger" href="javascript:void(0);" onclick="deleteJobCard({{ $jobCard->id }})">
+                                                    <i class="ri-delete-bin-line me-2"></i>Delete Job Card
+                                                </a>
+                                            </li>
+                                            @endif
+                                        </ul>
                                 </div>
                             </td>
                         </tr>
@@ -339,6 +378,28 @@ let partRowCount = 0;
 let labourRowCount = 0;
 let jobCardProducts = [];
 let jobCardTechnicians = [];
+
+// Initialize row click handlers
+function initializeRowClickHandlers() {
+    // Remove any existing handlers first
+    $(document).off('click', '.clickable-row');
+    
+    // Add new handler with event delegation
+    $(document).on('click', '.clickable-row', function(e) {
+        // Don't trigger if clicking on buttons, forms, or links
+        if (!$(e.target).closest('button, form, a, .btn').length) {
+            const jobCardId = $(this).data('job-card-id');
+            if (jobCardId) {
+                viewJobCard(jobCardId);
+            }
+        }
+    });
+}
+
+// Initialize on page load
+$(document).ready(function() {
+    initializeRowClickHandlers();
+});
 
 // Open create modal
 function openCreateModal() {
@@ -1608,13 +1669,34 @@ function viewJobCard(id) {
     fetch(url)
         .then(response => response.text())
         .then(html => {
-            document.getElementById('modalContainer').innerHTML = html;
-            const modal = new bootstrap.Modal(document.getElementById('viewJobCardModal'));
+            // Get modal container
+            const modalContainer = document.getElementById('modalContainer');
+            
+            // Check if modal already exists and dispose it
+            const existingModalElement = document.getElementById('viewJobCardModal');
+            if (existingModalElement) {
+                const existingModal = bootstrap.Modal.getInstance(existingModalElement);
+                if (existingModal) {
+                    existingModal.dispose();
+                }
+            }
+            
+            // Set new content
+            modalContainer.innerHTML = html;
+            
+            // Create and show new modal
+            const newModalElement = document.getElementById('viewJobCardModal');
+            if (newModalElement) {
+                const modal = new bootstrap.Modal(newModalElement, {
+                    backdrop: 'static',
+                    keyboard: false
+                });
             modal.show();
+            }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Error loading job card details');
+            toastr.error('Error loading job card details');
         });
 }
 
@@ -1625,8 +1707,28 @@ function editJobCard(id) {
     fetch(url)
         .then(response => response.text())
         .then(html => {
-            document.getElementById('modalContainer').innerHTML = html;
-            const modal = new bootstrap.Modal(document.getElementById('editJobCardModal'));
+            // Get modal container
+            const modalContainer = document.getElementById('modalContainer');
+            
+            // Check if modal already exists and dispose it
+            const existingModalElement = document.getElementById('editJobCardModal');
+            if (existingModalElement) {
+                const existingModal = bootstrap.Modal.getInstance(existingModalElement);
+                if (existingModal) {
+                    existingModal.dispose();
+                }
+            }
+            
+            // Set new content
+            modalContainer.innerHTML = html;
+            
+            // Create and show new modal
+            const newModalElement = document.getElementById('editJobCardModal');
+            if (newModalElement) {
+                const modal = new bootstrap.Modal(newModalElement, {
+                    backdrop: 'static',
+                    keyboard: false
+                });
             modal.show();
             
             // Attach submit handler after modal loads
@@ -1639,10 +1741,11 @@ function editJobCard(id) {
                     });
                 }
             }, 100);
+            }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Error loading edit form');
+            toastr.error('Error loading edit form');
         });
 }
 
@@ -1732,12 +1835,12 @@ function convertToInvoice(id) {
     // Show themed confirmation modal
     showConvertToInvoiceModal(id);
 }
-
+        
 function showConvertToInvoiceModal(jobCardId) {
     // First check if job card can be converted
     const url = '{{ route("job-cards.show", ":id") }}'.replace(':id', jobCardId);
-    fetch(url, {
-        headers: {
+        fetch(url, {
+            headers: {
             'Accept': 'application/json',
             'X-Requested-With': 'XMLHttpRequest'
         }
@@ -1791,20 +1894,20 @@ function confirmSimpleConvertToInvoice() {
             amount_paid: 0
         })
     })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
             $('#convertToInvoiceModal').modal('hide');
             // Show post-conversion modal with share options
             showJobCardPostSaleModal(data.invoice_id, data.invoice_number, data.grand_total);
-        } else {
+            } else {
             toastr.error(data.message || 'Error converting to invoice');
             btn.innerHTML = originalText;
             btn.disabled = false;
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
         toastr.error('Error converting to invoice');
         btn.innerHTML = originalText;
         btn.disabled = false;
@@ -1926,6 +2029,62 @@ function downloadPDF(id) {
     window.open(url, '_blank');
 }
 
+// Invoice sharing functions (for completed job cards with invoices)
+function downloadInvoicePDF(invoiceId) {
+    const url = '{{ route("invoices.pdf", ":id") }}'.replace(':id', invoiceId);
+    window.open(url, '_blank');
+}
+
+function printInvoice(invoiceId) {
+    const url = '{{ route("invoices.print", ":id") }}'.replace(':id', invoiceId);
+    window.open(url, '_blank');
+}
+
+function sendInvoiceWhatsApp(invoiceId) {
+    $.post('{{ route("invoices.whatsapp", ":id") }}'.replace(':id', invoiceId))
+        .done(function(response) {
+            if (response.success) {
+                const whatsappType = '{{ \App\Models\Setting::where('key', 'whatsapp_share_type')->value('value') ?? 'web' }}';
+                
+                if (whatsappType === 'desktop') {
+                    if (navigator.clipboard && response.message) {
+                        navigator.clipboard.writeText(response.message).then(() => {
+                            toastr.success('Message copied! Opening WhatsApp...');
+                        });
+                    }
+                }
+                
+                window.open(response.url, '_blank');
+            } else {
+                toastr.error(response.message || 'Failed to send WhatsApp');
+            }
+        })
+        .fail(function(xhr) {
+            const errorMsg = xhr.responseJSON?.message || 'Error sending WhatsApp';
+            toastr.error(errorMsg);
+        });
+}
+
+function sendInvoiceEmail(invoiceId) {
+    $.post('{{ route("invoices.email", ":id") }}'.replace(':id', invoiceId))
+        .done(function(response) {
+            if (response.success) {
+                toastr.success(response.message || 'Email sent successfully!');
+            } else {
+                toastr.error(response.message || 'Failed to send email');
+            }
+        })
+        .fail(function(xhr) {
+            const errorMsg = xhr.responseJSON?.message || 'Error sending email';
+            toastr.error(errorMsg);
+        });
+}
+
+function downloadPickingList(invoiceId) {
+    const url = '{{ route("invoices.picking-list", ":id") }}'.replace(':id', invoiceId);
+    window.open(url, '_blank');
+}
+
 // Delete job card
 function deleteJobCard(id) {
     if (confirm('Are you sure you want to delete this job card?')) {
@@ -1952,61 +2111,16 @@ function deleteJobCard(id) {
     }
 }
 
-// View invoice from job card
-function viewJobInvoice(invoiceId) {
-    // Create modal container if doesn't exist
-    let invoiceModalContainer = document.getElementById('invoiceModalContainer');
-    if (!invoiceModalContainer) {
-        invoiceModalContainer = document.createElement('div');
-        invoiceModalContainer.id = 'invoiceModalContainer';
-        document.body.appendChild(invoiceModalContainer);
+// View invoice from job card - redirect to invoices page with filter
+function viewJobInvoice(invoiceNumber) {
+    if (!invoiceNumber) {
+        toastr.error('Invoice number not found');
+        return;
     }
     
-    // Create modal structure if doesn't exist
-    if (!document.getElementById('viewInvoiceModal')) {
-        invoiceModalContainer.innerHTML = `
-            <div class="modal fade" id="viewInvoiceModal" tabindex="-1">
-                <div class="modal-dialog modal-xl modal-dialog-scrollable">
-                    <div class="modal-content" id="viewInvoiceModalContent">
-                        <div class="text-center p-5">
-                            <div class="spinner-border text-primary"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
-    
-    const url = '{{ route("invoices.view-modal", ":id") }}'.replace(':id', invoiceId);
-    const modalContent = document.getElementById('viewInvoiceModalContent');
-    
-    modalContent.innerHTML = `
-        <div class="text-center p-5">
-            <div class="spinner-border text-primary"></div>
-            <p class="mt-2">Loading invoice...</p>
-        </div>
-    `;
-    
-    const modal = new bootstrap.Modal(document.getElementById('viewInvoiceModal'));
-    modal.show();
-    
-    fetch(url)
-        .then(response => response.text())
-        .then(html => {
-            modalContent.innerHTML = html;
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            modalContent.innerHTML = `
-                <div class="modal-header">
-                    <h5 class="modal-title">Error</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="alert alert-danger">Error loading invoice details</div>
-                </div>
-            `;
-        });
+    // Redirect to invoices page with search filter
+    const url = '{{ route("invoices.index") }}?search=' + encodeURIComponent(invoiceNumber);
+    window.location.href = url;
 }
 
 // Print Job Cards Function

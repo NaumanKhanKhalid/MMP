@@ -75,7 +75,7 @@
                                 <div class="row mb-3">
                                     <div class="col-12">
                                         <strong>Final Invoice:</strong><br>
-                                        <a href="<?php echo e(route('invoices.show', $jobCard->final_invoice_id)); ?>" class="text-primary">
+                                        <a href="<?php echo e(route('invoices.index')); ?>?search=<?php echo e($jobCard->finalInvoice->invoice_number ?? ''); ?>" class="text-primary" target="_blank">
                                             <?php echo e($jobCard->finalInvoice->invoice_number ?? 'N/A'); ?>
 
                                         </a>
@@ -380,7 +380,7 @@
                 </button>
                 <?php endif; ?>
                 <?php if($jobCard->final_invoice_id): ?>
-                <a href="<?php echo e(route('invoices.show', $jobCard->final_invoice_id)); ?>" class="btn btn-success">
+                <a href="<?php echo e(route('invoices.index')); ?>?search=<?php echo e($jobCard->finalInvoice->invoice_number ?? ''); ?>" class="btn btn-success" target="_blank">
                     <i class="ri-file-list-3-line me-1"></i>View Invoice
                 </a>
                 <?php endif; ?>
