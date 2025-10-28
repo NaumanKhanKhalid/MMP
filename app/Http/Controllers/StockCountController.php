@@ -30,11 +30,17 @@ class StockCountController extends Controller
     /**
      * Show form for creating new stock count
      */
-    public function create()
+    public function create(Request $request)
     {
         $categories = Category::whereNull('parent_id')->orderBy('name')->get();
         $brands = Brand::orderBy('name')->get();
 
+        // If it's an AJAX request (from modal), return only the modal content
+        if ($request->ajax() || $request->wantsJson()) {
+            return view('stock-counts._create_modal', compact('categories', 'brands'));
+        }
+
+        // Otherwise return the full page
         return view('stock-counts.create', compact('categories', 'brands'));
     }
 
@@ -90,8 +96,8 @@ class StockCountController extends Controller
 
             // Create count items
             foreach ($products as $product) {
-                // Get current system quantity (on_hand from product or sum from batches)
-                $systemQty = $product->on_hand ?? 0;
+                // Get current system quantity from batches (proper way)
+                $systemQty = $product->stockBatches()->sum('qty_left');
 
                 // Get average cost (weighted average from batches or last cost)
                 $unitCost = $this->getAverageCost($product);
@@ -129,7 +135,11 @@ class StockCountController extends Controller
      */
     public function count($id)
     {
-        $stockCount = StockCount::with(['items.product'])->findOrFail($id);
+        $stockCount = StockCount::with([
+            'items.product.brand',
+            'items.product.category',
+            'items.product.oeNumbers',
+        ])->findOrFail($id);
 
         if (!$stockCount->canEdit()) {
             return redirect()->route('stock-counts.index')
@@ -165,6 +175,23 @@ class StockCountController extends Controller
         return response()->json([
             'success' => true,
             'item' => $item->load('product'),
+        ]);
+    }
+
+    /**
+     * Get stock count statistics for real-time updates
+     */
+    public function getStats($id)
+    {
+        $stockCount = StockCount::findOrFail($id);
+        
+        return response()->json([
+            'success' => true,
+            'total_products' => $stockCount->total_products,
+            'counted_products' => $stockCount->counted_products,
+            'products_with_variance' => $stockCount->products_with_variance,
+            'total_variance_value' => $stockCount->total_variance_value,
+            'progress_percentage' => $stockCount->progress_percentage,
         ]);
     }
 
@@ -244,36 +271,77 @@ class StockCountController extends Controller
             foreach ($stockCount->items as $item) {
                 if ($item->hasVariance()) {
                     $product = $item->product;
+                    $varianceQty = $item->variance_qty;
 
-                    // Create stock adjustment
+                    // Get cost for adjustment
+                    $unitCost = $item->unit_cost > 0 ? $item->unit_cost : ($this->getAverageCost($product) ?? 0);
+
+                    // Handle batch creation/update based on variance type
+                    if ($varianceQty > 0) {
+                        // VARIANCE POSITIVE: Create new batch (found more stock than system)
+                        \App\Models\StockBatch::create([
+                            'product_id' => $product->id,
+                            'batch_code' => 'COUNT-' . $stockCount->count_number . '-' . $product->sku,
+                            'qty_received' => $varianceQty,
+                            'qty_left' => $varianceQty,
+                            'landed_unit_cost' => $unitCost,
+                            'received_date' => $stockCount->count_date,
+                            'document_type' => 'stock_count',
+                            'document_id' => $stockCount->id,
+                        ]);
+                    } else {
+                        // VARIANCE NEGATIVE: Reduce from latest batches (less stock than system)
+                        $qtyToReduce = abs($varianceQty);
+                        $batches = $product->stockBatches()
+                            ->where('qty_left', '>', 0)
+                            ->orderBy('received_date', 'desc')
+                            ->orderBy('id', 'desc')
+                            ->get();
+
+                        foreach ($batches as $batch) {
+                            if ($qtyToReduce <= 0) break;
+
+                            if ($batch->qty_left >= $qtyToReduce) {
+                                $batch->qty_left -= $qtyToReduce;
+                                $batch->save();
+                                $qtyToReduce = 0;
+                            } else {
+                                $qtyToReduce -= $batch->qty_left;
+                                $batch->qty_left = 0;
+                                $batch->save();
+                            }
+                        }
+                    }
+
+                    // Create stock adjustment record
                     $adjustment = StockAdjustment::create([
                         'adjustment_type' => 'count',
                         'product_id' => $product->id,
                         'stock_count_id' => $stockCount->id,
                         'adjustment_date' => $stockCount->count_date,
                         'quantity_before' => $item->system_qty,
-                        'adjustment_qty' => $item->variance_qty,
+                        'adjustment_qty' => $varianceQty,
                         'quantity_after' => $item->counted_qty,
                         'reason' => 'Stock count variance - ' . $stockCount->count_number,
                         'notes' => $item->notes,
                         'user_id' => auth()->id(),
                     ]);
 
-                    // Update product on_hand
-                    $product->on_hand = $item->counted_qty;
-                    $product->save();
-
                     // Create stock ledger entry
                     StockLedger::create([
                         'product_id' => $product->id,
                         'document_type' => 'STOCK_COUNT',
                         'document_id' => $stockCount->id,
-                        'qty' => $item->variance_qty,
-                        'unit_cost' => $item->unit_cost,
+                        'qty' => $varianceQty,
+                        'unit_cost' => $unitCost,
                         'total_cost' => $item->variance_value,
                         'user_id' => auth()->id(),
                         'notes' => 'Stock count adjustment - ' . $stockCount->count_number,
                     ]);
+
+                    // Update product's on_hand from batches sum
+                    $product->on_hand = $product->stockBatches()->sum('qty_left');
+                    $product->save();
 
                     $adjustmentsCreated++;
                 }

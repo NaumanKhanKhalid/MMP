@@ -162,25 +162,94 @@
 
 @push('scripts')
 <script>
+// Global function for submitting stock count form
+window.submitStockCountForm = function() {
+    const form = document.getElementById('createStockCountForm');
+    const submitBtn = document.getElementById('submitBtn');
+    
+    if (!form || !submitBtn) {
+        console.error('Form or button not found');
+        return;
+    }
+    
+    // Validate
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+    }
+    
+    // Disable button
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Creating...';
+    
+    // Get form data
+    const formData = new FormData(form);
+    
+    // Submit
+    fetch('{{ route("stock-counts.store") }}', {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Close modal
+            const modalEl = document.getElementById('createStockCountModal');
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+            
+            // Success message
+            toastr.success(data.message);
+            
+            // Redirect
+            setTimeout(() => {
+                window.location.href = '{{ route("stock-counts.count", ":id") }}'.replace(':id', data.count_id);
+            }, 500);
+        } else {
+            toastr.error(data.message);
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="ri-add-line me-1"></i> Create Stock Count';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        toastr.error('Error creating stock count');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="ri-add-line me-1"></i> Create Stock Count';
+    });
+};
+
 // Open create stock count modal
 function openCreateStockCountModal() {
     const url = '{{ route("stock-counts.create") }}';
     
     // Show loading
     document.getElementById('createStockCountModalContent').innerHTML = `
-        <div class="text-center p-5">
+        <div class="modal-header">
+            <h5 class="modal-title"><i class="ri-file-add-line me-2"></i> New Stock Count</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body text-center p-5">
             <div class="spinner-border text-primary" role="status">
                 <span class="visually-hidden">Loading...</span>
             </div>
-            <p class="mt-2">Loading form...</p>
+            <p class="mt-3 text-muted">Loading form...</p>
         </div>
     `;
     
     const modal = new bootstrap.Modal(document.getElementById('createStockCountModal'));
     modal.show();
     
-    // Fetch content
-    fetch(url)
+    // Fetch content with AJAX headers
+    fetch(url, {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'text/html'
+        }
+    })
         .then(response => response.text())
         .then(html => {
             document.getElementById('createStockCountModalContent').innerHTML = html;
@@ -189,11 +258,16 @@ function openCreateStockCountModal() {
             console.error('Error:', error);
             document.getElementById('createStockCountModalContent').innerHTML = `
                 <div class="modal-header">
-                    <h5 class="modal-title">Error</h5>
+                    <h5 class="modal-title text-danger"><i class="ri-error-warning-line me-2"></i> Error</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="alert alert-danger">Error loading form. Please try again.</div>
+                    <div class="alert alert-danger mb-0">
+                        <i class="ri-close-circle-line me-2"></i> Error loading form. Please try again.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Close</button>
                 </div>
             `;
         });

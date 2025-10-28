@@ -110,6 +110,38 @@
                         </div>
                     </div>
 
+                    <!-- PO Details & History Section (Collapsible) -->
+                    <div class="card mb-3" id="poHistorySection" style="display: none;">
+                        <div class="card-header bg-primary-transparent">
+                            <h6 class="card-title mb-0">
+                                <a href="#" id="togglePOHistory" class="text-decoration-none text-dark">
+                                    <i class="ri-arrow-down-s-line me-1" id="poHistoryIcon"></i> 
+                                    Purchase Order Details & History
+                                </a>
+                                <span class="badge bg-primary ms-2" id="poNumber"></span>
+                            </h6>
+                        </div>
+                        <div class="card-body" id="poHistoryBody" style="display: none;">
+                            <!-- PO details will be loaded here -->
+                        </div>
+                    </div>
+
+                    <!-- Previous Receipts Section (Collapsible) -->
+                    <div class="card mb-3" id="previousReceiptsSection" style="display: none;">
+                        <div class="card-header bg-info-transparent">
+                            <h6 class="card-title mb-0">
+                                <a href="#" id="togglePreviousReceipts" class="text-decoration-none text-dark">
+                                    <i class="ri-arrow-down-s-line me-1" id="previousReceiptsIcon"></i> 
+                                    Previous Receipts for this PO
+                                </a>
+                                <span class="badge bg-info ms-2" id="previousReceiptsCount">0</span>
+                            </h6>
+                        </div>
+                        <div class="card-body p-0" id="previousReceiptsBody" style="display: none;">
+                            <!-- Previous receipts will be loaded here -->
+                        </div>
+                    </div>
+
                     <!-- Items Section - From PO Mode -->
                     <div class="card mb-3" id="fromPOItemsSection">
                         <div class="card-header bg-light d-flex justify-content-between align-items-center">
@@ -124,7 +156,7 @@
                                         <tr>
                                             <th width="30%">Product</th>
                                             <th width="10%" class="text-center">Ordered</th>
-                                            <th width="10%" class="text-center">Received</th>
+                                            <th width="10%" class="text-center">Previously Received</th>
                                             <th width="10%" class="text-center">Outstanding</th>
                                             <th width="12%">Receiving Now</th>
                                             <th width="12%">Unit Cost</th>
@@ -253,8 +285,42 @@
             const poId = $(this).val();
             if (poId) {
                 loadPOItems(poId);
+                loadPODetails(poId);
+                loadPreviousReceipts(poId);
             } else {
                 clearItems();
+                $('#poHistorySection').hide();
+                $('#previousReceiptsSection').hide();
+            }
+        });
+
+        // Toggle PO History
+        $('#togglePOHistory').on('click', function(e) {
+            e.preventDefault();
+            const body = $('#poHistoryBody');
+            const icon = $('#poHistoryIcon');
+            
+            if (body.is(':visible')) {
+                body.slideUp();
+                icon.removeClass('ri-arrow-up-s-line').addClass('ri-arrow-down-s-line');
+            } else {
+                body.slideDown();
+                icon.removeClass('ri-arrow-down-s-line').addClass('ri-arrow-up-s-line');
+            }
+        });
+
+        // Toggle Previous Receipts
+        $('#togglePreviousReceipts').on('click', function(e) {
+            e.preventDefault();
+            const body = $('#previousReceiptsBody');
+            const icon = $('#previousReceiptsIcon');
+            
+            if (body.is(':visible')) {
+                body.slideUp();
+                icon.removeClass('ri-arrow-up-s-line').addClass('ri-arrow-down-s-line');
+            } else {
+                body.slideDown();
+                icon.removeClass('ri-arrow-down-s-line').addClass('ri-arrow-up-s-line');
             }
         });
 
@@ -281,6 +347,204 @@
                 $('#grnProductSearch').focus();
             }
         });
+
+        // Load PO Details
+        function loadPODetails(poId) {
+            $.ajax({
+                url: '{{ route('goods-receipts.get-po-details', ':id') }}'.replace(':id', poId),
+                method: 'GET',
+                beforeSend: function() {
+                    $('#poHistoryBody').html(
+                        '<div class="text-center p-3"><div class="spinner-border spinner-border-sm"></div></div>'
+                    );
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $('#poHistorySection').show();
+                        $('#poNumber').text(response.po.po_number);
+                        renderPODetails(response.po);
+                    }
+                },
+                error: function() {
+                    $('#poHistorySection').hide();
+                    toastr.error('Failed to load PO details');
+                }
+            });
+        }
+
+        // Render PO Details
+        function renderPODetails(po) {
+            let statusBadge = '';
+            switch(po.status) {
+                case 'draft': statusBadge = 'bg-secondary'; break;
+                case 'approved': statusBadge = 'bg-info'; break;
+                case 'sent': statusBadge = 'bg-primary'; break;
+                case 'partially_received': statusBadge = 'bg-warning'; break;
+                case 'completed': statusBadge = 'bg-success'; break;
+                case 'cancelled': statusBadge = 'bg-danger'; break;
+                default: statusBadge = 'bg-secondary';
+            }
+
+            let html = `
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="card border shadow-sm h-100">
+                            <div class="card-header bg-light py-2">
+                                <h6 class="mb-0"><i class="ri-building-line me-1"></i>Supplier Information</h6>
+                            </div>
+                            <div class="card-body">
+                                <table class="table table-sm table-borderless mb-0">
+                                    <tr>
+                                        <td class="fw-semibold" width="130">Name:</td>
+                                        <td>${po.supplier_name}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-semibold">Email:</td>
+                                        <td>${po.supplier_email || '-'}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-semibold">Phone:</td>
+                                        <td>${po.supplier_phone || '-'}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card border shadow-sm h-100">
+                            <div class="card-header bg-light py-2">
+                                <h6 class="mb-0"><i class="ri-file-info-line me-1"></i>PO Details</h6>
+                            </div>
+                            <div class="card-body">
+                                <table class="table table-sm table-borderless mb-0">
+                                    <tr>
+                                        <td class="fw-semibold" width="150">Status:</td>
+                                        <td><span class="badge ${statusBadge}">${po.status_label}</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-semibold">Order Date:</td>
+                                        <td>${po.order_date}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-semibold">Expected Delivery:</td>
+                                        <td>${po.expected_delivery_date || 'Not set'}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-semibold">Created By:</td>
+                                        <td>${po.created_by}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card border shadow-sm">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0"><i class="ri-shopping-cart-line me-1"></i>Original PO Items</h6>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th width="5%">#</th>
+                                        <th width="45%">Product</th>
+                                        <th width="15%" class="text-center">Quantity</th>
+                                        <th width="15%" class="text-end">Unit Price</th>
+                                        <th width="20%" class="text-end">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+            `;
+            
+            po.items.forEach(function(item, index) {
+                html += `
+                    <tr>
+                        <td class="text-center">${index + 1}</td>
+                        <td>
+                            <div class="fw-semibold">${item.product_name}</div>
+                            <small class="text-muted">SKU: ${item.product_sku}</small>
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-light text-dark">${item.quantity}</span>
+                        </td>
+                        <td class="text-end">R ${parseFloat(item.unit_price).toFixed(2)}</td>
+                        <td class="text-end fw-semibold">R ${parseFloat(item.total).toFixed(2)}</td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-light">
+                        <div class="row">
+                            <div class="col-md-7"></div>
+                            <div class="col-md-5">
+                                <table class="table table-sm table-borderless mb-0">
+                                    <tr>
+                                        <td class="text-end fw-semibold">Subtotal:</td>
+                                        <td class="text-end" width="120">R ${parseFloat(po.subtotal).toFixed(2)}</td>
+                                    </tr>
+            `;
+            
+            if (po.total_discount > 0) {
+                html += `
+                    <tr>
+                        <td class="text-end text-danger fw-semibold">Discount:</td>
+                        <td class="text-end text-danger">- R ${parseFloat(po.total_discount).toFixed(2)}</td>
+                    </tr>
+                `;
+            }
+            
+            if (po.shipping > 0) {
+                html += `
+                    <tr>
+                        <td class="text-end fw-semibold">Shipping:</td>
+                        <td class="text-end">R ${parseFloat(po.shipping).toFixed(2)}</td>
+                    </tr>
+                `;
+            }
+            
+            if (po.vat > 0) {
+                html += `
+                    <tr>
+                        <td class="text-end fw-semibold">VAT:</td>
+                        <td class="text-end">R ${parseFloat(po.vat).toFixed(2)}</td>
+                    </tr>
+                `;
+            }
+            
+            html += `
+                                    <tr class="table-success">
+                                        <td class="text-end fw-bold">Grand Total:</td>
+                                        <td class="text-end fw-bold">R ${parseFloat(po.grand_total).toFixed(2)}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            if (po.notes) {
+                html += `
+                    <div class="card border shadow-sm mt-3">
+                        <div class="card-header bg-light py-2">
+                            <h6 class="mb-0"><i class="ri-sticky-note-line me-1"></i>PO Notes</h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="mb-0">${po.notes}</p>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            $('#poHistoryBody').html(html);
+        }
 
         // Load PO Items
         function loadPOItems(poId) {
@@ -315,6 +579,88 @@
                     toastr.error('Failed to load PO items');
                 }
             });
+        }
+
+        // Load Previous Receipts for PO
+        function loadPreviousReceipts(poId) {
+            $.ajax({
+                url: '{{ route('goods-receipts.get-po-receipts', ':id') }}'.replace(':id', poId),
+                method: 'GET',
+                beforeSend: function() {
+                    $('#previousReceiptsBody').html(
+                        '<div class="text-center p-3"><div class="spinner-border spinner-border-sm"></div></div>'
+                    );
+                },
+                success: function(response) {
+                    if (response.success && response.receipts.length > 0) {
+                        $('#previousReceiptsSection').show();
+                        $('#previousReceiptsCount').text(response.receipts.length);
+                        renderPreviousReceipts(response.receipts);
+                    } else {
+                        $('#previousReceiptsSection').hide();
+                    }
+                },
+                error: function() {
+                    $('#previousReceiptsSection').hide();
+                }
+            });
+        }
+
+        // Render Previous Receipts
+        function renderPreviousReceipts(receipts) {
+            let html = '<div class="table-responsive">';
+            
+            receipts.forEach(function(receipt) {
+                html += `
+                    <div class="border-bottom p-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <span class="badge bg-primary me-2">${receipt.grn_number}</span>
+                                <small class="text-muted">Received: ${receipt.received_date}</small>
+                                <span class="badge bg-${receipt.status === 'completed' ? 'success' : 'warning'} ms-2">${receipt.status}</span>
+                            </div>
+                            <small class="text-muted">By: ${receipt.user_name}</small>
+                        </div>
+                        <table class="table table-sm table-borderless mb-0">
+                            <thead>
+                                <tr class="text-muted" style="font-size: 0.85rem;">
+                                    <th width="50%">Product</th>
+                                    <th width="15%" class="text-center">Qty Received</th>
+                                    <th width="15%" class="text-end">Unit Cost</th>
+                                    <th width="20%" class="text-end">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody style="font-size: 0.9rem;">
+                `;
+                
+                receipt.items.forEach(function(item) {
+                    html += `
+                        <tr>
+                            <td>
+                                <div class="fw-semibold">${item.product_name}</div>
+                                <small class="text-muted">SKU: ${item.product_sku}</small>
+                            </td>
+                            <td class="text-center">
+                                <span class="badge bg-success-transparent">${item.received_qty}</span>
+                            </td>
+                            <td class="text-end">R ${parseFloat(item.unit_cost).toFixed(2)}</td>
+                            <td class="text-end fw-semibold">R ${parseFloat(item.line_total).toFixed(2)}</td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                            </tbody>
+                        </table>
+                        <div class="text-end mt-2 pe-2">
+                            <strong>GRN Total: R ${parseFloat(receipt.total_amount).toFixed(2)}</strong>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            $('#previousReceiptsBody').html(html);
         }
 
         // Search Products

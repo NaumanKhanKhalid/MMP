@@ -48,7 +48,7 @@
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(response, 'text/html');
                     const newTable = doc.querySelector('#mainGrnListTable');
-                    const newPagination = doc.querySelector('.pagination');
+                    const newPagination = doc.querySelector('#paginationContainer');
 
                     if (newTable) {
                         // Only update the main GRN list table, not modal tables
@@ -57,7 +57,7 @@
 
                     if (newPagination) {
                         // Only update pagination in the main GRN list container, not in modals
-                        $('.pagination').replaceWith(newPagination);
+                        $('#paginationContainer').replaceWith(newPagination);
                     }
 
                     // Update URL without page reload
@@ -354,7 +354,9 @@
             </div>
             </div>
             <div class="card-footer">
-            {{ $grns->appends(request()->query())->links() }}
+                <div id="paginationContainer">
+                    @include('goods_receipts.partials.pagination')
+                </div>
             </div>
         </div>
 

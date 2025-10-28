@@ -21,7 +21,7 @@ class CategoryController extends Controller
         $categories = Category::with('children', 'products')
             ->whereNull('parent_id')
             ->orderBy('name', 'asc')
-            ->paginate(15);
+            ->paginate(10);
 
         return view('categories.main_categories', compact('categories'));
     }
@@ -32,7 +32,7 @@ class CategoryController extends Controller
         $categories = Category::with('parent', 'products')
             ->whereNotNull('parent_id')
             ->orderBy('name', 'asc')
-            ->paginate(15);
+            ->paginate(10);
 
         return view('categories.sub_categories', compact('categories'));
     }

@@ -22,7 +22,7 @@ class EngineController extends Controller
             return response()->json($engines);
         }
         
-        $engines = Engine::orderBy('code')->paginate(15);
+        $engines = Engine::orderBy('code')->paginate(10);
         return view('engines.index', compact('engines'));
     }
 

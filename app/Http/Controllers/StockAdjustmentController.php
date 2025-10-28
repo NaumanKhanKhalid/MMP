@@ -44,7 +44,10 @@ class StockAdjustmentController extends Controller
             ->orderBy('id', 'desc')
             ->paginate(20);
 
-        $products = Product::orderBy('name')->get();
+        // Load products with all necessary relationships for comprehensive search
+        $products = Product::with(['brand', 'category', 'oeNumbers'])
+            ->orderBy('name')
+            ->get();
 
         return view('stock-adjustments.index', compact('adjustments', 'products'));
     }
@@ -66,17 +69,29 @@ class StockAdjustmentController extends Controller
         $validated = $request->validate([
             'product_id' => 'required|exists:products,id',
             'adjustment_type' => 'required|in:manual,damage,loss,found,correction',
-            'adjustment_qty' => 'required|numeric|not_in:0',
+            'adjustment_qty' => 'required|string|regex:/^[+-]?\d+(\.\d+)?$/',
             'adjustment_date' => 'required|date',
             'reason' => 'required|string|max:255',
             'notes' => 'nullable|string',
         ]);
+        
+        // Parse the quantity string to float
+        $adjustmentQty = floatval($validated['adjustment_qty']);
+        
+        // Validate that quantity is not zero
+        if ($adjustmentQty == 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Adjustment quantity cannot be zero',
+            ], 400);
+        }
 
         DB::beginTransaction();
         try {
             $product = Product::findOrFail($validated['product_id']);
-            $quantityBefore = $product->on_hand ?? 0;
-            $adjustmentQty = $validated['adjustment_qty'];
+            
+            // Calculate current stock from batches
+            $quantityBefore = $product->stockBatches()->sum('qty_left');
             $quantityAfter = $quantityBefore + $adjustmentQty;
 
             // Validate that adjustment won't result in negative stock (unless product allows it)
@@ -87,7 +102,57 @@ class StockAdjustmentController extends Controller
                 ], 400);
             }
 
-            // Create adjustment
+            // Get cost for adjustment
+            $unitCost = $this->getProductCost($product);
+
+            // Handle batch creation/update based on adjustment type
+            if ($adjustmentQty > 0) {
+                // CASE 1: Increase (+) - Create new batch
+                \App\Models\StockBatch::create([
+                    'product_id' => $product->id,
+                    'batch_code' => 'ADJ-' . date('YmdHis'),
+                    'qty_received' => $adjustmentQty,
+                    'qty_left' => $adjustmentQty,
+                    'landed_unit_cost' => $unitCost > 0 ? $unitCost : ($product->cost_price ?? 0),
+                    'received_date' => $validated['adjustment_date'],
+                    'document_type' => 'adjustment',
+                    'document_id' => null, // Will update after creating adjustment
+                ]);
+            } else {
+                // CASE 2: Decrease (-) - Reduce from latest batches
+                $qtyToReduce = abs($adjustmentQty);
+                $batches = $product->stockBatches()
+                    ->where('qty_left', '>', 0)
+                    ->orderBy('received_date', 'desc') // Latest first
+                    ->orderBy('id', 'desc')
+                    ->get();
+
+                foreach ($batches as $batch) {
+                    if ($qtyToReduce <= 0) break;
+
+                    if ($batch->qty_left >= $qtyToReduce) {
+                        // This batch has enough
+                        $batch->qty_left -= $qtyToReduce;
+                        $batch->save();
+                        $qtyToReduce = 0;
+                    } else {
+                        // Use entire batch and continue
+                        $qtyToReduce -= $batch->qty_left;
+                        $batch->qty_left = 0;
+                        $batch->save();
+                    }
+                }
+
+                if ($qtyToReduce > 0) {
+                    DB::rollBack();
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Not enough stock in batches to reduce. Remaining: ' . $qtyToReduce,
+                    ], 400);
+                }
+            }
+
+            // Create adjustment record
             $adjustment = StockAdjustment::create([
                 'adjustment_type' => $validated['adjustment_type'],
                 'product_id' => $product->id,
@@ -100,12 +165,15 @@ class StockAdjustmentController extends Controller
                 'user_id' => auth()->id(),
             ]);
 
-            // Update product on_hand
-            $product->on_hand = $quantityAfter;
-            $product->save();
-
-            // Get cost for ledger
-            $unitCost = $this->getProductCost($product);
+            // Update batch with adjustment ID if it was an increase
+            if ($adjustmentQty > 0) {
+                \App\Models\StockBatch::where('product_id', $product->id)
+                    ->where('document_type', 'adjustment')
+                    ->whereNull('document_id')
+                    ->orderBy('id', 'desc')
+                    ->first()
+                    ->update(['document_id' => $adjustment->id]);
+            }
 
             // Create stock ledger entry
             StockLedger::create([
@@ -113,11 +181,15 @@ class StockAdjustmentController extends Controller
                 'document_type' => 'ADJUSTMENT',
                 'document_id' => $adjustment->id,
                 'qty' => $adjustmentQty,
-                'unit_cost' => $unitCost,
-                'total_cost' => $adjustmentQty * $unitCost,
+                'unit_cost' => $unitCost > 0 ? $unitCost : ($product->cost_price ?? 0),
+                'total_cost' => $adjustmentQty * ($unitCost > 0 ? $unitCost : ($product->cost_price ?? 0)),
                 'user_id' => auth()->id(),
                 'notes' => $validated['reason'],
             ]);
+
+            // Update product's on_hand from batches sum
+            $product->on_hand = $product->stockBatches()->sum('qty_left');
+            $product->save();
 
             DB::commit();
 
@@ -154,24 +226,32 @@ class StockAdjustmentController extends Controller
         ]);
     }
 
-    // Helper method
+    // Helper method to get product cost
     private function getProductCost(Product $product)
     {
-        $batches = $product->stockBatches()->where('qty_left', '>', 0)->get();
+        // Try to get average cost from active batches (FIFO)
+        try {
+            $batches = $product->stockBatches()->where('qty_left', '>', 0)->get();
 
-        if ($batches->isEmpty()) {
-            return 0;
+            if ($batches->isNotEmpty()) {
+                $totalCost = 0;
+                $totalQty = 0;
+
+                foreach ($batches as $batch) {
+                    $totalCost += $batch->qty_left * $batch->landed_unit_cost;
+                    $totalQty += $batch->qty_left;
+                }
+
+                if ($totalQty > 0) {
+                    return round($totalCost / $totalQty, 4);
+                }
+            }
+        } catch (\Exception $e) {
+            \Log::warning('Error calculating batch cost: ' . $e->getMessage());
         }
 
-        $totalCost = 0;
-        $totalQty = 0;
-
-        foreach ($batches as $batch) {
-            $totalCost += $batch->qty_left * $batch->landed_unit_cost;
-            $totalQty += $batch->qty_left;
-        }
-
-        return $totalQty > 0 ? ($totalCost / $totalQty) : 0;
+        // Fallback to product's cost price or last cost
+        return $product->cost_price ?? $product->last_cost ?? 0;
     }
 }
 

@@ -52,7 +52,7 @@ class PurchaseOrderController extends Controller
             $query->whereDate('order_date', '<=', $request->date_to);
         }
 
-        $purchaseOrders = $query->latest()->paginate(15);
+        $purchaseOrders = $query->latest()->paginate(10);
         $suppliers = Supplier::orderBy('name')->get();
 
         return view('purchase_orders.index', compact('purchaseOrders', 'suppliers'));

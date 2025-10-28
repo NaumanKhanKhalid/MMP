@@ -440,7 +440,7 @@
                         @foreach ($products as $index => $product)
                             @php
                                 $lastCost = $product->stockBatches->first() ? $product->stockBatches->first()->landed_unit_cost : 0;
-                                $totalStock = $product->stockBatches->sum('qty_left');
+                                $totalStock = $product->stockBatches->sum('qty_left'); // Calculate from batches (proper way)
                             @endphp
                             <tr>
                                 <td class="text-center">{{ $index + 1 }}</td>

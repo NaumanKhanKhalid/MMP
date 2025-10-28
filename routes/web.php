@@ -214,6 +214,12 @@ Route::middleware(['auth', 'security'])->group(function () {
     Route::get('/goods-receipts/po/{poId}/items', [GoodsReceiptController::class, 'getPOItems'])
         ->name('goods-receipts.get-po-items');
     
+    Route::get('/goods-receipts/po/{poId}/details', [GoodsReceiptController::class, 'getPODetails'])
+        ->name('goods-receipts.get-po-details');
+    
+    Route::get('/goods-receipts/po/{poId}/receipts', [GoodsReceiptController::class, 'getPOReceipts'])
+        ->name('goods-receipts.get-po-receipts');
+    
     Route::get('/goods-receipts/export', [GoodsReceiptController::class, 'export'])
         ->name('goods-receipts.export');
     
@@ -444,6 +450,7 @@ Route::get('/quotes/{id}/edit-modal', [QuoteController::class, 'editModal'])->na
         Route::get('/create', [App\Http\Controllers\StockCountController::class, 'create'])->name('stock-counts.create');
         Route::post('/', [App\Http\Controllers\StockCountController::class, 'store'])->name('stock-counts.store');
         Route::get('/{id}/count', [App\Http\Controllers\StockCountController::class, 'count'])->name('stock-counts.count');
+        Route::get('/{id}/stats', [App\Http\Controllers\StockCountController::class, 'getStats'])->name('stock-counts.stats');
         Route::post('/{countId}/items/{itemId}', [App\Http\Controllers\StockCountController::class, 'updateItem'])->name('stock-counts.update-item');
         Route::post('/{id}/start', [App\Http\Controllers\StockCountController::class, 'startCounting'])->name('stock-counts.start');
         Route::post('/{id}/complete', [App\Http\Controllers\StockCountController::class, 'completeCounting'])->name('stock-counts.complete');

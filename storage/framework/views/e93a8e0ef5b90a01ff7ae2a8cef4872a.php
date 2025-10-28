@@ -298,43 +298,17 @@
                                     </button>
                                     <?php endif; ?>
                                     
-                                    <!-- More Actions Dropdown -->
-                                        <button type="button" class="btn btn-sm btn-purple-light btn-icon" data-bs-toggle="dropdown" aria-expanded="false" title="More Actions">
-                                            <i class="ri-more-fill"></i>
-                                        </button>
-                                        <ul class="dropdown-menu dropdown-menu-end">
-                                            <li>
-                                                <a class="dropdown-item" href="javascript:void(0);" onclick="downloadPDF(<?php echo e($jobCard->id); ?>)">
-                                                    <i class="ri-printer-line me-2"></i>Print Job Card
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <a class="dropdown-item" href="javascript:void(0);" onclick="downloadPDF(<?php echo e($jobCard->id); ?>)">
-                                                    <i class="ri-file-pdf-line me-2"></i>Download PDF
-                                                </a>
-                                            </li>
-                                            <?php if($jobCard->final_invoice_id): ?>
-                                            <li>
-                                                <a class="dropdown-item" href="javascript:void(0);" onclick="downloadInvoicePDF(<?php echo e($jobCard->final_invoice_id); ?>)">
-                                                    <i class="ri-file-pdf-line me-2"></i>Download Invoice PDF
-                                                </a>
-                                            </li>
-                                            <li>
-                                                <a class="dropdown-item" href="javascript:void(0);" onclick="printInvoice(<?php echo e($jobCard->final_invoice_id); ?>)">
-                                                    <i class="ri-printer-line me-2"></i>Print Invoice
-                                                </a>
-                                            </li>
-                                            
-                                            
-                                            <?php endif; ?>
-                                            <?php if($jobCard->status !== 'completed' && $jobCard->status !== 'cancelled'): ?>
-                                            <li>
-                                                <a class="dropdown-item text-danger" href="javascript:void(0);" onclick="deleteJobCard(<?php echo e($jobCard->id); ?>)">
-                                                    <i class="ri-delete-bin-line me-2"></i>Delete Job Card
-                                                </a>
-                                            </li>
-                                            <?php endif; ?>
-                                        </ul>
+                                    <!-- PDF Download -->
+                                    <button type="button" class="btn btn-sm btn-primary-light btn-icon" onclick="event.stopPropagation(); downloadPDF(<?php echo e($jobCard->id); ?>)" title="Download PDF">
+                                        <i class="ri-printer-line"></i>
+                                    </button>
+                                    
+                                    <!-- Delete Button -->
+                                    <?php if($jobCard->status !== 'completed' && $jobCard->status !== 'cancelled'): ?>
+                                    <button type="button" class="btn btn-sm btn-danger-light btn-icon" onclick="event.stopPropagation(); deleteJobCard(<?php echo e($jobCard->id); ?>)" title="Delete">
+                                        <i class="ri-delete-bin-line"></i>
+                                    </button>
+                                    <?php endif; ?>
                                 </div>
                             </td>
                         </tr>
@@ -2016,62 +1990,6 @@ function downloadJobCardPickingList() {
 // Download PDF
 function downloadPDF(id) {
     const url = '<?php echo e(route("job-cards.pdf", ":id")); ?>'.replace(':id', id);
-    window.open(url, '_blank');
-}
-
-// Invoice sharing functions (for completed job cards with invoices)
-function downloadInvoicePDF(invoiceId) {
-    const url = '<?php echo e(route("invoices.pdf", ":id")); ?>'.replace(':id', invoiceId);
-    window.open(url, '_blank');
-}
-
-function printInvoice(invoiceId) {
-    const url = '<?php echo e(route("invoices.print", ":id")); ?>'.replace(':id', invoiceId);
-    window.open(url, '_blank');
-}
-
-function sendInvoiceWhatsApp(invoiceId) {
-    $.post('<?php echo e(route("invoices.whatsapp", ":id")); ?>'.replace(':id', invoiceId))
-        .done(function(response) {
-            if (response.success) {
-                const whatsappType = '<?php echo e(\App\Models\Setting::where('key', 'whatsapp_share_type')->value('value') ?? 'web'); ?>';
-                
-                if (whatsappType === 'desktop') {
-                    if (navigator.clipboard && response.message) {
-                        navigator.clipboard.writeText(response.message).then(() => {
-                            toastr.success('Message copied! Opening WhatsApp...');
-                        });
-                    }
-                }
-                
-                window.open(response.url, '_blank');
-            } else {
-                toastr.error(response.message || 'Failed to send WhatsApp');
-            }
-        })
-        .fail(function(xhr) {
-            const errorMsg = xhr.responseJSON?.message || 'Error sending WhatsApp';
-            toastr.error(errorMsg);
-        });
-}
-
-function sendInvoiceEmail(invoiceId) {
-    $.post('<?php echo e(route("invoices.email", ":id")); ?>'.replace(':id', invoiceId))
-        .done(function(response) {
-            if (response.success) {
-                toastr.success(response.message || 'Email sent successfully!');
-            } else {
-                toastr.error(response.message || 'Failed to send email');
-            }
-        })
-        .fail(function(xhr) {
-            const errorMsg = xhr.responseJSON?.message || 'Error sending email';
-            toastr.error(errorMsg);
-        });
-}
-
-function downloadPickingList(invoiceId) {
-    const url = '<?php echo e(route("invoices.picking-list", ":id")); ?>'.replace(':id', invoiceId);
     window.open(url, '_blank');
 }
 

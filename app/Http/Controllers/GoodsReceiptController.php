@@ -59,7 +59,7 @@ class GoodsReceiptController extends Controller
             ->when($request->date_from, fn($q) => $q->whereDate('received_date', '>=', $request->date_from))
             ->when($request->date_to, fn($q) => $q->whereDate('received_date', '<=', $request->date_to))
             ->latest()
-            ->paginate(15);
+            ->paginate(10);
 
         $products = Product::orderBy('name')->get();
         $suppliers = Supplier::orderBy('name')->get();
@@ -457,8 +457,11 @@ class GoodsReceiptController extends Controller
             $po = \App\Models\PurchaseOrder::with(['items.product', 'supplier'])->findOrFail($poId);
 
             $items = $po->items->map(function ($item) {
-                // Calculate received quantity from GRN items
+                // Calculate received quantity from GRN items (only from completed GRNs)
                 $receivedQty = \App\Models\GoodsReceiptItem::where('purchase_order_item_id', $item->id)
+                    ->whereHas('goodsReceipt', function($query) {
+                        $query->where('status', 'completed');
+                    })
                     ->sum('received_qty');
                 $remainingQty = $item->quantity - $receivedQty;
                 
@@ -492,6 +495,98 @@ class GoodsReceiptController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to load PO items: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get full PO details for display
+     */
+    public function getPODetails($poId)
+    {
+        try {
+            $po = \App\Models\PurchaseOrder::with(['supplier', 'user', 'items.product'])->findOrFail($poId);
+
+            return response()->json([
+                'success' => true,
+                'po' => [
+                    'id' => $po->id,
+                    'po_number' => $po->po_number,
+                    'status' => $po->status,
+                    'status_label' => ucfirst(str_replace('_', ' ', $po->status)),
+                    'order_date' => optional($po->order_date)->format('d M Y') ?? 'N/A',
+                    'expected_delivery_date' => optional($po->expected_delivery_date)->format('d M Y'),
+                    'received_date' => optional($po->received_date)->format('d M Y'),
+                    'supplier_name' => $po->supplier->name ?? 'N/A',
+                    'supplier_email' => $po->supplier->email ?? '',
+                    'supplier_phone' => $po->supplier->phone ?? '',
+                    'created_by' => $po->user->name ?? 'N/A',
+                    'notes' => $po->notes,
+                    'subtotal' => $po->subtotal ?? 0,
+                    'total_discount' => $po->total_discount ?? 0,
+                    'shipping' => $po->shipping ?? 0,
+                    'vat' => $po->vat ?? 0,
+                    'grand_total' => $po->grand_total ?? 0,
+                    'items' => $po->items->map(function ($item) {
+                        return [
+                            'product_name' => $item->product->name ?? 'Unknown',
+                            'product_sku' => $item->product->sku ?? 'N/A',
+                            'quantity' => $item->quantity,
+                            'unit_price' => $item->unit_price,
+                            'total' => $item->total,
+                        ];
+                    })
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load PO details: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get previous receipts for a PO
+     */
+    public function getPOReceipts($poId)
+    {
+        try {
+            $receipts = GoodsReceipt::where('purchase_order_id', $poId)
+                ->with(['items.product', 'user'])
+                ->orderBy('received_date', 'desc')
+                ->get()
+                ->map(function ($receipt) {
+                    /** @var \App\Models\GoodsReceipt $receipt */
+                    return [
+                        'id' => $receipt->id,
+                        'grn_number' => $receipt->grn_number,
+                        'received_date' => optional($receipt->received_date)->format('d M Y') ?? 'N/A',
+                        'status' => $receipt->status,
+                        'total_amount' => $receipt->total_amount ?? 0,
+                        'user_name' => $receipt->user->name ?? 'N/A',
+                        'items' => $receipt->items->map(function ($item) {
+                            return [
+                                'product_name' => $item->product_name,
+                                'product_sku' => $item->product_sku,
+                                'received_qty' => $item->received_qty,
+                                'unit_cost' => $item->unit_cost,
+                                'line_total' => $item->line_total,
+                            ];
+                        })
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'receipts' => $receipts
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to load previous receipts: ' . $e->getMessage()
             ], 500);
         }
     }

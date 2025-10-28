@@ -15,7 +15,7 @@ class CarMakeController extends Controller
             return response()->json($makes);
         }
         
-        $makes = CarMake::orderBy('name')->paginate(15);
+        $makes = CarMake::orderBy('name')->paginate(10);
         return view('car_makes.index', compact('makes'));
     }
 

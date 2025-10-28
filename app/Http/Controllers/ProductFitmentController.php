@@ -13,7 +13,7 @@ class ProductFitmentController extends Controller
 {
     public function index()
     {
-        $fitments = ProductFitment::with(['product', 'make', 'model', 'engine'])->paginate(15);
+        $fitments = ProductFitment::with(['product', 'make', 'model', 'engine'])->paginate(10);
         $products = Product::orderBy('name')->get();
         $makes = CarMake::where('status', 'active')->orderBy('name')->get();
         $models = CarModel::where('status', 'active')->orderBy('name')->get();

@@ -40,23 +40,23 @@
                     data: formData,
                     beforeSend: function() {
                         // Show loading overlay
-                        $('.table-responsive').append(
-                            '<div class="position-absolute top-50 start-50 translate-middle"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>'
+                        $('#poTableContainer').append(
+                            '<div class="position-absolute top-50 start-50 translate-middle" style="z-index: 10;"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div></div>'
                         );
                     },
                     success: function(response) {
                         // Parse the response and update the table
                         const parser = new DOMParser();
                         const doc = parser.parseFromString(response, 'text/html');
-                        const newTable = doc.querySelector('.table');
-                        const newPagination = doc.querySelector('.pagination');
+                        const newTable = doc.querySelector('#purchaseOrdersTable');
+                        const newPagination = doc.querySelector('#paginationContainer');
 
                         if (newTable) {
-                            $('.table').replaceWith(newTable);
+                            $('#purchaseOrdersTable').replaceWith(newTable);
                         }
 
                         if (newPagination) {
-                            $('.pagination').replaceWith(newPagination);
+                            $('#paginationContainer').replaceWith(newPagination);
                         }
 
                         // Update URL without page reload
@@ -72,7 +72,7 @@
                         toastr.error('Failed to filter purchase orders. Please try again.');
                     },
                     complete: function() {
-                        $('.spinner-border').remove();
+                        $('#poTableContainer .spinner-border').parent().remove();
                     }
                 });
             }
@@ -222,7 +222,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="table-responsive position-relative">
+                <div class="table-responsive position-relative" id="poTableContainer">
                     <table class="table table-striped align-middle table-hover" id="purchaseOrdersTable">
                         <thead class="table-light">
                             <tr>
@@ -360,11 +360,11 @@
                     </table>
                 </div>
             </div>
-            @if ($purchaseOrders->hasPages())
-                <div class="card-footer">
-                    {{ $purchaseOrders->appends(request()->query())->links() }}
+            <div class="card-footer">
+                <div id="paginationContainer">
+                    @include('purchase_orders.partials.pagination')
                 </div>
-            @endif
+            </div>
         </div>
     </div>
 

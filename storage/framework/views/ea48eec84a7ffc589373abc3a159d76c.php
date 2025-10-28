@@ -1,0 +1,109 @@
+<div class="modal-header bg-success text-white">
+    <h5 class="modal-title">
+        <i class="ri-folder-add-line me-2"></i> Add Main Category
+    </h5>
+    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+</div>
+
+<form id="mainCategoryCreateForm" enctype="multipart/form-data">
+    <?php echo csrf_field(); ?>
+    
+    <div class="modal-body p-4">
+        <div class="alert alert-info alert-sm mb-3">
+            <small><i class="ri-information-line me-1"></i> You can create multiple categories. Each will be automatically selected in the product form.</small>
+        </div>
+        <div class="row">
+            <div class="col-12 mb-3">
+                <label class="form-label fw-bold">Category Name <span class="text-danger">*</span></label>
+                <input type="text" name="name" class="form-control" required placeholder="e.g., Brakes, Engine Parts, Filters">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Status <span class="text-danger">*</span></label>
+                <select name="status" class="form-control" required>
+                    <option value="active" selected>Active</option>
+                    <option value="inactive">Inactive</option>
+                </select>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Logo (Optional)</label>
+                <input type="file" name="logo" class="form-control" accept="image/*">
+                <small class="text-muted">Max 2MB</small>
+            </div>
+            <div class="col-12 mb-3">
+                <label class="form-label fw-bold">Description</label>
+                <textarea name="description" class="form-control" rows="3" placeholder="Category description (optional)"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-footer bg-light">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">
+            <i class="ri-close-line me-1"></i> Cancel
+        </button>
+        <button type="button" class="btn btn-success" data-bs-dismiss="modal">
+            <i class="ri-check-line me-1"></i> Done
+        </button>
+        <button type="submit" class="btn btn-success" id="createCategoryBtn">
+            <i class="ri-add-line me-1"></i> Add Category
+        </button>
+    </div>
+</form>
+
+<script>
+$(document).ready(function() {
+    $('#mainCategoryCreateForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const submitBtn = $('#createCategoryBtn');
+        const originalText = submitBtn.html();
+        
+        // Show loading state
+        submitBtn.html('<i class="ri-loader-4-line me-1"></i> Creating...').prop('disabled', true);
+        
+        $.ajax({
+            url: '<?php echo e(route("categories.store")); ?>',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function(response) {
+                if (response.success) {
+                    // Add new category to the select dropdown
+                    const categorySelect = $('select[name="category_id"]');
+                    const newOption = new Option(response.category.name, response.category.id, true, true);
+                    categorySelect.append(newOption).trigger('change');
+                    
+                    // Show success message
+                    toastr.success('Category created successfully and selected!');
+                    
+                    // Reset form but keep modal open for more entries
+                    $('#mainCategoryCreateForm')[0].reset();
+                    
+                    // Focus on the name field for next entry
+                    $('input[name="name"]').focus();
+                } else {
+                    toastr.error(response.message || 'Failed to create category');
+                }
+            },
+            error: function(xhr) {
+                let errorMessage = 'Failed to create category';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                } else if (xhr.responseJSON && xhr.responseJSON.errors) {
+                    const errors = xhr.responseJSON.errors;
+                    const firstError = Object.values(errors)[0];
+                    errorMessage = Array.isArray(firstError) ? firstError[0] : firstError;
+                }
+                toastr.error(errorMessage);
+            },
+            complete: function() {
+                // Reset button state
+                submitBtn.html(originalText).prop('disabled', false);
+            }
+        });
+    });
+});
+</script>
+
+<?php /**PATH C:\xampp\htdocs\MMP\resources\views/categories/partials/create_category_modal.blade.php ENDPATH**/ ?>

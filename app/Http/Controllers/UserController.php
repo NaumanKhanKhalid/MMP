@@ -18,7 +18,7 @@ class UserController extends Controller
             $users = User::with('role')
                 ->whereHas('role', fn ($q) => $q->where('name', '!=', 'Owner'))
                 ->latest()
-                ->paginate(15);
+                ->paginate(10);
 
             return view('users.index', compact('users'));
         } catch (\Exception $e) {

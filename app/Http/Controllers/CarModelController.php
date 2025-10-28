@@ -21,7 +21,7 @@ class CarModelController extends Controller
             return response()->json($models);
         }
         
-        $models = CarModel::with('make')->orderBy('name')->paginate(15);
+        $models = CarModel::with('make')->orderBy('name')->paginate(10);
         $makes = CarMake::where('status', 'active')->orderBy('name')->get();
         return view('car_models.index', compact('models', 'makes'));
     }
